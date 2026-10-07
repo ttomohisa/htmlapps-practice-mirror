@@ -2,100 +2,78 @@
 
 数秒前のカメラ映像を表示し、スポーツ・ダンス・トレーニングなどのフォームをその場で確認するWebアプリです。
 
-> v0.5.0では、1〜30秒の遅延設定、前面/背面カメラ切替、全画面、Screen Wake Lock、練習中の操作UI自動非表示、スマホ横向きレイアウトまで追加しています。
+> v0.6.0ではAdaptive Performanceを追加しました。端末負荷が継続して高い場合、処理fpsや解像度を段階的に下げ、重い端末でもセッションが破綻しにくい方向へ自動調整します。
 
 ## Features
 
-- 3秒 / 5秒 / 10秒 / 15秒プリセット
-- 1〜30秒の自由設定
-- 背面カメラ優先 + 複数カメラ端末での前面/背面切替
-- 直前最大10秒を固定するReview
-- 再生 / 一時停止 / シーク
-- 0.25× / 0.5× / 1×再生
-- 1コマ戻る / 1コマ進む
-- ドラッグできる縦・横ガイド
-- ガイドのキーボード微調整・削除
-- 左右反転表示
-- 全画面表示
-- Screen Wake Lockによる画面スリープ防止
-- スマホ/全画面Practiceでの操作UI自動非表示
-- 低い横向き画面での動画＋操作の2カラム表示
-- Review保存ファイル名の編集
-- MP4優先 / WebMフォールバックのローカル保存
-- 日本語 / English切り替え
+- 3 / 5 / 10 / 15秒プリセット + 1〜30秒自由設定
+- 複数カメラ端末での前面/背面切替
+- 直前10秒を固定するReview
+- 0.25× / 0.5× / 1×、シーク、コマ送り
+- 縦横ガイド、左右反転
+- Reviewクリップのローカル保存
+- MP4優先 / WebMフォールバック
+- 全画面、Screen Wake Lock
+- スマホPracticeの操作UI自動非表示
+- 短い横画面向け2カラムUI
+- 動作情報内のCapability tier
+- 4秒単位の端末負荷監視
+- 30 → 20 → 15 → 12fpsの段階的な自動負荷低減
+- 継続負荷時の720p → 540p → 360p目標への段階的調整
+- セッション中の自動画質上昇を行わず、上下往復を防止
+- 日本語 / English
 - 音声取得なし
-- CSPによる実行時外部通信禁止
-- 単一HTML + gzip自己展開版
+- `connect-src 'none'`
+- 単一HTML
 
-## Usage
+## Adaptive Performance
 
-1. 3 / 5 / 10 / 15秒、または自由設定で1〜30秒を選びます。
-2. **カメラを開始**を押し、カメラ利用を許可します。
-3. 準備後、選択した秒数だけ遅れた映像を見ながら練習します。
-4. 必要に応じて **カメラ切替**、**全画面**、**画面を点灯**、ガイド、**左右反転**を使います。
-5. スマホのPractice中は操作UIが自動的に隠れることがあります。映像をタップすると再表示されます。
-6. 履歴が十分たまったら **Review** を押します。
-7. スロー再生・シーク・コマ送りで直前10秒を確認します。
-8. 必要なReviewだけ端末へ保存します。
-9. **練習に戻る**で遅延バッファを作り直します。
+Practice中に以下を端末内で確認します。
+
+- 遅延映像の実測描画fps
+- encoder queueの混雑
+- decoder queueの混雑
+- backpressureにより処理を見送ったフレーム数
+
+一瞬の負荷では画質を落としません。複数の監視区間で負荷が続いた場合だけ段階を下げます。
+
+最初の自動調整は720pのまま30fps → 20fpsに下げるため、遅延バッファを作り直しません。それでも重い場合は540p/15fps、その後360p/12fpsを試します。解像度を変更した場合は古い映像と混在させないためWarm-upをやり直します。
+
+カメラが解像度変更を受け付けない場合でも、それだけを理由に停止せず、実際のカメラ解像度を維持したまま処理fpsを下げます。
 
 ## Privacy
 
-カメラ映像、Review、保存用動画の作成はすべてブラウザ内で行います。
+性能判定もすべて端末内です。
 
-Practice Mirrorでは以下を行いません。
+以下を外部へ送りません。
 
-- 映像アップロード
-- 外部APIへのカメラ映像送信
-- 音声取得
-- 動画の自動保存
-- Analytics / telemetry
+- カメラ映像
+- Review
+- 性能サンプル
+- CPUコア数 / device-memoryのヒント
+- カメラID / ラベル
 
-CSPは `connect-src 'none'` です。
+開始時の初期品質選択に `hardwareConcurrency` や `deviceMemory` の大まかな値を利用する場合がありますが、保存・送信しません。
 
-localStorageへ保存する可能性があるのは、言語、遅延秒数、前面/背面の一般設定、左右反転、Wake Lock設定です。カメラのdevice ID・ラベル、映像バッファ、Reviewクリップ、ガイド位置は自動保存しません。
+CSPは `connect-src 'none'`、マイク音声は取得しません。
 
 ## Browser support
 
-Practice / Reviewには以下が必要です。
+コア機能にはカメラ、`requestVideoFrameCallback()`、WebCodecsが必要です。
 
-- `navigator.mediaDevices.getUserMedia()`
-- `HTMLVideoElement.requestVideoFrameCallback()`
-- `VideoFrame`
-- `VideoEncoder`
-- `VideoDecoder`
-- H.264またはVP8のWebCodecs対応
+Fullscreen、Screen Wake Lock、複数カメラ、Canvas `captureStream()`、`MediaRecorder` は任意機能です。これらの一部がない場合は「基本」Capabilityとして表示し、遅延ミラー本体は使える設計です。
 
-任意機能として以下を利用します。
+## Limitations in v0.6.0
 
-- Fullscreen API
-- Screen Wake Lock API
-- カメラ切替用の複数 `videoinput`
-- Review保存用のCanvas `captureStream()` + `MediaRecorder`
-
-任意APIがない場合、その機能だけを無効にして遅延ミラー本体は利用できるようにします。
-
-## Limitations in v0.5.0
-
-まだ以下は未完了です。
-
-- 端末負荷に応じたFPS / 解像度の自動調整
-- 長時間利用を含むReliability仕上げ
-- 音声録音
-- ガイド / 左右反転の保存動画への焼き込み
-- AI / 姿勢推定
+- 自動調整の閾値は実機の幅広い検証がまだ必要
+- セッション中の品質自動回復は、頻繁な上下動を防ぐため意図的に未実装
+- 長時間Reliability検証は次のマイルストーン
+- 音声録音なし
+- AI / 姿勢推定なし
 
 ## Single HTML / offline behavior
 
-ビルドすると以下を生成します。
-
-```text
-dist/index.html
-practice-mirror.html
-dist/index.self-extract.html
-```
-
-外部ランタイムライブラリは使用していません。
+`dist/index.html`、`practice-mirror.html`、`dist/index.self-extract.html` を生成します。外部ランタイムライブラリは使用しません。
 
 ## Development
 

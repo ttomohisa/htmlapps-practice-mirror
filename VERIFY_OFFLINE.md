@@ -1,33 +1,33 @@
 # Offline / local-processing verification
 
-Practice Mirror is intended to run without runtime network access after the HTML file has loaded.
+Practice Mirror must perform delayed video, Review, export, and adaptive performance decisions without runtime network access.
 
 ## Static checks
 
-- Confirm generated HTML contains `connect-src 'none'`.
-- Confirm no external runtime script/style/font/image/API dependency.
-- Confirm `dependencies.json` is empty.
-- Confirm camera capture uses `audio: false`.
-- Confirm clip saving uses browser-local Canvas / VideoDecoder / MediaRecorder / Blob APIs.
-- Confirm camera switching stores only generic facing preference, not device IDs.
+- generated HTML contains `connect-src 'none'`
+- no external runtime script/style/font/API dependency
+- `dependencies.json` remains empty
+- camera capture uses `audio: false`
+- adaptive performance code has no fetch/XHR/WebSocket/EventSource/telemetry endpoint
+- device capability hints are not persisted
+- camera IDs and labels are not persisted
 
 ## Runtime checks
 
 1. Build `dist/index.html`.
-2. Open DevTools > Network.
-3. Start with 3 seconds, then test presets 5 / 10 / 15.
-4. Test custom values 1 and 30 seconds.
-5. Confirm invalid values such as 0, 31, blank, and non-integer input cannot start as entered.
-6. On a multi-camera phone, switch rear → front → rear and confirm each switch restarts warm-up.
-7. Confirm single-camera environments keep Switch camera disabled.
-8. Enter and exit fullscreen.
-9. Toggle Screen Wake Lock and confirm Stop releases it.
-10. On a smartphone, wait for Practice controls to auto-hide, then tap the video to restore them.
-11. Rotate portrait ↔ landscape and verify there is no horizontal page scroll or covered control.
-12. Enter Review and test slow playback, seek, frame stepping, guides, and Mirror.
-13. Save a Review clip and open it in a normal player.
-14. Confirm no audio, guide overlay, or Mirror transform is present in the saved file.
-15. Confirm no application network requests occur after initial document load.
-16. Stop and confirm camera use ends.
+2. Open DevTools Network and verify no application runtime request after initial load.
+3. Start Practice at 3s, 10s, and 30s delays.
+4. Confirm Technical details shows processing quality and performance status.
+5. On a normal device, confirm stable operation does not randomly downgrade from one isolated slow moment.
+6. With CPU throttling or a deliberately constrained test environment, sustain load for multiple 4-second windows.
+7. Confirm the first downgrade changes target processing from 30fps to 20fps without restarting Warm-up.
+8. Continue sustained load and confirm a later downgrade may restart Warm-up while requesting lower resolution.
+9. If possible, test a camera that rejects `applyConstraints()`; confirm the session continues at reduced software FPS.
+10. Confirm adaptation never automatically raises quality during the same session.
+11. Switch camera after an adaptive downgrade.
+12. Enter Review, use frame stepping/guides/Mirror, and save a Review clip after adaptation.
+13. Rotate portrait ↔ landscape and test Fullscreen and Wake Lock.
+14. Stop and confirm camera and Wake Lock are released.
+15. Confirm no performance sample or hardware hint is written to localStorage.
 
-Camera permission behavior for `file://` differs by browser. A local HTTPS/localhost environment may be required for camera access even though the app itself has no runtime server dependency.
+Real-device threshold tuning remains required; passing static/CI checks alone does not prove performance behavior across phones.
