@@ -1,15 +1,15 @@
 {
   "$schema": "./schemas/app-config.schema.json",
-  "name": "Single HTML App Starter",
-  "nameJa": "単一HTMLアプリ スターター",
-  "slug": "single-html-app-starter",
-  "version": "1.3.0",
-  "description": "A reusable starter for privacy-friendly, fully self-contained browser apps.",
-  "descriptionJa": "プライバシーに配慮した完全内包型ブラウザーアプリの再利用テンプレートです。",
+  "name": "Practice Mirror",
+  "nameJa": "Practice Mirror",
+  "slug": "practice-mirror",
+  "version": "0.2.0",
+  "description": "See your movement a few seconds later without stopping to record and replay.",
+  "descriptionJa": "録画と再生を繰り返さず、数秒前の自分の動きをその場で確認する遅延ミラーです。",
   "defaultLanguage": "auto",
   "repository": {
-    "owner": "OWNER",
-    "name": "single-html-app-template"
+    "owner": "ttomohisa",
+    "name": "htmlapps-practice-mirror"
   },
   "build": {
     "output": "dist/index.html",

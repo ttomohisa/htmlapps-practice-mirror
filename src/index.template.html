@@ -6,973 +6,594 @@
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f5f5f2">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; media-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Single HTML App Starter</title>
+  <title>Practice Mirror</title>
   <link rel="icon" href="__APP_ICON_DATA_URI__">
   <style>
     :root {
       color-scheme: light;
-      --bg: #f5f5f2;
-      --surface: #ffffff;
-      --surface-muted: #f0f0ed;
-      --surface-hover: #e9e9e5;
-      --text: #20211f;
-      --muted: #666963;
-      --line: #dadbd6;
-      --line-strong: #bfc1ba;
-      --accent: #16624f;
-      --accent-hover: #0e503f;
-      --accent-soft: #e1f0ea;
-      --danger: #b3261e;
-      --focus: #4d8bc7;
-      --shadow-sm: 0 1px 2px rgba(25, 28, 24, .08), 0 1px 6px rgba(25, 28, 24, .04);
-      --shadow-md: 0 12px 34px rgba(25, 28, 24, .10);
-      --radius: 12px;
-      --header-height: 66px;
+      --bg:#f5f5f2; --surface:#fff; --surface-muted:#f0f0ed; --surface-hover:#e9e9e5;
+      --text:#20211f; --muted:#666963; --line:#dadbd6; --line-strong:#bfc1ba;
+      --accent:#16624f; --accent-hover:#0e503f; --accent-soft:#e1f0ea;
+      --danger:#b3261e; --warning:#8a5a00; --warning-soft:#fff3d6; --focus:#4d8bc7;
+      --shadow-sm:0 1px 2px rgba(25,28,24,.08),0 1px 6px rgba(25,28,24,.04);
+      --shadow-md:0 14px 38px rgba(25,28,24,.14); --radius:14px; --header-height:66px;
     }
-    * { box-sizing: border-box; }
-    html { min-height: 100%; background: var(--bg); scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-      font-size: 15px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-    button, textarea, input { font: inherit; }
-    button { color: inherit; }
-    button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--focus) 55%, transparent);
-      outline-offset: 2px;
-    }
-    .app-header {
-      position: sticky;
-      z-index: 30;
-      top: 0;
-      min-height: var(--header-height);
-      border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
-      background: color-mix(in srgb, var(--bg) 92%, transparent);
-      backdrop-filter: blur(16px) saturate(1.2);
-    }
-    .header-inner {
-      width: min(1180px, 100%);
-      min-height: var(--header-height);
-      margin: 0 auto;
-      padding: 10px clamp(14px, 2.8vw, 30px);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .brand-mark {
-      display: block;
-      width: 38px;
-      height: 38px;
-      flex: 0 0 auto;
-      border-radius: 11px;
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-    .brand-mark img { width: 100%; height: 100%; display: block; }
-    .brand-copy { min-width: 0; }
-    .brand-name {
-      margin: 0;
-      font-size: 17px;
-      line-height: 1.2;
-      letter-spacing: .01em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .version-badge {
-      display: inline-flex;
-      align-items: center;
-      margin-left: 7px;
-      padding: 1px 6px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--muted);
-      background: var(--surface-muted);
-      font-size: 10px;
-      font-weight: 650;
-      vertical-align: 2px;
-    }
-    .brand-meta {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .button {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: border-color .16s ease, background .16s ease, transform .16s ease;
-    }
-    .button:hover { border-color: var(--line-strong); background: var(--surface-hover); }
-    .button:active { transform: translateY(1px); }
-    .language-button {
-      min-width: 0;
-      padding: 5px 1px;
-      border: 0;
-      background: transparent;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 750;
-      letter-spacing: .02em;
-      cursor: pointer;
-      transition: color .16s ease, opacity .16s ease;
-    }
-    .language-button:hover { color: var(--text); }
-    .language-button:active { opacity: .65; }
-    .icon-button {
-      display: inline-grid;
-      place-items: center;
-      width: 38px;
-      height: 38px;
-      padding: 0;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--surface);
-      cursor: pointer;
-      transition: border-color .16s ease, background .16s ease, transform .16s ease;
-    }
-    .icon-button:hover { border-color: var(--line-strong); background: var(--surface-hover); }
-    .icon-button:active { transform: translateY(1px); }
-    .icon-button svg { width: 18px; height: 18px; display: block; }
-    .header-icon-button {
-      width: auto;
-      height: auto;
-      padding: 5px 1px;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      color: var(--muted);
-      transition: color .16s ease, opacity .16s ease;
-    }
-    .header-icon-button:hover { border-color: transparent; background: transparent; color: var(--text); }
-    .header-icon-button:active { transform: none; opacity: .65; }
-    .header-icon-button svg { width: 20px; height: 20px; }
-    .main {
-      width: min(1180px, 100%);
-      margin: 0 auto;
-      padding: 22px clamp(14px, 2.8vw, 30px) 54px;
-    }
-    .page-intro {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 20px;
-      padding: 0 2px 18px;
-    }
-    .page-intro h2 {
-      margin: 0;
-      font-size: clamp(21px, 3vw, 26px);
-      line-height: 1.3;
-      letter-spacing: -.025em;
-    }
-    .page-intro p { margin: 5px 0 0; max-width: 760px; color: var(--muted); font-size: 13px; }
-    .local-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      flex: 0 0 auto;
-      margin-top: 3px;
-      padding: 7px 10px;
-      border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
-      border-radius: 999px;
-      color: var(--accent);
-      background: var(--accent-soft);
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .local-badge svg { width: 15px; height: 15px; display: block; }
-    .workspace {
-      margin: 0 0 28px;
-      padding: 20px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: var(--surface);
-      box-shadow: var(--shadow-sm);
-    }
-    .workspace-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 15px; }
-    .workspace h2, .section-title { margin: 0; letter-spacing: -.02em; }
-    .workspace h2 { font-size: 19px; }
-    .workspace-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-    .stats { display: flex; flex-wrap: wrap; gap: 7px; }
-    .stat { min-width: 70px; padding: 7px 10px; border-radius: 10px; background: var(--surface-muted); text-align: center; }
-    .stat-value { display: block; font-size: 15px; font-weight: 780; line-height: 1.2; }
-    .stat-label { color: var(--muted); font-size: 10px; }
-    textarea {
-      width: 100%;
-      min-height: 260px;
-      resize: vertical;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 16px;
-      background: #fbfbf9;
-      color: var(--text);
-      line-height: 1.7;
-    }
-    textarea:hover { border-color: var(--line-strong); }
-    .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 12px; }
-    .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
-    .button { min-height: 40px; padding: 8px 14px; font-weight: 700; }
-    .button.primary { border-color: var(--accent); color: white; background: var(--accent); }
-    .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
-    .button.danger { color: var(--danger); }
-    .save-status { align-self: center; color: var(--muted); font-size: 12px; }
-    .export-row { display: flex; align-items: end; gap: 10px; margin-top: 12px; }
-    .export-field { display: grid; gap: 5px; min-width: min(100%, 320px); }
-    .export-label { color: var(--muted); font-size: 11px; font-weight: 700; }
-    .filename-control { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-    .filename-control:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 20%, transparent); }
-    .filename-input { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 0; outline: 0; background: transparent; color: var(--text); }
-    .filename-extension { padding: 0 10px; color: var(--muted); font-size: 12px; user-select: none; }
-    .section { padding: 26px 0; }
-    .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 15px; }
-    .section-title { font-size: 20px; }
-    .section-head p { margin: 0; color: var(--muted); font-size: 13px; }
-    .card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-    .card { min-height: 150px; padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
-    .card-number { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
-    .card h3 { margin: 17px 0 6px; font-size: 15px; }
-    .card p { margin: 0; color: var(--muted); font-size: 12px; }
-    details { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; box-shadow: var(--shadow-sm); }
-    summary { cursor: pointer; padding: 14px 16px; font-weight: 720; }
-    .build-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 16px 16px; }
-    .build-item { padding: 11px; border-radius: 10px; background: var(--surface-muted); }
-    .build-item span { display: block; color: var(--muted); font-size: 10px; }
-    .build-item strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
-    footer { width: min(1180px, 100%); margin: 0 auto; padding: 0 clamp(14px, 2.8vw, 30px) 34px; color: var(--muted); font-size: 12px; }
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg)}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP","Yu Gothic UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+    button,input{font:inherit}
+    button{color:inherit}
+    button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid color-mix(in srgb,var(--focus) 55%,transparent);outline-offset:2px}
+    .app-header{position:sticky;z-index:30;top:0;min-height:var(--header-height);border-bottom:1px solid color-mix(in srgb,var(--line) 82%,transparent);background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(16px) saturate(1.2)}
+    .header-inner{width:min(1180px,100%);min-height:var(--header-height);margin:0 auto;padding:10px clamp(14px,2.8vw,30px);display:flex;align-items:center;gap:14px}
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}.brand-mark{display:block;width:38px;height:38px;flex:0 0 auto;border-radius:11px;overflow:hidden;box-shadow:var(--shadow-sm)}.brand-mark img{width:100%;height:100%;display:block}.brand-copy{min-width:0}.brand-name{margin:0;font-size:17px;line-height:1.2;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.version-badge{display:inline-flex;align-items:center;margin-left:7px;padding:1px 6px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--surface-muted);font-size:10px;font-weight:650;vertical-align:2px}.brand-meta{margin:2px 0 0;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .header-actions{margin-left:auto;display:flex;align-items:center;gap:12px}.language-button{min-width:0;padding:5px 1px;border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;cursor:pointer}.language-button:hover{color:var(--text)}.icon-button{display:inline-grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer}.icon-button:hover{border-color:var(--line-strong);background:var(--surface-hover)}.header-icon-button{width:auto;height:auto;padding:5px 1px;border:0;border-radius:0;background:transparent;color:var(--muted)}.header-icon-button:hover{background:transparent;color:var(--text)}.header-icon-button svg{width:20px;height:20px}
+    .main{width:min(1180px,100%);margin:0 auto;padding:22px clamp(14px,2.8vw,30px) 54px}.page-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:0 2px 18px}.page-intro h2{margin:0;font-size:clamp(22px,3vw,29px);line-height:1.25;letter-spacing:-.025em}.page-intro p{margin:6px 0 0;max-width:760px;color:var(--muted);font-size:13px}.local-badge{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;margin-top:3px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));border-radius:999px;color:var(--accent);background:var(--accent-soft);font-size:12px;font-weight:700;white-space:nowrap}.local-badge svg{width:15px;height:15px}
+    .workspace{padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm)}
+    .start-panel{min-height:430px;display:grid;place-items:center;padding:clamp(22px,5vw,52px)}.start-inner{width:min(620px,100%);text-align:center}.start-icon{width:72px;height:72px;margin:0 auto 18px;border-radius:20px;box-shadow:var(--shadow-sm)}.start-title{margin:0;font-size:clamp(24px,4vw,34px);letter-spacing:-.035em}.start-copy{margin:10px auto 24px;max-width:520px;color:var(--muted);font-size:14px}.delay-fieldset{margin:0 auto 22px;padding:0;border:0}.delay-label{display:block;margin-bottom:8px;font-size:12px;font-weight:760;color:var(--muted)}.delay-options{display:flex;justify-content:center;gap:8px}.delay-option{min-width:88px;min-height:44px;padding:8px 16px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-weight:760;cursor:pointer}.delay-option[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}.primary-button{min-height:48px;padding:10px 20px;border:1px solid var(--accent);border-radius:12px;background:var(--accent);color:#fff;font-weight:780;cursor:pointer;box-shadow:var(--shadow-sm)}.primary-button:hover{border-color:var(--accent-hover);background:var(--accent-hover)}.primary-button:disabled{opacity:.52;cursor:not-allowed}.privacy-note{display:flex;align-items:flex-start;justify-content:center;gap:8px;margin:18px auto 0;max-width:520px;color:var(--muted);font-size:12px}.privacy-note svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;color:var(--accent)}
+    .mirror-panel{display:none;min-height:0}.mirror-panel.active{display:block}.stage-shell{position:relative;overflow:hidden;border-radius:15px;background:#111;aspect-ratio:16/9;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}.stage-canvas{display:block;width:100%;height:100%;object-fit:contain;background:#111}.camera-source{position:absolute;width:1px;height:1px;left:-10000px;top:-10000px;opacity:0;pointer-events:none}.stage-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}.warmup-card,.error-card{width:min(420px,calc(100% - 32px));padding:18px;border:1px solid rgba(255,255,255,.2);border-radius:14px;background:rgba(20,22,21,.76);color:#fff;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25);backdrop-filter:blur(10px)}.warmup-title,.error-title{margin:0;font-size:17px}.warmup-copy,.error-copy{margin:7px 0 0;color:rgba(255,255,255,.78);font-size:13px}.progress{height:7px;margin-top:15px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.14)}.progress-bar{width:0;height:100%;background:#fff;border-radius:inherit;transition:width .16s linear}.warmup-count{margin-top:8px;font-variant-numeric:tabular-nums;font-size:12px;color:rgba(255,255,255,.76)}
+    .stage-status{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:999px;background:rgba(20,22,21,.66);color:#fff;font-size:12px;font-weight:760;backdrop-filter:blur(9px);pointer-events:none}.status-dot{width:8px;height:8px;border-radius:50%;background:#fff}.stage-status[data-state="practice"] .status-dot{background:#7ee0b6}.stage-status[data-state="review"] .status-dot{background:#ffd27a}.stage-status[data-state="error"] .status-dot{background:#ffb4ab}.stage-status[data-state="warming"] .status-dot{animation:pulse 1.1s ease-in-out infinite}
+    .stage-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}.stage-summary{display:flex;align-items:center;gap:10px;min-width:0}.stage-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}.delay-chip{display:inline-flex;align-items:center;min-height:38px;padding:7px 11px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800}.engine-meta{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-weight:740;cursor:pointer}.secondary-button:hover{border-color:var(--line-strong);background:var(--surface-hover)}.secondary-button:disabled{opacity:.48;cursor:not-allowed}.secondary-button svg{width:17px;height:17px;flex:0 0 auto}.review-button{border-color:color-mix(in srgb,var(--accent) 35%,var(--line));background:var(--accent-soft);color:var(--accent)}.review-button:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 70%,#fff)}
+    .review-controls{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-muted)}.review-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.review-copy{min-width:0}.review-title{display:block;font-size:14px}.review-subtitle{display:block;margin-top:2px;color:var(--muted);font-size:11px}.review-transport{display:flex;align-items:center;gap:10px;margin-top:13px}.play-button{min-width:112px;border-color:var(--accent);background:var(--accent);color:#fff}.play-button:hover{border-color:var(--accent-hover);background:var(--accent-hover)}.rate-group{display:flex;gap:6px}.rate-button{min-width:58px}.rate-button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}.seek-wrap{display:block;margin-top:12px}.review-seek{width:100%;accent-color:var(--accent);cursor:pointer}.review-time{display:flex;justify-content:space-between;gap:12px;margin-top:3px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}.review-preparing .review-controls{opacity:.65;pointer-events:none}
+    .notice{display:none;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-muted);font-size:13px}.notice.visible{display:block}.notice.warning{border-color:#e3c782;background:var(--warning-soft);color:#604000}.notice.error{border-color:#e4aaa6;background:#fff1f0;color:#7d231d}.notice strong{display:block;margin-bottom:3px}.notice p{margin:0}.notice-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .diagnostics{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}.diagnostics summary{padding:10px 12px;color:var(--muted);font-size:11px;font-weight:760;cursor:pointer}.detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 10px 10px}.detail-card{padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.detail-card span{display:block;color:var(--muted);font-size:10px}.detail-card strong{display:block;margin-top:3px;font-size:13px;overflow-wrap:anywhere}
     /* Reusable toast / Undo component. Canonical source: components/toast.html */
-    .app-toast {
-      position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 60;
-      display: flex; align-items: center; gap: 12px; max-width: min(420px, calc(100vw - 36px));
-      padding: 10px 12px 10px 14px; border: 1px solid var(--line); border-radius: 12px;
-      background: var(--surface); color: var(--text); box-shadow: var(--shadow-md); opacity: 0;
-      transform: translateY(12px); pointer-events: none; transition: opacity .18s ease, transform .18s ease;
-    }
-    .app-toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-    .app-toast[data-tone="success"] { border-color: color-mix(in srgb, var(--accent) 34%, var(--line)); }
-    .app-toast[data-tone="warning"] { border-color: #c58a24; }
-    .app-toast-message { min-width: 0; flex: 1 1 auto; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
-    .app-toast-action { flex: 0 0 auto; min-height: 34px; padding: 5px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
-    .app-toast-action:hover { background: var(--surface-hover); }
-    .app-toast-action[hidden] { display: none; }
-    dialog {
-      width: min(640px, calc(100% - 28px));
-      max-height: min(760px, calc(100dvh - 28px));
-      padding: 0;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: var(--surface);
-      color: var(--text);
-      box-shadow: var(--shadow-md);
-    }
-    dialog::backdrop { background: rgba(15, 17, 14, .52); backdrop-filter: blur(4px); }
-    #helpDialog[open] {
-      display: flex;
-      flex-direction: column;
-      max-height: calc(100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    }
-    .dialog-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex: 0 0 auto;
-      gap: 12px;
-      padding: 16px 18px;
-      border-bottom: 1px solid var(--line);
-    }
-    .dialog-header h2 { margin: 0; font-size: 17px; }
-    .dialog-body {
-      min-height: 0;
-      flex: 1 1 auto;
-      padding: 20px 20px calc(28px + env(safe-area-inset-bottom));
-      overflow: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-    .dialog-body h3 {
-      margin: 25px 0 8px;
-      padding-top: 19px;
-      border-top: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-      font-size: 14px;
-    }
-    .dialog-body h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
-    .dialog-body p, .dialog-body li { color: var(--muted); font-size: 13px; line-height: 1.7; }
-    .dialog-body p { margin: 8px 0 0; }
-    .dialog-body ul, .dialog-body ol { margin: 8px 0 0; padding-left: 22px; }
-    .dialog-body li + li { margin-top: 7px; }
-    .dialog-note {
-      margin-top: 12px;
-      padding: 11px 12px;
-      border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
-      border-radius: 10px;
-      background: var(--accent-soft);
-      color: var(--text) !important;
-    }
-
-    /* Reusable confirmation component. Canonical source: components/confirm-dialog.html */
-    .app-confirm-dialog { width: min(420px, calc(100% - 24px)); max-width: 100%; }
-    .app-confirm-dialog::backdrop { background: rgba(15, 17, 14, .48); backdrop-filter: blur(3px); }
-    .app-confirm-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 15px 18px 13px;
-      border-bottom: 1px solid var(--line);
-    }
-    .app-confirm-title { margin: 0; font-size: 17px; letter-spacing: -.01em; }
-    .app-confirm-close {
-      display: grid;
-      place-items: center;
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      border: 0;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--text);
-      cursor: pointer;
-    }
-    .app-confirm-close:hover { background: var(--surface-hover); }
-    .app-confirm-close svg { width: 19px; height: 19px; }
-    .app-confirm-body { padding: 18px; }
-    .app-confirm-message {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.7;
-      overflow-wrap: anywhere;
-    }
-    .app-confirm-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 18px;
-    }
-    .app-confirm-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      padding: 8px 12px;
-      border: 1px solid var(--line);
-      border-radius: 11px;
-      background: var(--surface);
-      color: var(--text);
-      font: inherit;
-      font-size: 12px;
-      font-weight: 760;
-      cursor: pointer;
-    }
-    .app-confirm-button:hover { border-color: var(--line-strong); background: var(--surface-hover); }
-    .app-confirm-button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
-    .app-confirm-button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
-    .app-confirm-button.danger { border-color: var(--danger); background: var(--danger); color: #fff; }
-    .app-confirm-button:focus-visible, .app-confirm-close:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--focus) 55%, transparent);
-      outline-offset: 2px;
-    }
-
-    code { padding: 1px 5px; border-radius: 5px; background: var(--surface-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    @media (max-width: 820px) {
-      .page-intro { align-items: stretch; flex-direction: column; gap: 10px; }
-      .local-badge { align-self: flex-start; }
-      .workspace-head, .section-head { align-items: stretch; flex-direction: column; }
-      .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .build-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 520px) {
-      :root { --header-height: 58px; }
-      .header-inner { padding-block: 8px; }
-      .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
-      .brand-name { font-size: 15px; }
-      .brand-meta { display: none; }
-      .header-actions { gap: 11px; }
-      .language-button { padding-block: 6px; }
-      .header-icon-button { padding-block: 6px; }
-      .main { padding-top: 18px; }
-      .page-intro { padding-bottom: 14px; }
-      .workspace { padding: 14px; border-radius: 14px; }
-      .stats { width: 100%; }
-      .stat { flex: 1 1 0; min-width: 0; }
-      .card-grid { grid-template-columns: 1fr; }
-      .toolbar, .button-row { width: 100%; }
-      .button-row .button { flex: 1 1 auto; }
-      .export-row, .export-field { width: 100%; }
-      .app-toast { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: none; }
-      textarea { min-height: 235px; }
-      #helpDialog {
-        width: calc(100% - 20px);
-        max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-      }
-      #helpDialog .dialog-body {
-        padding: 18px 18px calc(24px + env(safe-area-inset-bottom));
-      }
-      .app-confirm-dialog {
-        width: 100%;
-        max-width: none;
-        margin: auto 0 0;
-        border-width: 1px 0 0;
-        border-radius: 22px 22px 0 0;
-      }
-      .app-confirm-dialog::backdrop { background: rgba(0, 0, 0, .42); backdrop-filter: blur(2px); }
-      .app-confirm-header { padding: 14px 18px 12px; }
-      .app-confirm-body { padding: 12px 18px calc(env(safe-area-inset-bottom) + 18px); }
-      .app-confirm-message { font-size: 14px; line-height: 1.75; }
-      .app-confirm-actions { grid-template-columns: 1fr; gap: 10px; margin-top: 16px; }
-      .app-confirm-button { min-height: 48px; font-size: 14px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
-    }
+    .app-toast{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;gap:12px;max-width:min(420px,calc(100vw - 36px));padding:10px 12px 10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);box-shadow:var(--shadow-md);opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}.app-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}.app-toast[data-tone="success"]{border-color:color-mix(in srgb,var(--accent) 34%,var(--line))}.app-toast[data-tone="warning"]{border-color:#c58a24}.app-toast-message{min-width:0;flex:1 1 auto;font-size:13px;line-height:1.45;overflow-wrap:anywhere}.app-toast-action{flex:0 0 auto;min-height:34px;padding:5px 8px;border:0;border-radius:8px;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:800;cursor:pointer}.app-toast-action:hover{background:var(--surface-hover)}.app-toast-action[hidden]{display:none}
+    dialog{width:min(680px,calc(100vw - 28px));max-height:min(760px,calc(100dvh - 28px));padding:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);box-shadow:var(--shadow-md)}dialog::backdrop{background:rgba(20,22,21,.42);backdrop-filter:blur(2px)}.dialog-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface)}.dialog-head h2{margin:0;font-size:17px}.dialog-body{overflow:auto;max-height:calc(min(760px,100dvh - 28px) - 62px);padding:16px 18px calc(22px + env(safe-area-inset-bottom))}.dialog-body h3{margin:20px 0 7px;font-size:14px}.dialog-body h3:first-child{margin-top:0}.dialog-body p,.dialog-body li{color:var(--muted);font-size:13px}.dialog-body ul,.dialog-body ol{padding-left:20px}.dialog-body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+    footer{width:min(1180px,100%);margin:0 auto;padding:0 clamp(14px,2.8vw,30px) 34px;color:var(--muted);font-size:12px}
+    .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+    [hidden]{display:none!important}
+    @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+    @media (max-width:760px){
+      :root{--header-height:62px}.header-inner{padding-inline:14px}.brand-meta{display:none}.brand-name{font-size:15px}.main{padding:14px 10px 28px}.page-intro{padding:0 4px 12px}.page-intro h2{font-size:20px}.page-intro p{font-size:12px}.local-badge{display:none}.workspace{padding:8px;border-radius:15px}.start-panel{min-height:calc(100dvh - 168px);padding:24px 14px}.start-icon{width:64px;height:64px;border-radius:18px}.start-copy{font-size:13px}.delay-option{min-width:96px}.stage-shell{border-radius:11px;aspect-ratio:auto;height:min(66dvh,700px);min-height:390px}.stage-canvas{object-fit:contain}.stage-controls{padding:0 4px 5px;align-items:flex-start;flex-wrap:wrap}.stage-summary{display:grid;gap:5px;flex:1 1 140px}.stage-actions{margin-left:auto}.engine-meta{max-width:54vw}.review-controls{margin:8px 2px 0;padding:12px}.review-head{align-items:center}.review-transport{align-items:stretch;flex-wrap:wrap}.play-button{flex:1 1 130px}.rate-group{flex:0 0 auto}.detail-grid{grid-template-columns:1fr}.dialog-body{padding-inline:16px}}
+    @media (orientation:landscape) and (max-height:620px){.app-header{position:static}.main{padding-top:8px}.page-intro{display:none}.stage-shell{height:calc(100dvh - 96px);min-height:260px;aspect-ratio:auto}.workspace{padding:6px}.stage-controls{margin-top:8px}}
   </style>
 </head>
 <body>
   <header class="app-header">
     <div class="header-inner">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt="">
-        </div>
+        <span class="brand-mark"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></span>
         <div class="brand-copy">
-          <p class="brand-name"><span id="brandName">Single HTML App Starter</span><span class="version-badge" id="versionBadge">v1.1.0</span></p>
-          <p class="brand-meta" data-i18n="brandMeta">Single file · Local-first · GitHub Pages</p>
+          <h1 class="brand-name">Practice Mirror <span class="version-badge">v0.2.0</span></h1>
+          <p class="brand-meta" data-i18n="brandMeta">5秒 / 10秒遅延でフォーム確認</p>
         </div>
       </div>
       <div class="header-actions">
-        <button class="language-button" id="languageButton" type="button" aria-label="Switch language">EN</button>
-        <button class="icon-button header-icon-button" id="helpButton" type="button" data-i18n-title="helpTitle" data-i18n-aria-label="helpTitle" title="使い方と注意事項" aria-label="使い方と注意事項">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.35 2.35 0 1 1 3.72 1.9c-.92.67-1.52 1.12-1.52 2.1"/><path d="M12 17h.01"/></svg>
+        <button id="languageButton" class="language-button" type="button" aria-label="Switch language">EN</button>
+        <button id="helpButton" class="icon-button header-icon-button" type="button" data-i18n-aria="helpAria" aria-label="使い方と注意事項">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.8 9a2.35 2.35 0 1 1 3.45 2.07c-.94.53-1.25.96-1.25 1.93" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1" fill="currentColor"/></svg>
         </button>
       </div>
     </div>
   </header>
 
   <main class="main">
-    <section class="page-intro" aria-labelledby="heroTitle">
+    <section class="page-intro">
       <div>
-        <h2 id="heroTitle" data-i18n="introTitle">単一HTMLアプリのスターター</h2>
-        <p data-i18n="lead">PDF Organizerと同じ、固定依存・完全内包・実行時通信なしの構成から、新しいブラウザーアプリを作れます。</p>
+        <h2 data-i18n="heroTitle">動いた直後に、さっきの自分を見る。</h2>
+        <p data-i18n="heroCopy">カメラ映像を数秒遅らせて表示します。録画・停止・再生を繰り返さず、その場でフォームを確認できます。</p>
       </div>
-      <div class="local-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-5"/></svg>
-        <span data-i18n="localBadge">実行時通信なし</span>
-      </div>
+      <span class="local-badge">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.2c0 4.65 3.08 8.62 7.5 9.8 4.42-1.18 7.5-5.15 7.5-9.8V6L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m8.8 12 2.05 2.05L15.6 9.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="localBadge">完全ローカル処理</span>
+      </span>
     </section>
 
-    <!-- APP:BEGIN Replace this demo workspace with the real application. -->
-    <section class="shell workspace" aria-labelledby="workspaceTitle">
-      <div class="workspace-head">
-        <div>
-          <h2 id="workspaceTitle" data-i18n="workspaceTitle">Starter workspace</h2>
-          <p data-i18n="workspaceBody">Text stays in this browser. It is never sent by this app.</p>
-        </div>
-        <div class="stats" aria-live="polite">
-          <div class="stat"><span class="stat-value" id="characterCount">0</span><span class="stat-label" data-i18n="characters">Characters</span></div>
-          <div class="stat"><span class="stat-value" id="wordCount">0</span><span class="stat-label" data-i18n="words">Words</span></div>
-          <div class="stat"><span class="stat-value" id="lineCount">0</span><span class="stat-label" data-i18n="lines">Lines</span></div>
+    <!-- APP:BEGIN -->
+    <section class="workspace" aria-live="polite">
+      <div id="startPanel" class="start-panel">
+        <div class="start-inner">
+          <img id="startIcon" class="start-icon" alt="">
+          <h2 class="start-title" data-i18n="startTitle">遅延ミラーを開始</h2>
+          <p class="start-copy" data-i18n="startCopy">スマートフォンを置いて動いたあと、画面を見ると数秒前の自分が映ります。最初に遅延時間を選んでください。</p>
+          <fieldset class="delay-fieldset">
+            <legend class="delay-label" data-i18n="delayLabel">遅延時間</legend>
+            <div class="delay-options" role="group" data-i18n-aria="delayAria" aria-label="遅延時間">
+              <button class="delay-option" type="button" data-delay="5" aria-pressed="false"><span data-i18n="delay5">5秒</span></button>
+              <button class="delay-option" type="button" data-delay="10" aria-pressed="true"><span data-i18n="delay10">10秒</span></button>
+            </div>
+          </fieldset>
+          <button id="startButton" class="primary-button" type="button" data-i18n="startButton">カメラを開始</button>
+          <div class="privacy-note">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.2c0 4.65 3.08 8.62 7.5 9.8 4.42-1.18 7.5-5.15 7.5-9.8V6L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span data-i18n="privacyInline">カメラ映像はこの端末内で処理され、外部サーバーへ送信されません。</span>
+          </div>
+          <div id="preflightNotice" class="notice" role="status"></div>
         </div>
       </div>
-      <label class="sr-only" for="editor" data-i18n="editorLabel">Text editor</label>
-      <textarea id="editor" spellcheck="true"></textarea>
-      <div class="export-row">
-        <label class="export-field" for="outputFilename">
-          <span class="export-label" data-i18n="outputFilename">出力ファイル名</span>
-          <span class="filename-control">
-            <input class="filename-input" id="outputFilename" type="text" maxlength="120" autocomplete="off" spellcheck="false" aria-describedby="outputFilenameHint">
-            <span class="filename-extension" aria-hidden="true">.txt</span>
-          </span>
-          <span class="sr-only" id="outputFilenameHint" data-i18n="outputFilenameHint">拡張子は自動で .txt が付きます</span>
-        </label>
-      </div>
-      <div class="toolbar">
-        <div class="button-row">
-          <button class="button primary" id="copyButton" type="button" data-i18n="copy">Copy</button>
-          <button class="button" id="downloadButton" type="button" data-i18n="download">Download text</button>
-          <button class="button" id="sampleButton" type="button" data-i18n="sample">Restore sample</button>
+
+      <div id="mirrorPanel" class="mirror-panel">
+        <div class="stage-shell" id="stageShell">
+          <video id="cameraVideo" class="camera-source" autoplay muted playsinline aria-hidden="true"></video>
+          <canvas id="delayCanvas" class="stage-canvas"></canvas>
+          <div id="stageStatus" class="stage-status" data-state="warming"><span class="status-dot"></span><span id="stageStatusText" data-i18n="warmingStatus">準備中</span></div>
+          <div id="stageOverlay" class="stage-overlay">
+            <div id="warmupCard" class="warmup-card">
+              <h3 class="warmup-title" data-i18n="warmupTitle">遅延映像を準備しています</h3>
+              <p class="warmup-copy" data-i18n="warmupCopy">選択した時間分の映像を端末内に一時保持しています。</p>
+              <div class="progress" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
+              <div id="warmupCount" class="warmup-count">0.0 / 10.0 s</div>
+            </div>
+            <div id="stageErrorCard" class="error-card" hidden>
+              <h3 class="error-title" id="stageErrorTitle"></h3>
+              <p class="error-copy" id="stageErrorCopy"></p>
+            </div>
+          </div>
         </div>
-        <div class="button-row">
-          <button class="button danger" id="clearButton" type="button" data-i18n="clear">Clear</button>
+        <div class="stage-controls">
+          <div class="stage-summary">
+            <span id="delayChip" class="delay-chip">10秒遅延</span>
+            <span id="engineMeta" class="engine-meta"></span>
+          </div>
+          <div class="stage-actions">
+            <button id="reviewButton" class="secondary-button review-button" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h10a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m8 13.5-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-i18n="reviewButton">Review</span>
+            </button>
+            <button id="stopButton" class="secondary-button" type="button" data-i18n="stopButton">終了</button>
+          </div>
         </div>
-        <span class="save-status" id="saveStatus" data-i18n="savedLocally">Saved locally</span>
+        <div id="reviewControls" class="review-controls" hidden>
+          <div class="review-head">
+            <div class="review-copy">
+              <strong class="review-title" data-i18n="reviewTitle">直前10秒を確認</strong>
+              <span id="reviewDurationMeta" class="review-subtitle"></span>
+            </div>
+            <button id="returnButton" class="secondary-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7-5 5 5 5M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-i18n="returnButton">練習に戻る</span>
+            </button>
+          </div>
+          <div class="review-transport">
+            <button id="playPauseButton" class="secondary-button play-button" type="button">
+              <svg id="playPauseIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5Z" fill="currentColor"/></svg>
+              <span id="playPauseLabel" data-i18n="playButton">再生</span>
+            </button>
+            <div class="rate-group" role="group" data-i18n-aria="playbackSpeedAria" aria-label="再生速度">
+              <button class="secondary-button rate-button" type="button" data-rate="0.5" aria-pressed="false">0.5×</button>
+              <button class="secondary-button rate-button" type="button" data-rate="1" aria-pressed="true">1×</button>
+            </div>
+          </div>
+          <label class="seek-wrap">
+            <span class="sr-only" data-i18n="seekLabel">レビュー位置</span>
+            <input id="reviewSeek" class="review-seek" type="range" min="0" max="1000" value="0" step="1">
+          </label>
+          <div class="review-time"><span id="reviewCurrentTime">0:00.0</span><span id="reviewTotalTime">0:10.0</span></div>
+        </div>
+        <div id="runtimeNotice" class="notice" role="status"></div>
+        <details class="diagnostics">
+          <summary data-i18n="detailsLabel">動作情報</summary>
+          <div class="detail-grid" aria-label="Runtime information">
+            <div class="detail-card"><span data-i18n="cameraLabel">カメラ</span><strong id="cameraMeta">—</strong></div>
+            <div class="detail-card"><span data-i18n="codecLabel">映像処理</span><strong id="codecMeta">—</strong></div>
+            <div class="detail-card"><span data-i18n="delayActualLabel">現在の遅延</span><strong id="delayActualMeta">—</strong></div>
+          </div>
+        </details>
       </div>
     </section>
     <!-- APP:END -->
-
-    <section class="shell section" aria-labelledby="guaranteesTitle">
-      <div class="section-head">
-        <h2 class="section-title" id="guaranteesTitle" data-i18n="guaranteesTitle">Template guarantees</h2>
-        <p data-i18n="guaranteesBody">Keep these constraints unless the product specification explicitly changes them.</p>
-      </div>
-      <div class="card-grid">
-        <article class="card"><div class="card-number">01</div><h3 data-i18n="card1Title">One deliverable</h3><p data-i18n="card1Body">The release artifact is dist/index.html. It opens directly and can be hosted as a static page.</p></article>
-        <article class="card"><div class="card-number">02</div><h3 data-i18n="card2Title">Pinned dependencies</h3><p data-i18n="card2Body">Third-party npm assets are version-pinned, hashed, and embedded during the build.</p></article>
-        <article class="card"><div class="card-number">03</div><h3 data-i18n="card3Title">No runtime network</h3><p data-i18n="card3Body">Content Security Policy blocks runtime connections. User data stays inside the page.</p></article>
-        <article class="card"><div class="card-number">04</div><h3 data-i18n="card4Title">LLM-ready workflow</h3><p data-i18n="card4Body">AGENTS.md and APP_SPEC.md give coding agents a stable contract, acceptance criteria, and handoff format.</p></article>
-      </div>
-    </section>
-
-    <section class="shell section">
-      <details>
-        <summary data-i18n="buildInfo">Build information</summary>
-        <div class="build-grid">
-          <div class="build-item"><span data-i18n="appVersion">App version</span><strong id="buildVersion">—</strong></div>
-          <div class="build-item"><span data-i18n="builtAt">Built at</span><strong id="builtAt">—</strong></div>
-          <div class="build-item"><span data-i18n="dependencies">Embedded dependencies</span><strong id="dependencyCount">0</strong></div>
-        </div>
-      </details>
-    </section>
   </main>
 
-  <footer><span id="footerName">Single HTML App Starter</span> · MIT License · <span data-i18n="footer">Generated as one self-contained HTML file</span></footer>
+  <footer><span data-i18n="footer">Practice Mirror v0.2.0 · 映像は端末内で処理されます。</span></footer>
   <div class="app-toast" id="appToast" role="status" aria-live="polite" aria-atomic="true" data-tone="default">
     <span class="app-toast-message" id="appToastMessage"></span>
     <button class="app-toast-action" id="appToastAction" type="button" hidden></button>
   </div>
 
-  <!-- Reusable confirmation component. Keep in sync with components/confirm-dialog.html. -->
-  <dialog class="app-confirm-dialog" id="appConfirmDialog" aria-labelledby="appConfirmTitle" aria-describedby="appConfirmMessage">
-    <div class="app-confirm-header">
-      <h2 class="app-confirm-title" id="appConfirmTitle">確認</h2>
-      <button class="app-confirm-close" id="appConfirmClose" type="button" data-i18n-aria-label="close" aria-label="閉じる">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div class="app-confirm-body">
-      <p class="app-confirm-message" id="appConfirmMessage"></p>
-      <div class="app-confirm-actions">
-        <button class="app-confirm-button" id="appConfirmCancel" type="button">キャンセル</button>
-        <button class="app-confirm-button primary" id="appConfirmOk" type="button">実行する</button>
-      </div>
-    </div>
-  </dialog>
-
   <dialog id="helpDialog" aria-labelledby="helpTitle">
-    <div class="dialog-header">
+    <div class="dialog-head">
       <h2 id="helpTitle" data-i18n="helpTitle">使い方と注意事項</h2>
-      <button class="icon-button" id="closeHelpButton" type="button" data-i18n-title="close" data-i18n-aria-label="close" title="閉じる" aria-label="閉じる">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+      <button id="helpCloseButton" class="icon-button" type="button" data-i18n-aria="closeAria" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
     </div>
     <div class="dialog-body">
-      <!-- APP:HELP:BEGIN Update this section together with the real application. -->
-      <h3 data-i18n="helpBasicsTitle">基本操作</h3>
-      <ol>
-        <li data-i18n="helpStep1">作業領域へテキストを入力します。内容は入力のたびに端末内へ保存されます。</li>
-        <li data-i18n="helpStep2">出力ファイル名を必要に応じて変更し、「コピー」または「テキスト保存」で入力内容を取り出せます。</li>
-        <li data-i18n="helpStep3">「サンプルに戻す」や「消去」の直後は、トーストの「元に戻す」から取り消せます。</li>
-      </ol>
-
-      <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
-      <p data-i18n="helpPrivacyBody">入力内容と操作はブラウザー内で処理され、このアプリから外部へ送信されません。必要なコードと依存ファイルも配布用HTMLに内包されます。</p>
-
-      <h3 data-i18n="helpNotesTitle">注意事項</h3>
-      <ul>
-        <li data-i18n="helpNoteStorage">ブラウザーのサイトデータを削除すると、端末内に保存した入力内容も消える場合があります。必要な内容はファイルとして保存してください。</li>
-        <li data-i18n="helpNoteBrowser">一部の機能はブラウザーの制限や端末性能の影響を受けます。重要な成果物は保存後に内容を確認してください。</li>
-        <li data-i18n="helpNoteTemplate">この画面はスターターの例です。新しいアプリを作る際は、機能と一緒にこのヘルプも実際の操作へ書き換えます。</li>
-      </ul>
-      <p class="dialog-note" data-i18n="helpOffline">配布物は dist/index.html ひとつです。ローカルで直接開くことも、GitHub Pagesで公開することもできます。</p>
+      <!-- APP:HELP:BEGIN -->
+      <div data-lang-block="ja">
+        <h3>基本操作</h3>
+        <ol><li>5秒または10秒の遅延を選びます。</li><li>「カメラを開始」を押して、ブラウザのカメラ利用を許可します。</li><li>準備が終わると、選択した秒数だけ遅れた映像が表示されます。</li><li>直前10秒を見返したいときは「Review」を押します。Reviewでは再生・一時停止・シーク・0.5×/1×再生ができます。</li><li>「練習に戻る」を押すと遅延バッファを作り直して練習を再開します。</li></ol>
+        <h3>プライバシー</h3><p>カメラ映像はブラウザ内だけで処理します。映像のアップロード、外部API送信、録画保存はv0.2.0では行いません。ランタイム通信はCSPで禁止しています。</p>
+        <h3>対応ブラウザ</h3><p>カメラ、WebCodecs、<code>requestVideoFrameCallback()</code> が利用できるブラウザが必要です。必要な機能がない場合は開始前に案内します。</p>
+        <h3>現在の制限</h3><p>v0.2.0ではReviewに再生・一時停止・シーク・0.5×/1×再生を追加しました。0.25×、コマ送り、ガイド線、動画保存、カメラ切り替えはまだありません。</p>
+        <h3>データ消失について</h3><p>遅延用の映像バッファは一時メモリにだけ保持されます。終了・再読み込み・タブを閉じると失われます。</p>
+      </div>
+      <div data-lang-block="en" hidden>
+        <h3>Basic use</h3>
+        <ol><li>Choose a 5 or 10 second delay.</li><li>Select “Start camera” and allow camera access.</li><li>After warm-up, the view shows the camera feed with the selected delay.</li><li>Select “Review” to freeze up to the previous 10 seconds. Review supports play, pause, seeking, and 0.5× / 1× playback.</li><li>Select “Back to practice” to rebuild the delay buffer and continue practicing.</li></ol>
+        <h3>Privacy</h3><p>Camera frames are processed only in this browser. v0.2.0 does not upload, send to an external API, record, or save the video. Runtime network access is blocked by CSP.</p>
+        <h3>Browser requirements</h3><p>A browser with camera access, WebCodecs, and <code>requestVideoFrameCallback()</code> is required. Missing capabilities are reported before the camera starts.</p>
+        <h3>Current limitations</h3><p>v0.2.0 adds Review with play, pause, seeking, and 0.5× / 1× playback. 0.25× playback, frame stepping, guides, clip saving, and camera switching are not included yet.</p>
+        <h3>Temporary data</h3><p>The delay buffer exists only in memory. It is discarded when you stop, reload, or close the tab.</p>
+      </div>
       <!-- APP:HELP:END -->
     </div>
   </dialog>
 
   <script>
-    (() => {
-      'use strict';
+  (() => {
+    "use strict";
 
-      const APP_CONFIG = __APP_CONFIG_JSON__;
-      const BUILD_MANIFEST = __BUILD_MANIFEST_JSON__;
-      // Asset payloads are Base64 exactly once. The JSON bundle itself is embedded directly.
-      const assetBundle = __EMBEDDED_ASSET_BUNDLE_JSON__;
-      const blobUrls = new Set();
-      const assetByteCache = new Map();
+    const APP_CONFIG = __APP_CONFIG_JSON__;
+    const BUILD_MANIFEST = __BUILD_MANIFEST_JSON__;
+    // Asset payloads are Base64 exactly once. The JSON bundle itself is embedded directly.
+    const assetBundle = __EMBEDDED_ASSET_BUNDLE_JSON__;
+    const blobUrls = new Set();
+    const assetByteCache = new Map();
 
-      function decodeBase64Bytes(base64) {
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-        return bytes;
+    function decodeBase64Bytes(base64){ const binary=atob(base64); const bytes=new Uint8Array(binary.length); for(let index=0;index<binary.length;index+=1) bytes[index]=binary.charCodeAt(index); return bytes; }
+    function getAsset(dependencyId,assetKey){ const asset=assetBundle.dependencies?.[dependencyId]?.assets?.[assetKey]; if(!asset) throw new Error(`Embedded asset not found: ${dependencyId}/${assetKey}`); return asset; }
+    async function inflateAsset(asset){
+      const stored=decodeBase64Bytes(asset.base64); if(!asset.compression||asset.compression==="none") return stored;
+      if(asset.compression!=="gzip") throw new Error(`Unsupported embedded asset compression: ${asset.compression}`);
+      if(typeof DecompressionStream!=="function") throw new Error("This browser cannot expand gzip-compressed embedded assets.");
+      const stream=new Blob([stored]).stream().pipeThrough(new DecompressionStream("gzip")); const expanded=new Uint8Array(await new Response(stream).arrayBuffer());
+      if(Number.isFinite(asset.originalBytes)&&expanded.byteLength!==asset.originalBytes) throw new Error(`Embedded gzip asset size mismatch: expected ${asset.originalBytes}, got ${expanded.byteLength}`);
+      return expanded;
+    }
+    window.StandaloneAssets=Object.freeze({
+      manifest:BUILD_MANIFEST,
+      list(){ return Object.entries(assetBundle.dependencies||{}).flatMap(([dependencyId,dependency])=>Object.keys(dependency.assets||{}).map(assetKey=>`${dependencyId}/${assetKey}`)); },
+      has(dependencyId,assetKey){ return Boolean(assetBundle.dependencies?.[dependencyId]?.assets?.[assetKey]); },
+      bytes(dependencyId,assetKey){ const asset=getAsset(dependencyId,assetKey); if(asset.compression&&asset.compression!=="none") throw new Error(`Embedded asset ${dependencyId}/${assetKey} is gzip-compressed; use await StandaloneAssets.bytesAsync().`); return decodeBase64Bytes(asset.base64); },
+      async bytesAsync(dependencyId,assetKey){ const cacheKey=`${dependencyId}/${assetKey}`; if(!assetByteCache.has(cacheKey)) assetByteCache.set(cacheKey,inflateAsset(getAsset(dependencyId,assetKey))); return new Uint8Array(await assetByteCache.get(cacheKey)); },
+      text(dependencyId,assetKey){ return new TextDecoder().decode(this.bytes(dependencyId,assetKey)); },
+      async textAsync(dependencyId,assetKey){ return new TextDecoder().decode(await this.bytesAsync(dependencyId,assetKey)); },
+      blobUrl(dependencyId,assetKey){ const asset=getAsset(dependencyId,assetKey); const url=URL.createObjectURL(new Blob([this.bytes(dependencyId,assetKey)],{type:asset.mime||"application/octet-stream"})); blobUrls.add(url); return url; },
+      async blobUrlAsync(dependencyId,assetKey){ const asset=getAsset(dependencyId,assetKey); const url=URL.createObjectURL(new Blob([await this.bytesAsync(dependencyId,assetKey)],{type:asset.mime||"application/octet-stream"})); blobUrls.add(url); return url; }
+    });
+    window.addEventListener("pagehide",()=>{ blobUrls.forEach(url=>URL.revokeObjectURL(url)); blobUrls.clear(); });
+
+    // outputFilename is intentionally deferred until local clip export is implemented in v0.4.0.
+    const REVIEW_DURATION_US = 10_000_000;
+    const HISTORY_KEEP_US = 14_000_000;
+
+    const translations = {
+      ja: {
+        brandMeta:"5秒 / 10秒遅延 + Review", delayAria:"遅延時間", playbackSpeedAria:"再生速度", detailsLabel:"動作情報", helpAria:"使い方と注意事項", closeAria:"閉じる",
+        heroTitle:"動いた直後に、さっきの自分を見る。", heroCopy:"カメラ映像を数秒遅らせて表示します。気になった動きは直前10秒をReviewで見返せます。", localBadge:"完全ローカル処理",
+        startTitle:"遅延ミラーを開始", startCopy:"スマートフォンを置いて動いたあと、画面を見ると数秒前の自分が映ります。最初に遅延時間を選んでください。", delayLabel:"遅延時間", delay5:"5秒", delay10:"10秒", startButton:"カメラを開始",
+        privacyInline:"カメラ映像はこの端末内で処理され、外部サーバーへ送信されません。", warmingStatus:"準備中", practiceStatus:"遅延表示中", reviewPreparingStatus:"Review準備中", reviewStatus:"Review", errorStatus:"停止しました", warmupTitle:"遅延映像を準備しています", warmupCopy:"選択した時間分の映像を端末内に一時保持しています。", stopButton:"終了", reviewButton:"Review", reviewTitle:"直前10秒を確認", reviewPreparingTitle:"Reviewを準備しています", reviewPreparingCopy:"直前の映像を固定して、端末内で再生準備をしています。", returnButton:"練習に戻る", playButton:"再生", pauseButton:"一時停止", seekLabel:"レビュー位置", cameraLabel:"カメラ", codecLabel:"映像処理", delayActualLabel:"現在の遅延", helpTitle:"使い方と注意事項", footer:"Practice Mirror v0.2.0 · 映像は端末内で処理されます。",
+        unsupportedTitle:"このブラウザでは開始できません", unsupportedCopy:"遅延表示に必要なブラウザ機能が不足しています。最新版のChrome、Edge、Safariなどでお試しください。", secureCopy:"カメラを使うには、安全なページ（HTTPSまたは対応するローカル環境）で開く必要があります。",
+        cameraDeniedTitle:"カメラを利用できません", cameraDeniedCopy:"ブラウザの設定から、このページのカメラ利用を許可してください。", cameraMissingCopy:"使用できるカメラが見つかりませんでした。", cameraBusyCopy:"カメラを開始できませんでした。他のアプリがカメラを使用していないか確認してください。",
+        codecTitle:"映像処理を開始できません", codecCopy:"この端末で利用できる映像コーデックを確認できませんでした。ブラウザを更新するか、別のブラウザをお試しください。", runtimeTitle:"遅延映像を処理できませんでした", runtimeCopy:"カメラを終了しました。もう一度開始しても改善しない場合は、別のブラウザまたは端末をお試しください。",
+        reviewNotReadyTitle:"Reviewの準備中です", reviewNotReadyCopy:"直前10秒分の映像がたまるまで、もう少し練習を続けてください。", reviewFailedTitle:"Reviewを開始できませんでした", reviewFailedCopy:"直前の映像を固定できませんでした。練習に戻ってもう一度お試しください。",
+        cameraStarting:"カメラを準備しています…", stopped:"カメラを終了しました。", localOnly:"外部通信なし", seconds:"秒遅延", actualPending:"準備中", reviewChip:"Review", reviewDuration:"直前 {seconds} 秒を端末内で固定", practiceRestarting:"遅延バッファを作り直しています"
+      },
+      en: {
+        brandMeta:"5 / 10 second delay + Review", delayAria:"Delay time", playbackSpeedAria:"Playback speed", detailsLabel:"Technical details", helpAria:"How to use and notes", closeAria:"Close",
+        heroTitle:"See the movement you just made.", heroCopy:"Practice Mirror shows the camera a few seconds late. Freeze the previous 10 seconds in Review whenever you want a closer look.", localBadge:"Fully local processing",
+        startTitle:"Start delayed mirror", startCopy:"Place your device, move, then look back at the screen to see yourself a few seconds earlier. Choose the delay first.", delayLabel:"Delay", delay5:"5 sec", delay10:"10 sec", startButton:"Start camera",
+        privacyInline:"Camera frames are processed on this device and are not sent to an external server.", warmingStatus:"Preparing", practiceStatus:"Delayed view", reviewPreparingStatus:"Preparing Review", reviewStatus:"Review", errorStatus:"Stopped", warmupTitle:"Preparing delayed video", warmupCopy:"The browser is temporarily buffering the selected amount of video on this device.", stopButton:"Stop", reviewButton:"Review", reviewTitle:"Review the previous 10 seconds", reviewPreparingTitle:"Preparing Review", reviewPreparingCopy:"The previous video is being frozen and prepared for local playback.", returnButton:"Back to practice", playButton:"Play", pauseButton:"Pause", seekLabel:"Review position", cameraLabel:"Camera", codecLabel:"Video processing", delayActualLabel:"Current delay", helpTitle:"How to use & notes", footer:"Practice Mirror v0.2.0 · Video is processed on this device.",
+        unsupportedTitle:"This browser cannot start Practice Mirror", unsupportedCopy:"A browser feature required for delayed video is missing. Try the latest Chrome, Edge, Safari, or another supported browser.", secureCopy:"Camera access requires a secure page (HTTPS or a supported local environment).",
+        cameraDeniedTitle:"Camera access is unavailable", cameraDeniedCopy:"Allow camera access for this page in your browser settings and try again.", cameraMissingCopy:"No usable camera was found.", cameraBusyCopy:"The camera could not start. Check whether another app is using it.",
+        codecTitle:"Video processing could not start", codecCopy:"No supported video codec could be selected on this device. Update the browser or try another browser.", runtimeTitle:"Delayed video stopped", runtimeCopy:"The camera has been stopped. If restarting does not help, try another browser or device.",
+        reviewNotReadyTitle:"Review is still preparing", reviewNotReadyCopy:"Keep practicing a little longer until the previous 10 seconds are available.", reviewFailedTitle:"Review could not start", reviewFailedCopy:"The previous video could not be frozen. Return to practice and try again.",
+        cameraStarting:"Starting camera…", stopped:"Camera stopped.", localOnly:"No network access", seconds:"sec delay", actualPending:"Preparing", reviewChip:"Review", reviewDuration:"Previous {seconds} sec frozen locally", practiceRestarting:"Rebuilding the delay buffer"
       }
+    };
 
-      function getAsset(dependencyId, assetKey) {
-        const asset = assetBundle.dependencies?.[dependencyId]?.assets?.[assetKey];
-        if (!asset) throw new Error(`Embedded asset not found: ${dependencyId}/${assetKey}`);
-        return asset;
-      }
+    const state = {
+      language:"ja", delaySeconds:10, phase:"idle", stream:null, encoder:null, decoder:null,
+      codec:null, decoderConfig:null, decoderConfigured:false, encodedQueue:[], historyPackets:[], frameRequestId:0,
+      schedulerId:0, firstEncodedTimestamp:null, latestEncodedTimestamp:null, latestRenderedTimestamp:null,
+      startPerformanceUs:0, lastKeyframeUs:0, lastFrameUs:0, frameIntervalUs:33333,
+      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false,
+      review:{packets:[], visibleStartUs:0, endUs:0, durationUs:0, decoder:null, decoderGeneration:0, rafId:0,
+        playing:false, rate:1, positionUs:0, playbackBasePerfUs:0, playbackBasePositionUs:0, packetIndex:0,
+        outputMode:"play", seekTargetUs:0, seekFrame:null, seekFrameDistance:Infinity, seekGeneration:0}
+    };
 
-      async function inflateAsset(asset) {
-        const stored = decodeBase64Bytes(asset.base64);
-        if (!asset.compression || asset.compression === 'none') return stored;
-        if (asset.compression !== 'gzip') throw new Error(`Unsupported embedded asset compression: ${asset.compression}`);
-        if (typeof DecompressionStream !== 'function') throw new Error('This browser cannot expand gzip-compressed embedded assets.');
-        const stream = new Blob([stored]).stream().pipeThrough(new DecompressionStream('gzip'));
-        const expanded = new Uint8Array(await new Response(stream).arrayBuffer());
-        if (Number.isFinite(asset.originalBytes) && expanded.byteLength !== asset.originalBytes) {
-          throw new Error(`Embedded gzip asset size mismatch: expected ${asset.originalBytes}, got ${expanded.byteLength}`);
-        }
-        return expanded;
-      }
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      languageButton:$("languageButton"), helpButton:$("helpButton"), helpDialog:$("helpDialog"), helpCloseButton:$("helpCloseButton"), appBrandIcon:$("appBrandIcon"), startIcon:$("startIcon"),
+      appToast:$("appToast"), appToastMessage:$("appToastMessage"), appToastAction:$("appToastAction"),
+      startPanel:$("startPanel"), mirrorPanel:$("mirrorPanel"), startButton:$("startButton"), stopButton:$("stopButton"), reviewButton:$("reviewButton"), preflightNotice:$("preflightNotice"), runtimeNotice:$("runtimeNotice"),
+      cameraVideo:$("cameraVideo"), delayCanvas:$("delayCanvas"), stageOverlay:$("stageOverlay"), warmupCard:$("warmupCard"), progressBar:$("progressBar"), warmupCount:$("warmupCount"),
+      stageErrorCard:$("stageErrorCard"), stageErrorTitle:$("stageErrorTitle"), stageErrorCopy:$("stageErrorCopy"), stageStatus:$("stageStatus"), stageStatusText:$("stageStatusText"), delayChip:$("delayChip"),
+      engineMeta:$("engineMeta"), cameraMeta:$("cameraMeta"), codecMeta:$("codecMeta"), delayActualMeta:$("delayActualMeta"),
+      reviewControls:$("reviewControls"), reviewDurationMeta:$("reviewDurationMeta"), returnButton:$("returnButton"), playPauseButton:$("playPauseButton"), playPauseIcon:$("playPauseIcon"), playPauseLabel:$("playPauseLabel"),
+      reviewSeek:$("reviewSeek"), reviewCurrentTime:$("reviewCurrentTime"), reviewTotalTime:$("reviewTotalTime")
+    };
+    const context = els.delayCanvas.getContext("2d", {alpha:false, desynchronized:true});
 
-      window.StandaloneAssets = Object.freeze({
-        manifest: BUILD_MANIFEST,
-        list() {
-          return Object.entries(assetBundle.dependencies || {}).flatMap(([dependencyId, dependency]) =>
-            Object.keys(dependency.assets || {}).map(assetKey => `${dependencyId}/${assetKey}`));
-        },
-        has(dependencyId, assetKey) {
-          return Boolean(assetBundle.dependencies?.[dependencyId]?.assets?.[assetKey]);
-        },
-        bytes(dependencyId, assetKey) {
-          const asset = getAsset(dependencyId, assetKey);
-          if (asset.compression && asset.compression !== 'none') {
-            throw new Error(`Embedded asset ${dependencyId}/${assetKey} is gzip-compressed; use await StandaloneAssets.bytesAsync().`);
-          }
-          return decodeBase64Bytes(asset.base64);
-        },
-        async bytesAsync(dependencyId, assetKey) {
-          const cacheKey = `${dependencyId}/${assetKey}`;
-          if (!assetByteCache.has(cacheKey)) assetByteCache.set(cacheKey, inflateAsset(getAsset(dependencyId, assetKey)));
-          return new Uint8Array(await assetByteCache.get(cacheKey));
-        },
-        text(dependencyId, assetKey) {
-          return new TextDecoder().decode(this.bytes(dependencyId, assetKey));
-        },
-        async textAsync(dependencyId, assetKey) {
-          return new TextDecoder().decode(await this.bytesAsync(dependencyId, assetKey));
-        },
-        blobUrl(dependencyId, assetKey) {
-          const asset = getAsset(dependencyId, assetKey);
-          const url = URL.createObjectURL(new Blob([this.bytes(dependencyId, assetKey)], { type: asset.mime || 'application/octet-stream' }));
-          blobUrls.add(url);
-          return url;
-        },
-        async blobUrlAsync(dependencyId, assetKey) {
-          const asset = getAsset(dependencyId, assetKey);
-          const url = URL.createObjectURL(new Blob([await this.bytesAsync(dependencyId, assetKey)], { type: asset.mime || 'application/octet-stream' }));
-          blobUrls.add(url);
-          return url;
-        },
-        async loadClassicScript(dependencyId, assetKey, globalName = '') {
-          const sourceUrl = await this.blobUrlAsync(dependencyId, assetKey);
-          try {
-            await new Promise((resolve, reject) => {
-              const script = document.createElement('script');
-              script.src = sourceUrl;
-              script.onload = resolve;
-              script.onerror = () => reject(new Error(`Failed to load embedded script: ${dependencyId}/${assetKey}`));
-              document.head.append(script);
-            });
-            return globalName ? window[globalName] : true;
-          } finally {
-            URL.revokeObjectURL(sourceUrl);
-            blobUrls.delete(sourceUrl);
-          }
-        },
-        async importModule(dependencyId, assetKey) {
-          const sourceUrl = await this.blobUrlAsync(dependencyId, assetKey);
-          try {
-            return await import(sourceUrl);
-          } finally {
-            URL.revokeObjectURL(sourceUrl);
-            blobUrls.delete(sourceUrl);
-          }
-        }
-      });
-
-      window.addEventListener('pagehide', () => {
-        blobUrls.forEach(url => URL.revokeObjectURL(url));
-        blobUrls.clear();
-      });
-
-      const translations = {
-        ja: {
-          brandMeta: '単一HTML・ローカル処理・GitHub Pages',
-          helpTitle: '使い方と注意事項', close: '閉じる',
-          helpBasicsTitle: '基本操作',
-          helpStep1: '作業領域へテキストを入力します。内容は入力のたびに端末内へ保存されます。',
-          helpStep2: '出力ファイル名を必要に応じて変更し、「コピー」または「テキスト保存」で入力内容を取り出せます。',
-          helpStep3: '「サンプルに戻す」や「消去」の直後は、トーストの「元に戻す」から取り消せます。',
-          helpPrivacyTitle: 'プライバシー',
-          helpPrivacyBody: '入力内容と操作はブラウザー内で処理され、このアプリから外部へ送信されません。必要なコードと依存ファイルも配布用HTMLに内包されます。',
-          helpNotesTitle: '注意事項',
-          helpNoteStorage: 'ブラウザーのサイトデータを削除すると、端末内に保存した入力内容も消える場合があります。必要な内容はファイルとして保存してください。',
-          helpNoteBrowser: '一部の機能はブラウザーの制限や端末性能の影響を受けます。重要な成果物は保存後に内容を確認してください。',
-          helpNoteTemplate: 'この画面はスターターの例です。新しいアプリを作る際は、機能と一緒にこのヘルプも実際の操作へ書き換えます。',
-          helpOffline: '配布物は dist/index.html ひとつです。ローカルで直接開くことも、GitHub Pagesで公開することもできます。',
-          introTitle: '単一HTMLアプリのスターター',
-          lead: 'PDF Organizerと同じ、固定依存・完全内包・実行時通信なしの構成から、新しいブラウザーアプリを作れます。',
-          localBadge: '実行時通信なし',
-          workspaceTitle: 'スターター作業領域',
-          workspaceBody: '入力内容はこのブラウザー内だけに保存され、このアプリから送信されません。',
-          characters: '文字', words: '単語', lines: '行', editorLabel: 'テキスト入力',
-          copy: 'コピー', download: 'テキスト保存', sample: 'サンプルに戻す', clear: '消去', savedLocally: '端末内に保存済み', outputFilename: '出力ファイル名', outputFilenameHint: '拡張子は自動で .txt が付きます', undo: '元に戻す', undone: '元に戻しました',
-          confirmTitle: '確認', confirmAction: '実行する', cancel: 'キャンセル',
-          guaranteesTitle: 'テンプレートの基本保証',
-          guaranteesBody: 'アプリ仕様で明示的に変更しない限り、この制約を維持します。',
-          card1Title: '配布物はひとつ', card1Body: 'リリース成果物は dist/index.html。直接開くことも、静的サイトとして公開することもできます。',
-          card2Title: '依存を固定して内包', card2Body: 'npmの外部素材はバージョンとtarball hashを固定し、検証してからHTMLへ内包します。',
-          card3Title: '実行時通信なし', card3Body: 'Content Security Policyで実行時通信を遮断し、ユーザーデータをページ内に保ちます。',
-          card4Title: 'LLM向けの作業契約', card4Body: 'AGENTS.mdとAPP_SPEC.mdで、実装方針、受入条件、完了報告を安定して伝えます。',
-          buildInfo: 'ビルド情報', appVersion: 'アプリバージョン', builtAt: '生成日時', dependencies: '内包依存数',
-          footer: '完全内包HTMLとして生成', copied: 'コピーしました', copyFailed: 'コピーできませんでした', downloaded: 'テキストを保存しました', cleared: '入力を消去しました', restored: 'サンプルを復元しました'
-        },
-        en: {
-          brandMeta: 'Single file · Local-first · GitHub Pages',
-          helpTitle: 'How to use & notes', close: 'Close',
-          helpBasicsTitle: 'Basics',
-          helpStep1: 'Enter text in the workspace. The content is saved locally as you type.',
-          helpStep2: 'Change the output filename if needed, then use Copy or Download text.',
-          helpStep3: 'After Restore sample or Clear, use Undo in the toast to reverse the change.',
-          helpPrivacyTitle: 'Privacy',
-          helpPrivacyBody: 'Your content and actions are processed in the browser and are not sent outside by this app. Required code and dependencies are embedded in the distributable HTML.',
-          helpNotesTitle: 'Notes',
-          helpNoteStorage: 'Clearing browser site data may also remove content saved locally. Download anything important as a file.',
-          helpNoteBrowser: 'Some features are affected by browser restrictions and device performance. Review important output after saving it.',
-          helpNoteTemplate: 'This screen is a starter example. When building a new app, update this help together with the real features and workflow.',
-          helpOffline: 'The deliverable is one dist/index.html file. It can open locally or be published with GitHub Pages.',
-          introTitle: 'Single HTML App Starter',
-          lead: 'Build a new browser app from the same pinned-dependency, fully embedded, no-runtime-network foundation used by PDF Organizer.',
-          localBadge: 'No runtime network',
-          workspaceTitle: 'Starter workspace',
-          workspaceBody: 'Text stays in this browser. It is never sent by this app.',
-          characters: 'Characters', words: 'Words', lines: 'Lines', editorLabel: 'Text editor',
-          copy: 'Copy', download: 'Download text', sample: 'Restore sample', clear: 'Clear', savedLocally: 'Saved locally', outputFilename: 'Output filename', outputFilenameHint: 'The .txt extension is added automatically', undo: 'Undo', undone: 'Restored',
-          confirmTitle: 'Confirm', confirmAction: 'Continue', cancel: 'Cancel',
-          guaranteesTitle: 'Template guarantees',
-          guaranteesBody: 'Keep these constraints unless the product specification explicitly changes them.',
-          card1Title: 'One deliverable', card1Body: 'The release artifact is dist/index.html. It opens directly and can be hosted as a static page.',
-          card2Title: 'Pinned dependencies', card2Body: 'Third-party npm assets are version-pinned, hashed, and embedded during the build.',
-          card3Title: 'No runtime network', card3Body: 'Content Security Policy blocks runtime connections. User data stays inside the page.',
-          card4Title: 'LLM-ready workflow', card4Body: 'AGENTS.md and APP_SPEC.md give coding agents a stable contract, acceptance criteria, and handoff format.',
-          buildInfo: 'Build information', appVersion: 'App version', builtAt: 'Built at', dependencies: 'Embedded dependencies',
-          footer: 'Generated as one self-contained HTML file', copied: 'Copied', copyFailed: 'Could not copy', downloaded: 'Text downloaded', cleared: 'Text cleared', restored: 'Sample restored'
-        }
-      };
-
-      const storageKeys = {
-        text: `${APP_CONFIG.slug}:starter-text`,
-        language: `${APP_CONFIG.slug}:language`
-      };
-      const sampleText = {
-        ja: 'この領域はサンプルです。\n\n新しいアプリを作るときは APP_SPEC.md に目的と受入条件を書き、LLMに AGENTS.md から読むよう指示してください。',
-        en: 'This workspace is a sample.\n\nFor a new app, describe the goal and acceptance criteria in APP_SPEC.md, then tell the LLM to start with AGENTS.md.'
-      };
-
-      const $ = selector => document.querySelector(selector);
-      const editor = $('#editor');
-      const outputFilename = $('#outputFilename');
-      let language = readStorage(storageKeys.language) || detectLanguage();
-
-      // Reusable Promise-based confirmation API. Canonical source: components/confirm-dialog.html.
-      const AppConfirm = (() => {
-        const dialog = $('#appConfirmDialog');
-        const title = $('#appConfirmTitle');
-        const message = $('#appConfirmMessage');
-        const closeButton = $('#appConfirmClose');
-        const cancelButton = $('#appConfirmCancel');
-        const okButton = $('#appConfirmOk');
-        let resolver = null;
-        let restoreFocus = null;
-
-        function finish(result) {
-          if (!dialog.open) return;
-          const currentResolver = resolver;
-          resolver = null;
-          dialog.close();
-          if (restoreFocus instanceof HTMLElement && restoreFocus.isConnected) restoreFocus.focus({ preventScroll: true });
-          restoreFocus = null;
-          if (currentResolver) currentResolver(result);
-        }
-
-        function ask({ title: heading, message: body, confirmLabel, cancelLabel, tone = 'default' } = {}) {
-          if (dialog.open) finish(false);
-          title.textContent = heading || translate('confirmTitle');
-          message.textContent = body || '';
-          cancelButton.textContent = cancelLabel || translate('cancel');
-          okButton.textContent = confirmLabel || translate('confirmAction');
-          okButton.classList.toggle('danger', tone === 'danger');
-          okButton.classList.toggle('primary', tone !== 'danger');
-          restoreFocus = document.activeElement;
-          return new Promise(resolve => {
-            resolver = resolve;
-            dialog.showModal();
-            requestAnimationFrame(() => cancelButton.focus({ preventScroll: true }));
-          });
-        }
-
-        closeButton.addEventListener('click', () => finish(false));
-        cancelButton.addEventListener('click', () => finish(false));
-        okButton.addEventListener('click', () => finish(true));
-        dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false); });
-        dialog.addEventListener('click', event => {
-          const rect = dialog.getBoundingClientRect();
-          const outside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
-          if (outside) finish(false);
-        });
-
-        return Object.freeze({ ask });
-      })();
-      window.AppConfirm = AppConfirm;
-
-      function readStorage(key) {
-        try { return localStorage.getItem(key); } catch { return null; }
-      }
-      function writeStorage(key, value) {
-        try { localStorage.setItem(key, value); } catch { /* Storage may be unavailable in private contexts. */ }
-      }
-      function detectLanguage() {
-        if (APP_CONFIG.defaultLanguage === 'ja' || APP_CONFIG.defaultLanguage === 'en') return APP_CONFIG.defaultLanguage;
-        return (navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
-      }
-      function translate(key) { return translations[language]?.[key] ?? translations.en[key] ?? key; }
-
-      // Reusable toast / Undo API. Canonical source: components/toast.html.
-      const AppToast = (() => {
-        const root = $('#appToast');
-        const message = $('#appToastMessage');
-        const action = $('#appToastAction');
-        let timer = 0;
-        let actionHandler = null;
-        function dismiss() {
-          clearTimeout(timer);
-          timer = 0;
-          root.classList.remove('show');
-          actionHandler = null;
-        }
-        function show({ message: text = '', actionLabel = '', onAction = null, duration = 3200, tone = 'default' } = {}) {
-          clearTimeout(timer);
-          message.textContent = String(text);
-          root.dataset.tone = tone;
-          actionHandler = typeof onAction === 'function' ? onAction : null;
-          action.textContent = actionLabel || '';
-          action.hidden = !actionHandler || !actionLabel;
-          root.classList.add('show');
-          if (duration > 0) timer = window.setTimeout(dismiss, duration);
-          return Object.freeze({ dismiss });
-        }
-        action.addEventListener('click', () => {
-          const handler = actionHandler;
-          dismiss();
-          if (handler) handler();
-        });
-        return Object.freeze({ show, dismiss });
-      })();
-      window.AppToast = AppToast;
-      function showToast(message, options = {}) { AppToast.show({ message, ...options }); }
-      function applyLanguage() {
-        document.documentElement.lang = language;
-        document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = translate(element.dataset.i18n); });
-        document.querySelectorAll('[data-i18n-title]').forEach(element => { element.title = translate(element.dataset.i18nTitle); });
-        document.querySelectorAll('[data-i18n-aria-label]').forEach(element => { element.setAttribute('aria-label', translate(element.dataset.i18nAriaLabel)); });
-        $('#languageButton').textContent = language === 'ja' ? 'EN' : '日本語';
-        $('#languageButton').setAttribute('aria-label', language === 'ja' ? '英語に切り替え' : 'Switch to Japanese');
-        document.title = language === 'ja' ? APP_CONFIG.nameJa : APP_CONFIG.name;
-        $('#brandName').textContent = language === 'ja' ? APP_CONFIG.nameJa : APP_CONFIG.name;
-        $('#footerName').textContent = language === 'ja' ? APP_CONFIG.nameJa : APP_CONFIG.name;
-        if (!editor.value) editor.value = sampleText[language];
-        updateStats();
-      }
-      function updateStats() {
-        const value = editor.value;
-        const words = value.trim() ? (value.match(/[\p{L}\p{N}]+(?:['’_-][\p{L}\p{N}]+)*/gu) || []).length : 0;
-        $('#characterCount').textContent = new Intl.NumberFormat(language).format([...value].length);
-        $('#wordCount').textContent = new Intl.NumberFormat(language).format(words);
-        $('#lineCount').textContent = new Intl.NumberFormat(language).format(value ? value.split(/\r?\n/).length : 0);
-        $('#saveStatus').textContent = translate('savedLocally');
-      }
-      function saveText() {
-        writeStorage(storageKeys.text, editor.value);
-        updateStats();
-      }
-      async function copyText() {
-        try {
-          await navigator.clipboard.writeText(editor.value);
-          showToast(translate('copied'));
-        } catch {
-          editor.select();
-          const ok = document.execCommand('copy');
-          showToast(translate(ok ? 'copied' : 'copyFailed'));
-        }
-      }
-      function normalizedFilenameBase() {
-        const fallback = APP_CONFIG.slug || 'text';
-        const cleaned = outputFilename.value.trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-').replace(/\.+$/g, '').trim();
-        let base = cleaned.replace(/\.txt$/i, '') || fallback;
-        if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(base)) base = `${base}-file`;
-        if (!cleaned) outputFilename.value = fallback;
-        return base.slice(0, 120);
-      }
-      function downloadText() {
-        const url = URL.createObjectURL(new Blob([editor.value], { type: 'text/plain;charset=utf-8' }));
-        const anchor = document.createElement('a');
-        const filenameBase = normalizedFilenameBase();
-        outputFilename.value = filenameBase;
-        anchor.href = url;
-        anchor.download = `${filenameBase}.txt`;
-        anchor.click();
-        URL.revokeObjectURL(url);
-        showToast(translate('downloaded'), { tone: 'success' });
-      }
-
-      $('#languageButton').addEventListener('click', () => {
-        language = language === 'ja' ? 'en' : 'ja';
-        writeStorage(storageKeys.language, language);
-        applyLanguage();
-      });
-      const helpDialog = $('#helpDialog');
-      $('#helpButton').addEventListener('click', () => helpDialog.showModal());
-      $('#closeHelpButton').addEventListener('click', () => helpDialog.close());
-      helpDialog.addEventListener('click', event => {
-        const rect = helpDialog.getBoundingClientRect();
-        const outside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
-        if (outside) helpDialog.close();
-      });
-      editor.addEventListener('input', saveText);
-      outputFilename.addEventListener('blur', () => { outputFilename.value = normalizedFilenameBase(); });
-      $('#copyButton').addEventListener('click', copyText);
-      $('#downloadButton').addEventListener('click', downloadText);
-      $('#sampleButton').addEventListener('click', () => {
-        const before = editor.value;
-        editor.value = sampleText[language];
-        saveText();
-        showToast(translate('restored'), { actionLabel: translate('undo'), onAction: () => { editor.value = before; saveText(); editor.focus(); showToast(translate('undone')); } });
-      });
-      $('#clearButton').addEventListener('click', () => {
-        if (!editor.value) return;
-        const before = editor.value;
-        editor.value = '';
-        saveText();
-        editor.focus();
-        showToast(translate('cleared'), {
-          actionLabel: translate('undo'),
-          onAction: () => { editor.value = before; saveText(); editor.focus(); showToast(translate('undone')); },
-          duration: 5000
-        });
-      });
-
-      editor.value = readStorage(storageKeys.text) || sampleText[language];
-      outputFilename.value = APP_CONFIG.slug || 'text';
-      $('#versionBadge').textContent = `v${APP_CONFIG.version}`;
-      $('#buildVersion').textContent = APP_CONFIG.version;
-      $('#builtAt').textContent = BUILD_MANIFEST.generatedAtUtc || '—';
-      $('#dependencyCount').textContent = String(BUILD_MANIFEST.dependencies?.length || 0);
-      applyLanguage();
+    function readStorage(key){ try{return localStorage.getItem(key);}catch{return null;} }
+    function writeStorage(key,value){ try{localStorage.setItem(key,value);}catch{/* Storage may be unavailable. */} }
+    const AppToast=(()=>{
+      const root=els.appToast,message=els.appToastMessage,action=els.appToastAction; let timer=0,actionHandler=null;
+      function dismiss(){ clearTimeout(timer); timer=0; root.classList.remove("show"); actionHandler=null; }
+      function show({message:text="",actionLabel="",onAction=null,duration=3200,tone="default"}={}){ clearTimeout(timer); message.textContent=String(text); root.dataset.tone=tone; actionHandler=typeof onAction==="function"?onAction:null; action.textContent=actionLabel||""; action.hidden=!actionHandler||!actionLabel; root.classList.add("show"); if(duration>0) timer=window.setTimeout(dismiss,duration); return Object.freeze({dismiss}); }
+      action.addEventListener("click",()=>{ const handler=actionHandler; dismiss(); if(handler) handler(); }); return Object.freeze({show,dismiss});
     })();
+    window.AppToast=AppToast;
+
+    function t(key){ return translations[state.language][key] ?? key; }
+    function detectLanguage(){ const saved=readStorage("practice-mirror-language"); if(saved==="ja"||saved==="en") return saved; if(APP_CONFIG.defaultLanguage==="ja"||APP_CONFIG.defaultLanguage==="en") return APP_CONFIG.defaultLanguage; return navigator.language&&navigator.language.toLowerCase().startsWith("ja")?"ja":"en"; }
+    function formatReviewTime(us){ const seconds=Math.max(0,us/1e6); const minutes=Math.floor(seconds/60); return `${minutes}:${(seconds-minutes*60).toFixed(1).padStart(4,"0")}`; }
+    function applyLanguage(lang){
+      state.language=lang; document.documentElement.lang=lang; writeStorage("practice-mirror-language",lang);
+      document.querySelectorAll("[data-i18n]").forEach(node=>{ const key=node.dataset.i18n; if(translations[lang][key]) node.textContent=translations[lang][key]; });
+      document.querySelectorAll("[data-i18n-aria]").forEach(node=>{ const key=node.dataset.i18nAria; if(translations[lang][key]) node.setAttribute("aria-label",translations[lang][key]); });
+      document.querySelectorAll("[data-lang-block]").forEach(node=>{ node.hidden=node.dataset.langBlock!==lang; });
+      els.languageButton.textContent=lang==="ja"?"EN":"JA"; document.title=lang==="ja"?APP_CONFIG.nameJa:APP_CONFIG.name; updatePhaseUI(); updateReviewUI();
+    }
+    function updateDelayLabels(){
+      els.delayChip.textContent=state.phase==="review"||state.phase==="reviewPreparing"?t("reviewChip"):(state.language==="ja"?`${state.delaySeconds}${t("seconds")}`:`${state.delaySeconds} ${t("seconds")}`);
+      document.querySelectorAll(".delay-option").forEach(btn=>btn.setAttribute("aria-pressed",String(Number(btn.dataset.delay)===state.delaySeconds)));
+    }
+
+    function capabilityReport(){
+      const missing=[];
+      if(!window.isSecureContext) missing.push("secure-context");
+      if(!navigator.mediaDevices?.getUserMedia) missing.push("getUserMedia");
+      if(!window.VideoEncoder) missing.push("VideoEncoder");
+      if(!window.VideoDecoder) missing.push("VideoDecoder");
+      if(!window.VideoFrame) missing.push("VideoFrame");
+      if(!window.EncodedVideoChunk) missing.push("EncodedVideoChunk");
+      if(!HTMLVideoElement.prototype.requestVideoFrameCallback) missing.push("requestVideoFrameCallback");
+      return {ok:missing.length===0,missing};
+    }
+
+    function showNotice(element,tone,title,copy){ element.className=`notice visible ${tone||""}`; element.innerHTML=""; const strong=document.createElement("strong"); strong.textContent=title; const p=document.createElement("p"); p.textContent=copy; element.append(strong,p); }
+    function hideNotice(element){ element.className="notice"; element.textContent=""; }
+
+    async function chooseCodec(width,height,framerate){
+      const candidates=[
+        {label:"H.264",encoder:{codec:"avc1.42E01F",width,height,bitrate:1800000,framerate,latencyMode:"realtime",avc:{format:"annexb"}},decoder:{codec:"avc1.42E01F",codedWidth:width,codedHeight:height}},
+        {label:"VP8",encoder:{codec:"vp8",width,height,bitrate:1800000,framerate,latencyMode:"realtime"},decoder:{codec:"vp8",codedWidth:width,codedHeight:height}}
+      ];
+      for(const candidate of candidates){
+        try{ const [enc,dec]=await Promise.all([VideoEncoder.isConfigSupported(candidate.encoder),VideoDecoder.isConfigSupported(candidate.decoder)]); if(enc.supported&&dec.supported) return {...candidate,encoder:enc.config,decoder:dec.config}; }catch(_error){}
+      }
+      return null;
+    }
+
+    function normalizedCameraError(error){
+      const name=error?.name||"";
+      if(name==="NotAllowedError"||name==="SecurityError") return {title:t("cameraDeniedTitle"),copy:t("cameraDeniedCopy")};
+      if(name==="NotFoundError"||name==="DevicesNotFoundError") return {title:t("cameraDeniedTitle"),copy:t("cameraMissingCopy")};
+      return {title:t("cameraDeniedTitle"),copy:t("cameraBusyCopy")};
+    }
+
+    function resetCanvas(){ context.save(); context.fillStyle="#111"; context.fillRect(0,0,els.delayCanvas.width||1,els.delayCanvas.height||1); context.restore(); }
+    function drawFrame(frame){ context.drawImage(frame,0,0,els.delayCanvas.width,els.delayCanvas.height); }
+    function setStageError(title,copy){ els.warmupCard.hidden=true; els.stageErrorCard.hidden=false; els.stageErrorTitle.textContent=title; els.stageErrorCopy.textContent=copy; els.stageOverlay.hidden=false; els.stageStatus.dataset.state="error"; els.stageStatusText.textContent=t("errorStatus"); }
+    function clearStageError(){ els.stageErrorCard.hidden=true; els.warmupCard.hidden=false; els.stageOverlay.hidden=false; }
+    function setOverlay(title,copy,{progress=false}={}){ clearStageError(); els.warmupCard.querySelector(".warmup-title").textContent=title; els.warmupCard.querySelector(".warmup-copy").textContent=copy; els.progressBar.parentElement.hidden=!progress; els.warmupCount.hidden=!progress; els.stageOverlay.hidden=false; }
+    function setWarmupOverlay(){ setOverlay(t("warmupTitle"),t("warmupCopy"),{progress:true}); els.progressBar.style.width="0%"; els.warmupCount.textContent=`0.0 / ${state.delaySeconds.toFixed(1)} s`; }
+
+    function historyReady(){ if(state.historyPackets.length<2) return false; return (state.historyPackets[state.historyPackets.length-1].timestamp-state.historyPackets[0].timestamp)>=REVIEW_DURATION_US-300000; }
+    function updatePhaseUI(){
+      if(state.phase==="warming"){ els.stageStatus.dataset.state="warming"; els.stageStatusText.textContent=t("warmingStatus"); }
+      else if(state.phase==="practice"){ els.stageStatus.dataset.state="practice"; els.stageStatusText.textContent=t("practiceStatus"); }
+      else if(state.phase==="reviewPreparing"){ els.stageStatus.dataset.state="warming"; els.stageStatusText.textContent=t("reviewPreparingStatus"); }
+      else if(state.phase==="review"){ els.stageStatus.dataset.state="review"; els.stageStatusText.textContent=t("reviewStatus"); }
+      else if(state.phase==="error"){ els.stageStatus.dataset.state="error"; els.stageStatusText.textContent=t("errorStatus"); }
+      els.reviewButton.disabled=state.phase!=="practice"||!state.reviewReady; els.reviewButton.title=state.reviewReady?"":t("reviewNotReadyCopy");
+      els.reviewButton.hidden=state.phase==="review"||state.phase==="reviewPreparing";
+      els.reviewControls.hidden=state.phase!=="review";
+      updateDelayLabels();
+    }
+
+    function cloneDecoderConfig(config){
+      if(!config) return null;
+      const copy={...config};
+      if(config.description){ const bytes=new Uint8Array(config.description); copy.description=bytes.slice().buffer; }
+      return copy;
+    }
+    function packetFromChunk(chunk){ const data=new Uint8Array(chunk.byteLength); chunk.copyTo(data); return {type:chunk.type,timestamp:chunk.timestamp,duration:chunk.duration??0,data}; }
+    function chunkFromPacket(packet){ const init={type:packet.type,timestamp:packet.timestamp,data:packet.data}; if(packet.duration) init.duration=packet.duration; return new EncodedVideoChunk(init); }
+    function pruneHistory(){ if(!state.historyPackets.length||state.latestEncodedTimestamp===null) return; const cutoff=state.latestEncodedTimestamp-HISTORY_KEEP_US; let remove=0; while(remove<state.historyPackets.length&&state.historyPackets[remove].timestamp<cutoff) remove+=1; if(remove>0) state.historyPackets.splice(0,remove); }
+
+    function cancelLiveLoops(){
+      if(state.frameRequestId&&els.cameraVideo.cancelVideoFrameCallback){ try{ els.cameraVideo.cancelVideoFrameCallback(state.frameRequestId); }catch(_error){} }
+      state.frameRequestId=0; if(state.schedulerId) cancelAnimationFrame(state.schedulerId); state.schedulerId=0;
+    }
+    function disposeLiveCodecs({clearQueue=true}={}){
+      try{ if(state.encoder&&state.encoder.state!=="closed") state.encoder.close(); }catch(_error){}
+      try{ if(state.decoder&&state.decoder.state!=="closed") state.decoder.close(); }catch(_error){}
+      state.encoder=null; state.decoder=null; state.decoderConfigured=false; if(clearQueue) state.encodedQueue.length=0;
+    }
+    function disposeReviewDecoder(){
+      if(state.review.rafId) cancelAnimationFrame(state.review.rafId); state.review.rafId=0; state.review.playing=false;
+      state.review.decoderGeneration+=1;
+      try{ if(state.review.decoder&&state.review.decoder.state!=="closed") state.review.decoder.close(); }catch(_error){}
+      state.review.decoder=null;
+      if(state.review.seekFrame){ try{ state.review.seekFrame.close(); }catch(_error){} state.review.seekFrame=null; }
+    }
+    function clearReviewState(){ disposeReviewDecoder(); state.review.packets=[]; state.review.visibleStartUs=0; state.review.endUs=0; state.review.durationUs=0; state.review.positionUs=0; state.review.packetIndex=0; state.review.outputMode="play"; state.review.seekGeneration+=1; }
+    function stopStream(){ if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
+
+    async function stopPractice({message=true}={}){
+      state.stopping=true; state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; stopStream(); state.phase="idle"; state.stopping=false;
+      els.mirrorPanel.classList.remove("active"); els.startPanel.hidden=false; els.startButton.disabled=false; clearStageError(); hideNotice(els.runtimeNotice); resetCanvas(); updateReviewUI();
+      if(message) showNotice(els.preflightNotice,"",t("stopped"),t("localOnly"));
+    }
+
+    function handleRuntimeFailure(error){
+      if(state.stopping||state.runtimeErrorShown) return;
+      state.runtimeErrorShown=true; console.error("Practice Mirror runtime error",error); state.phase="error"; updatePhaseUI(); setStageError(t("runtimeTitle"),t("runtimeCopy"));
+      showNotice(els.runtimeNotice,"error",t("runtimeTitle"),error?.message?`${t("runtimeCopy")} (${error.message})`:t("runtimeCopy")); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); stopStream();
+    }
+
+    function encoderOutput(chunk,metadata){
+      try{
+        if(metadata?.decoderConfig){ state.decoderConfig=cloneDecoderConfig(metadata.decoderConfig); if(state.decoder&&!state.decoderConfigured){ state.decoder.configure(state.decoderConfig); state.decoderConfigured=true; } }
+        if(!state.decoderConfigured&&state.decoder&&state.codec){ state.decoder.configure(state.codec.decoder); state.decoderConfigured=true; }
+        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); }
+      }catch(error){ handleRuntimeFailure(error); }
+    }
+
+    function decoderOutput(frame){
+      try{
+        if(state.phase==="warming"){ state.phase="practice"; els.stageOverlay.hidden=true; updatePhaseUI(); }
+        drawFrame(frame); state.latestRenderedTimestamp=frame.timestamp;
+        if(state.latestEncodedTimestamp!==null){ const currentDelay=Math.max(0,(state.latestEncodedTimestamp-frame.timestamp)/1e6); els.delayActualMeta.textContent=`${currentDelay.toFixed(1)} s`; }
+      }catch(error){ handleRuntimeFailure(error); }
+      finally{ try{ frame.close(); }catch(_error){} }
+    }
+
+    function scheduleDecode(){
+      if(state.phase!=="warming"&&state.phase!=="practice") return;
+      const nowUs=Math.round(performance.now()*1000); const delayUs=state.delaySeconds*1e6; let decoded=0;
+      try{ while(state.encodedQueue.length&&nowUs-state.encodedQueue[0].timestamp>=delayUs&&decoded<12){ const chunk=state.encodedQueue.shift(); if(state.decoderConfigured&&state.decoder?.state==="configured") state.decoder.decode(chunk); decoded+=1; } }
+      catch(error){ handleRuntimeFailure(error); return; }
+      updateWarmup(nowUs); state.schedulerId=requestAnimationFrame(scheduleDecode);
+    }
+    function updateWarmup(nowUs){ if(state.phase!=="warming") return; const elapsed=Math.max(0,(nowUs-state.startPerformanceUs)/1e6); const progress=Math.min(1,elapsed/state.delaySeconds); els.progressBar.style.width=`${(progress*100).toFixed(1)}%`; els.warmupCount.textContent=`${Math.min(elapsed,state.delaySeconds).toFixed(1)} / ${state.delaySeconds.toFixed(1)} s`; }
+    function scheduleCapture(generation){
+      const callback=(now)=>{
+        if(generation!==state.generation||!["warming","practice"].includes(state.phase)) return;
+        try{
+          const timestampUs=Math.round(now*1000);
+          if(timestampUs-state.lastFrameUs>=state.frameIntervalUs*0.72&&state.encoder?.state==="configured"&&state.encoder.encodeQueueSize<4){
+            const frame=new VideoFrame(els.cameraVideo,{timestamp:timestampUs}); const keyFrame=state.lastKeyframeUs===0||timestampUs-state.lastKeyframeUs>=2_000_000; state.encoder.encode(frame,{keyFrame}); frame.close(); state.lastFrameUs=timestampUs; if(keyFrame) state.lastKeyframeUs=timestampUs;
+          }
+        }catch(error){ handleRuntimeFailure(error); return; }
+        state.frameRequestId=els.cameraVideo.requestVideoFrameCallback(callback);
+      };
+      state.frameRequestId=els.cameraVideo.requestVideoFrameCallback(callback);
+    }
+
+    function configureLivePipeline(){
+      state.decoderConfig=null; state.decoderConfigured=false;
+      state.decoder=new VideoDecoder({output:decoderOutput,error:handleRuntimeFailure});
+      state.encoder=new VideoEncoder({output:encoderOutput,error:handleRuntimeFailure}); state.encoder.configure(state.codec.encoder);
+      state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false; state.firstEncodedTimestamp=null; state.latestEncodedTimestamp=null; state.latestRenderedTimestamp=null; state.lastKeyframeUs=0; state.lastFrameUs=0;
+      state.startPerformanceUs=Math.round(performance.now()*1000); state.phase="warming"; state.generation+=1; const generation=state.generation;
+      setWarmupOverlay(); updatePhaseUI(); els.delayActualMeta.textContent=t("actualPending"); scheduleCapture(generation); scheduleDecode();
+    }
+
+    async function startPractice(){
+      hideNotice(els.preflightNotice); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
+      const caps=capabilityReport();
+      if(!caps.ok){ const secureOnly=caps.missing.includes("secure-context")||caps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"error",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${caps.missing.join(", ")})`); return; }
+      state.phase="requesting"; state.stopping=false; state.generation+=1; const generation=state.generation; els.startButton.disabled=true; els.startButton.textContent=t("cameraStarting");
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}});
+        if(generation!==state.generation){ stream.getTracks().forEach(track=>track.stop()); return; }
+        state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play();
+        if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
+        state.width=els.cameraVideo.videoWidth||stream.getVideoTracks()[0].getSettings().width||1280; state.height=els.cameraVideo.videoHeight||stream.getVideoTracks()[0].getSettings().height||720;
+        const settings=stream.getVideoTracks()[0].getSettings(); const fps=Math.min(30,Math.max(10,Number(settings.frameRate)||30)); state.frameIntervalUs=Math.round(1e6/fps);
+        state.codec=await chooseCodec(state.width,state.height,fps); if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
+        els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); clearReviewState(); configureLivePipeline();
+        els.startPanel.hidden=true; els.mirrorPanel.classList.add("active"); clearStageError(); els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(fps)} fps`; els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
+      }catch(error){
+        stopStream(); disposeLiveCodecs(); state.phase="idle"; els.startButton.disabled=false;
+        if(error?.practiceCode==="codec") showNotice(els.preflightNotice,"error",t("codecTitle"),t("codecCopy")); else { const friendly=normalizedCameraError(error); showNotice(els.preflightNotice,"error",friendly.title,friendly.copy); }
+      }finally{ els.startButton.textContent=t("startButton"); }
+    }
+
+    function buildReviewSnapshot(){
+      if(!historyReady()||state.latestEncodedTimestamp===null) return null;
+      const endUs=state.latestEncodedTimestamp; const desiredStartUs=Math.max(state.historyPackets[0].timestamp,endUs-REVIEW_DURATION_US);
+      let firstAtOrAfter=state.historyPackets.findIndex(packet=>packet.timestamp>=desiredStartUs); if(firstAtOrAfter<0) firstAtOrAfter=state.historyPackets.length-1;
+      let keyIndex=firstAtOrAfter; while(keyIndex>0&&state.historyPackets[keyIndex].type!=="key") keyIndex-=1; if(state.historyPackets[keyIndex].type!=="key"){ const forward=state.historyPackets.findIndex(packet=>packet.type==="key"); if(forward<0) return null; keyIndex=forward; }
+      const packets=state.historyPackets.slice(keyIndex).filter(packet=>packet.timestamp<=endUs).map(packet=>({type:packet.type,timestamp:packet.timestamp,duration:packet.duration,data:packet.data.slice()}));
+      if(!packets.length) return null; return {packets,visibleStartUs:desiredStartUs,endUs,durationUs:Math.max(1,endUs-desiredStartUs)};
+    }
+
+    function reviewDecoderOutput(frame,generation){
+      if(generation!==state.review.decoderGeneration){ try{ frame.close(); }catch(_error){} return; }
+      try{
+        if(state.review.outputMode==="seek"){
+          const distance=Math.abs(frame.timestamp-state.review.seekTargetUs);
+          if(distance<=state.review.seekFrameDistance){ if(state.review.seekFrame) state.review.seekFrame.close(); state.review.seekFrame=frame; state.review.seekFrameDistance=distance; return; }
+          frame.close(); return;
+        }
+        if(frame.timestamp>=state.review.visibleStartUs&&frame.timestamp<=state.review.endUs+state.frameIntervalUs){ drawFrame(frame); state.review.positionUs=Math.min(state.review.durationUs,Math.max(0,frame.timestamp-state.review.visibleStartUs)); updateReviewUI(); }
+      }catch(error){ try{ frame.close(); }catch(_error){} handleRuntimeFailure(error); return; }
+      try{ frame.close(); }catch(_error){}
+    }
+
+    function createReviewDecoder(){
+      disposeReviewDecoder(); const generation=++state.review.decoderGeneration;
+      const decoder=new VideoDecoder({output:frame=>reviewDecoderOutput(frame,generation),error:handleRuntimeFailure});
+      decoder.configure(state.decoderConfig||state.codec.decoder); state.review.decoder=decoder; return decoder;
+    }
+
+    function nearestKeyIndex(targetAbsUs){
+      let index=0; for(let i=0;i<state.review.packets.length;i+=1){ if(state.review.packets[i].timestamp>targetAbsUs) break; if(state.review.packets[i].type==="key") index=i; } return index;
+    }
+
+    async function seekReview(positionUs,{resume=false}={}){
+      if(state.phase!=="review"&&state.phase!=="reviewPreparing") return; const seekGeneration=++state.review.seekGeneration; pauseReview({update:false});
+      const clamped=Math.max(0,Math.min(state.review.durationUs,positionUs)); const targetAbsUs=state.review.visibleStartUs+clamped; state.review.positionUs=clamped; updateReviewUI();
+      const decoder=createReviewDecoder(); state.review.outputMode="seek"; state.review.seekTargetUs=targetAbsUs; state.review.seekFrameDistance=Infinity; if(state.review.seekFrame){ state.review.seekFrame.close(); state.review.seekFrame=null; }
+      const startIndex=nearestKeyIndex(targetAbsUs); let index=startIndex; const decodeUntil=targetAbsUs+state.frameIntervalUs;
+      try{
+        for(;index<state.review.packets.length&&state.review.packets[index].timestamp<=decodeUntil;index+=1) decoder.decode(chunkFromPacket(state.review.packets[index]));
+        await decoder.flush(); if(seekGeneration!==state.review.seekGeneration||(state.phase!=="review"&&state.phase!=="reviewPreparing")) return;
+        if(state.review.seekFrame){ drawFrame(state.review.seekFrame); state.review.seekFrame.close(); state.review.seekFrame=null; }
+        state.review.packetIndex=index; state.review.outputMode="play"; state.review.positionUs=clamped; updateReviewUI(); if(resume) playReview();
+      }catch(error){ if(seekGeneration===state.review.seekGeneration) handleRuntimeFailure(error); }
+    }
+
+    function pauseReview({update=true}={}){
+      if(state.review.playing&&update){ const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; state.review.positionUs=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); }
+      state.review.playing=false; if(state.review.rafId) cancelAnimationFrame(state.review.rafId); state.review.rafId=0; updateReviewUI();
+    }
+
+    function playReview(){
+      if(state.phase!=="review"||state.review.playing) return;
+      if(state.review.positionUs>=state.review.durationUs-10_000){ seekReview(0,{resume:true}); return; }
+      state.review.playing=true; state.review.playbackBasePerfUs=performance.now()*1000; state.review.playbackBasePositionUs=state.review.positionUs; updateReviewUI();
+      const tick=()=>{
+        if(!state.review.playing||state.phase!=="review") return;
+        const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; const desired=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); const targetAbs=state.review.visibleStartUs+desired;
+        try{ while(state.review.packetIndex<state.review.packets.length&&state.review.packets[state.review.packetIndex].timestamp<=targetAbs+state.frameIntervalUs*0.35){ state.review.decoder.decode(chunkFromPacket(state.review.packets[state.review.packetIndex])); state.review.packetIndex+=1; } }
+        catch(error){ handleRuntimeFailure(error); return; }
+        state.review.positionUs=desired; updateReviewUI(); if(desired>=state.review.durationUs){ pauseReview({update:false}); return; } state.review.rafId=requestAnimationFrame(tick);
+      };
+      state.review.rafId=requestAnimationFrame(tick);
+    }
+
+    function updateReviewUI(){
+      if(!els.reviewSeek) return; const duration=Math.max(1,state.review.durationUs); const ratio=Math.max(0,Math.min(1,state.review.positionUs/duration)); els.reviewSeek.value=String(Math.round(ratio*1000));
+      els.reviewCurrentTime.textContent=formatReviewTime(state.review.positionUs); els.reviewTotalTime.textContent=formatReviewTime(state.review.durationUs||REVIEW_DURATION_US);
+      const durationSeconds=Math.max(0,state.review.durationUs/1e6).toFixed(1); els.reviewDurationMeta.textContent=t("reviewDuration").replace("{seconds}",durationSeconds);
+      els.playPauseLabel.textContent=state.review.playing?t("pauseButton"):t("playButton");
+      els.playPauseIcon.innerHTML=state.review.playing?'<path d="M8 7h3v10H8zM13 7h3v10h-3z" fill="currentColor"/>':'<path d="m9 7 8 5-8 5Z" fill="currentColor"/>';
+      document.querySelectorAll(".rate-button").forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.rate)===state.review.rate)));
+    }
+
+    async function startReview(){
+      if(state.phase!=="practice") return;
+      if(!historyReady()){ showNotice(els.runtimeNotice,"warning",t("reviewNotReadyTitle"),t("reviewNotReadyCopy")); return; }
+      hideNotice(els.runtimeNotice); state.phase="reviewPreparing"; updatePhaseUI(); setOverlay(t("reviewPreparingTitle"),t("reviewPreparingCopy")); cancelLiveLoops();
+      try{
+        if(state.encoder?.state==="configured") await state.encoder.flush();
+        const snapshot=buildReviewSnapshot(); if(!snapshot) throw new Error("Review snapshot is not decodable");
+        disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.review.packets=snapshot.packets; state.review.visibleStartUs=snapshot.visibleStartUs; state.review.endUs=snapshot.endUs; state.review.durationUs=snapshot.durationUs; state.review.positionUs=0; state.review.rate=1; state.review.packetIndex=0;
+        updateReviewUI(); await seekReview(0); state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI();
+      }catch(error){ console.error("Practice Mirror review error",error); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); showNotice(els.runtimeNotice,"error",t("reviewFailedTitle"),t("reviewFailedCopy")); }
+    }
+
+    async function returnToPractice(){
+      if(state.phase!=="review") return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice);
+      const track=state.stream?.getVideoTracks?.()[0]; if(!track||track.readyState!=="live"){ await stopPractice({message:false}); showNotice(els.preflightNotice,"error",t("cameraDeniedTitle"),t("cameraBusyCopy")); return; }
+      state.runtimeErrorShown=false; configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; updateReviewUI();
+    }
+
+    document.querySelectorAll(".delay-option").forEach(button=>button.addEventListener("click",()=>{ if(state.phase!=="idle") return; state.delaySeconds=Number(button.dataset.delay); writeStorage("practice-mirror-delay",String(state.delaySeconds)); updateDelayLabels(); }));
+    document.querySelectorAll(".rate-button").forEach(button=>button.addEventListener("click",()=>{ const rate=Number(button.dataset.rate); if(state.phase!=="review"||!Number.isFinite(rate)) return; if(state.review.playing){ const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; state.review.positionUs=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); state.review.playbackBasePositionUs=state.review.positionUs; state.review.playbackBasePerfUs=performance.now()*1000; } state.review.rate=rate; updateReviewUI(); }));
+    els.startButton.addEventListener("click",startPractice); els.stopButton.addEventListener("click",()=>stopPractice()); els.reviewButton.addEventListener("click",startReview); els.returnButton.addEventListener("click",returnToPractice);
+    els.playPauseButton.addEventListener("click",()=>{ if(state.review.playing) pauseReview(); else playReview(); });
+    els.reviewSeek.addEventListener("input",()=>{ if(state.review.playing) pauseReview(); const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; state.review.positionUs=position; els.reviewCurrentTime.textContent=formatReviewTime(position); });
+    els.reviewSeek.addEventListener("change",()=>{ const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; seekReview(position); });
+    els.languageButton.addEventListener("click",()=>applyLanguage(state.language==="ja"?"en":"ja"));
+    els.helpButton.addEventListener("click",()=>els.helpDialog.showModal()); els.helpCloseButton.addEventListener("click",()=>els.helpDialog.close());
+    els.helpDialog.addEventListener("click",event=>{ if(event.target===els.helpDialog){ const rect=els.helpDialog.getBoundingClientRect(); const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom; if(!inside) els.helpDialog.close(); }});
+    document.addEventListener("visibilitychange",()=>{ if(document.hidden&&state.phase!=="idle") stopPractice({message:false}); });
+    window.addEventListener("pagehide",()=>{ if(state.phase!=="idle") stopPractice({message:false}); });
+
+    const savedDelay=Number(readStorage("practice-mirror-delay")); if(savedDelay===5||savedDelay===10) state.delaySeconds=savedDelay;
+    els.startIcon.src=els.appBrandIcon.src; const versionBadge=document.querySelector(".version-badge"); if(versionBadge) versionBadge.textContent=`v${APP_CONFIG.version}`;
+    applyLanguage(detectLanguage()); updateDelayLabels(); updateReviewUI();
+    const initialCaps=capabilityReport(); if(!initialCaps.ok){ const secureOnly=initialCaps.missing.includes("secure-context")||initialCaps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"warning",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${initialCaps.missing.join(", ")})`); }
+  })();
   </script>
 </body>
 </html>
