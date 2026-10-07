@@ -267,7 +267,7 @@
         <ol><li>3秒・5秒・10秒・15秒、または自由設定で1〜30秒の遅延を選びます。</li><li>「カメラを開始」を押して、ブラウザのカメラ利用を許可します。</li><li>準備が終わると、選択した秒数だけ遅れた映像が表示されます。複数カメラがある端末ではカメラ切替も使えます。</li><li>全画面や画面スリープ防止を必要に応じて切り替えられます。スマートフォンの練習中は操作UIが自動的に隠れ、画面をタップすると再表示されます。</li><li>直前10秒を見返したいときは「Review」を押します。Reviewでは0.25×/0.5×/1×再生、シーク、1コマ戻る・進むができます。映像下の操作から縦横ガイドと左右反転を利用でき、必要なReviewだけMP4またはWebMとして端末へ保存できます。</li><li>「練習に戻る」を押すと遅延バッファを作り直して練習を再開します。</li></ol>
         <h3>プライバシー</h3><p>カメラ映像とReview保存処理はブラウザ内だけで行います。外部API送信やアップロードは行いません。保存はユーザーが押したReviewクリップだけを端末へ書き出します。ランタイム通信はCSPで禁止しています。</p>
         <h3>対応ブラウザ</h3><p>カメラ、WebCodecs、<code>requestVideoFrameCallback()</code> が利用できるブラウザが必要です。必要な機能がない場合は開始前に案内します。</p>
-        <h3>現在の制限</h3><p>v0.6.0では端末負荷を4秒ごとに監視し、必要な場合は30→20→15→12fpsの順に処理負荷を下げ、継続して重い場合は720p→540p→360pへ段階的に調整します。解像度を変更すると遅延バッファを作り直します。</p>
+        <h3>現在の制限</h3><p>v0.6.0では端末負荷を4秒ごとに監視し、必要な場合は30→20→15→12fpsの順に処理負荷を下げ、継続して重い場合は720p→540p→360pへ段階的に調整します。解像度を変更すると遅延バッファを作り直します。「動作情報」で現在の処理品質と性能状態を確認できます。</p>
         <h3>データ消失について</h3><p>遅延用の映像バッファは一時メモリにだけ保持されます。終了・再読み込み・タブを閉じると失われます。</p>
       </div>
       <div data-lang-block="en" hidden>
@@ -275,7 +275,7 @@
         <ol><li>Choose a 3, 5, 10, or 15 second preset, or enter a custom delay from 1 to 30 seconds.</li><li>Select “Start camera” and allow camera access.</li><li>After warm-up, the view shows the camera feed with the selected delay. Switch camera is available when the browser reports multiple video inputs.</li><li>Use fullscreen or screen wake lock when helpful. On smartphones, Practice controls auto-hide and reappear when you tap or interact with the view.</li><li>Select “Review” to freeze up to the previous 10 seconds. Review supports 0.25× / 0.5× / 1× playback, seeking, frame stepping, guides, and mirroring. You can save only the Review clip locally as MP4 when supported or WebM as a fallback.</li><li>Select “Back to practice” to rebuild the delay buffer and continue practicing.</li></ol>
         <h3>Privacy</h3><p>Camera frames and Review export are processed only in this browser. Nothing is uploaded or sent to an external API. A file is created only when you explicitly save a Review clip. Runtime network access is blocked by CSP.</p>
         <h3>Browser requirements</h3><p>A browser with camera access, WebCodecs, and <code>requestVideoFrameCallback()</code> is required. Missing capabilities are reported before the camera starts.</p>
-        <h3>Current limitations</h3><p>v0.6.0 monitors sustained load in four-second windows. It steps processing down from 30 → 20 → 15 → 12 fps and, when load remains high, from 720p → 540p → 360p. Resolution changes rebuild the delay buffer.</p>
+        <h3>Current limitations</h3><p>v0.6.0 monitors sustained load in four-second windows. It steps processing down from 30 → 20 → 15 → 12 fps and, when load remains high, from 720p → 540p → 360p. Resolution changes rebuild the delay buffer. Technical details show the current processing quality and performance state.</p>
         <h3>Temporary data</h3><p>The delay buffer exists only in memory. It is discarded when you stop, reload, or close the tab.</p>
       </div>
       <!-- APP:HELP:END -->
