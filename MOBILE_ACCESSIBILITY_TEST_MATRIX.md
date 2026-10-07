@@ -10,12 +10,13 @@ Test around 320px, 360px, 390px, and 430px CSS width.
 
 Verify:
 
+- Practice tools panel starts collapsed and opens from Controls,
 - no horizontal page scroll,
 - delay buttons fit,
 - Practice tool buttons fit in two columns,
 - Review / Stop remain visible,
-- Review transport does not overlap,
-- speed controls fit,
+- Review transport does not overlap and the whole video + seek bar fit in the viewport,
+- 0.25x / 0.5x / 1x / 2x speed controls fit,
 - long filename stays inside its control,
 - dialogs stay inside viewport,
 - toast stays inside safe area.
