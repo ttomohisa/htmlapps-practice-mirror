@@ -1097,7 +1097,7 @@
       state.review.decoder=null;
       if(state.review.seekFrame){ try{ state.review.seekFrame.close(); }catch(_error){} state.review.seekFrame=null; }
     }
-    function clearReviewState(){ disposeReviewDecoder(); state.review.packets=[]; state.review.visibleStartUs=0; state.review.endUs=0; state.review.durationUs=0; state.review.positionUs=0; state.review.packetIndex=0; state.review.outputMode="play"; state.review.seekGeneration+=1; }
+    function clearReviewState(){ disposeReviewDecoder(); state.review.packets=[]; state.review.visibleStartUs=0; state.review.endUs=0; state.review.durationUs=0; state.review.positionUs=0; state.review.packetIndex=0; state.review.outputMode="play"; state.review.seekGeneration+=1; state.review.recoveryAttempts=0; state.review.recovering=false; state.review.lastDecoderError=null; }
     function stopStream(){ clearTrackLifecycle(); if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
 
     async function suspendSessionForBackground(){
@@ -1265,13 +1265,41 @@
           frame.close(); return;
         }
         if(frame.timestamp>=state.review.visibleStartUs&&frame.timestamp<=state.review.endUs+state.frameIntervalUs){ drawFrame(frame); state.review.positionUs=Math.min(state.review.durationUs,Math.max(0,frame.timestamp-state.review.visibleStartUs)); updateReviewUI(); }
-      }catch(error){ try{ frame.close(); }catch(_error){} handleRuntimeFailure(error); return; }
+      }catch(error){ try{ frame.close(); }catch(_error){} handleReviewDecoderError(error,generation); return; }
       try{ frame.close(); }catch(_error){}
+    }
+
+    function degradeReview(error){
+      console.error("Practice Mirror Review degraded",error);
+      state.review.recovering=false; pauseReview({update:false}); disposeReviewDecoder(); state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); updateReliabilityDiagnostics();
+      showNotice(els.runtimeNotice,"warning",t("reviewDegraded"),error?.message?error.message:t("reviewFailedCopy"));
+    }
+    async function attemptReviewRecovery(error){
+      if(state.phase!=="review"||state.review.recovering||!state.review.packets.length) return;
+      if(state.review.recoveryAttempts>=1){ degradeReview(error); return; }
+      state.review.recoveryAttempts+=1; state.review.recovering=true; state.reliability.reviewRecoveries+=1; updateReliabilityDiagnostics();
+      const position=state.review.positionUs;
+      try{
+        disposeReviewDecoder();
+        await seekReview(position,{recoveryAttempt:true});
+        if(state.review.lastDecoderError) throw state.review.lastDecoderError;
+        hideNotice(els.runtimeNotice); AppToast.show({message:t("reviewRecovered"),tone:"warning"});
+      }catch(recoveryError){
+        degradeReview(recoveryError);
+      }finally{
+        state.review.recovering=false; updateReliabilityDiagnostics();
+      }
+    }
+    function handleReviewDecoderError(error,generation){
+      if(generation!==state.review.decoderGeneration) return;
+      state.review.lastDecoderError=error;
+      if(state.phase==="review"&&!state.review.recovering) void attemptReviewRecovery(error);
     }
 
     function createReviewDecoder(){
       disposeReviewDecoder(); const generation=++state.review.decoderGeneration;
-      const decoder=new VideoDecoder({output:frame=>reviewDecoderOutput(frame,generation),error:handleRuntimeFailure});
+      state.review.lastDecoderError=null;
+      const decoder=new VideoDecoder({output:frame=>reviewDecoderOutput(frame,generation),error:error=>handleReviewDecoderError(error,generation)});
       decoder.configure(state.decoderConfig||state.codec.decoder); state.review.decoder=decoder; return decoder;
     }
 
@@ -1279,17 +1307,17 @@
       let index=0; for(let i=0;i<state.review.packets.length;i+=1){ if(state.review.packets[i].timestamp>targetAbsUs) break; if(state.review.packets[i].type==="key") index=i; } return index;
     }
 
-    async function seekReview(positionUs,{resume=false}={}){
+    async function seekReview(positionUs,{resume=false,recoveryAttempt=false}={}){
       if(state.phase!=="review"&&state.phase!=="reviewPreparing") return; const seekGeneration=++state.review.seekGeneration; pauseReview({update:false});
       const clamped=Math.max(0,Math.min(state.review.durationUs,positionUs)); const targetAbsUs=state.review.visibleStartUs+clamped; state.review.positionUs=clamped; updateReviewUI();
       const decoder=createReviewDecoder(); state.review.outputMode="seek"; state.review.seekTargetUs=targetAbsUs; state.review.seekFrameDistance=Infinity; if(state.review.seekFrame){ state.review.seekFrame.close(); state.review.seekFrame=null; }
       const startIndex=nearestKeyIndex(targetAbsUs); let index=startIndex; const decodeUntil=targetAbsUs+state.frameIntervalUs;
       try{
         for(;index<state.review.packets.length&&state.review.packets[index].timestamp<=decodeUntil;index+=1) decoder.decode(chunkFromPacket(state.review.packets[index]));
-        await decoder.flush(); if(seekGeneration!==state.review.seekGeneration||(state.phase!=="review"&&state.phase!=="reviewPreparing")) return;
+        await decoder.flush(); if(state.review.lastDecoderError) throw state.review.lastDecoderError; if(seekGeneration!==state.review.seekGeneration||(state.phase!=="review"&&state.phase!=="reviewPreparing")) return;
         if(state.review.seekFrame){ drawFrame(state.review.seekFrame); state.review.seekFrame.close(); state.review.seekFrame=null; }
         state.review.packetIndex=index; state.review.outputMode="play"; state.review.positionUs=clamped; updateReviewUI(); if(resume) playReview();
-      }catch(error){ if(seekGeneration===state.review.seekGeneration) handleRuntimeFailure(error); }
+      }catch(error){ if(seekGeneration!==state.review.seekGeneration) return; if(state.phase==="reviewPreparing"||recoveryAttempt) throw error; void attemptReviewRecovery(error); }
     }
 
     async function stepReview(direction){
@@ -1310,7 +1338,7 @@
         if(!state.review.playing||state.phase!=="review") return;
         const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; const desired=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); const targetAbs=state.review.visibleStartUs+desired;
         try{ while(state.review.packetIndex<state.review.packets.length&&state.review.packets[state.review.packetIndex].timestamp<=targetAbs+state.frameIntervalUs*0.35){ state.review.decoder.decode(chunkFromPacket(state.review.packets[state.review.packetIndex])); state.review.packetIndex+=1; } }
-        catch(error){ handleRuntimeFailure(error); return; }
+        catch(error){ void attemptReviewRecovery(error); return; }
         state.review.positionUs=desired; updateReviewUI(); if(desired>=state.review.durationUs){ pauseReview({update:false}); return; } state.review.rafId=requestAnimationFrame(tick);
       };
       state.review.rafId=requestAnimationFrame(tick);
@@ -1328,13 +1356,15 @@
     async function startReview(){
       if(state.phase!=="practice") return;
       if(!historyReady()){ showNotice(els.runtimeNotice,"warning",t("reviewNotReadyTitle"),t("reviewNotReadyCopy")); return; }
+      const liveGeneration=state.generation;
       hideNotice(els.runtimeNotice); state.phase="reviewPreparing"; updatePhaseUI(); setOverlay(t("reviewPreparingTitle"),t("reviewPreparingCopy")); stopReliabilityWatchdog(); cancelLiveLoops();
       try{
         if(state.encoder?.state==="configured") await state.encoder.flush();
+        if(state.reliability.suspended||liveGeneration!==state.generation) return;
         const snapshot=buildReviewSnapshot(); if(!snapshot) throw new Error("Review snapshot is not decodable");
-        disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.review.packets=snapshot.packets; state.review.visibleStartUs=snapshot.visibleStartUs; state.review.endUs=snapshot.endUs; state.review.durationUs=snapshot.durationUs; state.review.positionUs=0; state.review.rate=1; state.review.packetIndex=0;
-        updateReviewUI(); await seekReview(0); state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI();
-      }catch(error){ console.error("Practice Mirror review error",error); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); showNotice(els.runtimeNotice,"error",t("reviewFailedTitle"),t("reviewFailedCopy")); }
+        disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.review.packets=snapshot.packets; state.review.visibleStartUs=snapshot.visibleStartUs; state.review.endUs=snapshot.endUs; state.review.durationUs=snapshot.durationUs; state.review.positionUs=0; state.review.rate=1; state.review.packetIndex=0; state.review.recoveryAttempts=0; state.review.recovering=false; state.review.lastDecoderError=null;
+        updateReviewUI(); await seekReview(0); if(state.reliability.suspended) return; state.phase="review"; state.reliability.reviewCycles+=1; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); updateReliabilityDiagnostics();
+      }catch(error){ if(state.reliability.suspended) return; console.error("Practice Mirror review error",error); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); showNotice(els.runtimeNotice,"error",t("reviewFailedTitle"),t("reviewFailedCopy")); }
     }
 
     async function returnToPractice(){
