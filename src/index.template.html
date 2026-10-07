@@ -401,7 +401,7 @@
       codec:null, decoderConfig:null, decoderConfigured:false, encodedQueue:[], historyPackets:[], frameRequestId:0,
       schedulerId:0, firstEncodedTimestamp:null, latestEncodedTimestamp:null, latestRenderedTimestamp:null,
       startPerformanceUs:0, lastKeyframeUs:0, lastFrameUs:0, frameIntervalUs:33333,
-      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, cameraSwitching:false, cameraSwitchToken:0, wakeEnabled:true, wakeLock:null, controlsTimer:0, keyboardMode:false, lastAnnouncement:"", qualityIndex:0, captureTargetFps:30, qualityChanging:false, capabilityTier:"unsupported", performance:{windowStart:0,captureDue:0,encoded:0,rendered:0,backpressureSkips:0,encoderPeak:0,decoderPeak:0,overloadWindows:0,lastChangeAt:0,measuredFps:0,status:"watching"}, reliability:{suspended:false,suspendedFrom:null,recovering:false,recoveryWindowStart:0,recoveryAttempts:0,liveRecoveries:0,reviewRecoveries:0,reviewCycles:0,lastEncodedAt:0,lastRenderedAt:0,watchdogId:0,trackEndHandler:null,trackLifecycleTrack:null},
+      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, historyPruneTimestamp:0, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, cameraSwitching:false, cameraSwitchToken:0, wakeEnabled:true, wakeLock:null, controlsTimer:0, keyboardMode:false, lastAnnouncement:"", qualityIndex:0, captureTargetFps:30, qualityChanging:false, capabilityTier:"unsupported", performance:{windowStart:0,captureDue:0,encoded:0,rendered:0,backpressureSkips:0,encoderPeak:0,decoderPeak:0,overloadWindows:0,lastChangeAt:0,measuredFps:0,status:"watching"}, reliability:{suspended:false,suspendedFrom:null,recovering:false,recoveryWindowStart:0,recoveryAttempts:0,liveRecoveries:0,reviewRecoveries:0,reviewCycles:0,lastEncodedAt:0,lastRenderedAt:0,watchdogId:0,trackEndHandler:null,trackLifecycleTrack:null},
       review:{packets:[], visibleStartUs:0, endUs:0, durationUs:0, decoder:null, decoderGeneration:0, rafId:0,
         playing:false, rate:1, positionUs:0, playbackBasePerfUs:0, playbackBasePositionUs:0, packetIndex:0,
         outputMode:"play", seekTargetUs:0, seekFrame:null, seekFrameDistance:Infinity, seekGeneration:0, playbackFloorUs:null, recoveryAttempts:0, recovering:false, degraded:false, lastDecoderError:null}
@@ -1227,12 +1227,16 @@
     function pruneHistory(){
       if(!state.historyPackets.length||state.latestEncodedTimestamp===null) return;
       const keepUs=reviewHistoryKeepUs();
+      const maxPackets=Math.ceil((keepUs/1e6+2)*Math.max(12,state.captureTargetFps||12)*1.7);
+      const overPacketLimit=state.historyPackets.length>maxPackets;
+      const dueForTimePrune=!state.historyPruneTimestamp||state.latestEncodedTimestamp-state.historyPruneTimestamp>=1_000_000;
+      if(!overPacketLimit&&!dueForTimePrune) return;
+      state.historyPruneTimestamp=state.latestEncodedTimestamp;
       const cutoff=state.latestEncodedTimestamp-keepUs;
       let remove=0;
       while(remove<state.historyPackets.length&&state.historyPackets[remove].timestamp<cutoff) remove+=1;
+      if(state.historyPackets.length-remove>maxPackets) remove=Math.max(remove,state.historyPackets.length-maxPackets);
       if(remove>0) state.historyPackets.splice(0,remove);
-      const maxPackets=Math.ceil((keepUs/1e6+2)*Math.max(12,state.captureTargetFps||12)*1.7);
-      if(state.historyPackets.length>maxPackets) state.historyPackets.splice(0,state.historyPackets.length-maxPackets);
     }
 
     function cancelLiveLoops(){
@@ -1387,7 +1391,7 @@
       state.decoderConfig=null; state.decoderConfigured=false; state.generation+=1; const generation=state.generation;
       state.decoder=new VideoDecoder({output:frame=>decoderOutput(frame,generation),error:error=>handleLiveCodecFailure(error,generation)});
       state.encoder=new VideoEncoder({output:(chunk,metadata)=>encoderOutput(chunk,metadata,generation),error:error=>handleLiveCodecFailure(error,generation)}); state.encoder.configure(state.codec.encoder);
-      state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false; state.firstEncodedTimestamp=null; state.latestEncodedTimestamp=null; state.latestRenderedTimestamp=null; state.lastKeyframeUs=0; state.lastFrameUs=0;
+      state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false; state.historyPruneTimestamp=0; state.firstEncodedTimestamp=null; state.latestEncodedTimestamp=null; state.latestRenderedTimestamp=null; state.lastKeyframeUs=0; state.lastFrameUs=0;
       state.startPerformanceUs=Math.round(performance.now()*1000); state.phase="warming"; const now=performance.now(); state.reliability.lastEncodedAt=now; state.reliability.lastRenderedAt=now;
       resetPerformanceWindow(); setWarmupOverlay(); updatePhaseUI(); els.delayActualMeta.textContent=t("actualPending"); updateCapabilityDiagnostics(); startReliabilityWatchdog(); scheduleCapture(generation); scheduleDecode(generation);
     }
