@@ -535,19 +535,21 @@
     async function switchCamera(){
       if(!["warming","practice"].includes(state.phase)||state.exporting) return;
       const previous=state.facingMode; const next=previous==="environment"?"user":"environment";
-      state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
+      state.generation+=1; const transitionGeneration=state.generation; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
       setOverlay(t("switchingCamera"),"",{progress:false}); showControls({schedule:false});
       stopStream();
       try{
         let stream;
         try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next,{exact:true})); }
         catch(_exactError){ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next)); }
+        if(state.reliability.suspended||transitionGeneration!==state.generation){ stream.getTracks().forEach(track=>track.stop()); return; }
         state.facingMode=next; writeStorage("practice-mirror-facing",next);
         await activateCameraStream(stream);
       }catch(error){
         stopStream(); disposeLiveCodecs();
         try{
           const recovery=await navigator.mediaDevices.getUserMedia(cameraConstraints(previous));
+          if(state.reliability.suspended||transitionGeneration!==state.generation){ recovery.getTracks().forEach(track=>track.stop()); return; }
           state.facingMode=previous; await activateCameraStream(recovery);
           showNotice(els.runtimeNotice,"warning",t("cameraSwitchFailed"),normalizedCameraError(error).copy);
         }catch(recoveryError){
@@ -723,6 +725,7 @@
         }catch(_constraintError){
           // Continue with software frame-rate reduction if the camera cannot change resolution in place.
         }
+        if(state.reliability.suspended||state.stopping||state.phase==="suspended") return;
 
         const settings=track.getSettings();
         state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width||next.width;
