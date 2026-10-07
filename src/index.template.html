@@ -660,6 +660,7 @@
           showNotice(els.runtimeNotice,"warning",t("cameraInterrupted"),t("practiceRestarting"));
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
+          if(rel.suspended||document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); return; }
           await activateCameraStream(stream);
         }else{
           const settings=oldTrack.getSettings();
@@ -1147,6 +1148,7 @@
         }else{
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
+          if(document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); rel.suspended=true; rel.suspendedFrom="practice"; state.phase="suspended"; updatePhaseUI(); return; }
           await activateCameraStream(stream);
         }
         await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"});
@@ -1405,7 +1407,8 @@
     window.addEventListener("resize",()=>showControls());
     if(screen.orientation?.addEventListener) screen.orientation.addEventListener("change",()=>showControls());
     document.addEventListener("visibilitychange",()=>{ if(document.hidden) void suspendSessionForBackground(); else void resumeSessionFromBackground(); });
-    window.addEventListener("pagehide",()=>{ state.exportGeneration+=1; state.exporting=false; releaseWakeLock(); if(state.phase!=="idle") stopPractice({message:false}); });
+    window.addEventListener("pagehide",event=>{ if(event.persisted){ void suspendSessionForBackground(); return; } state.exportGeneration+=1; state.exporting=false; releaseWakeLock(); if(state.phase!=="idle") stopPractice({message:false}); });
+    window.addEventListener("pageshow",event=>{ if(event.persisted) void resumeSessionFromBackground(); });
 
     const savedDelay=Number(readStorage("practice-mirror-delay")); if(Number.isInteger(savedDelay)&&savedDelay>=1&&savedDelay<=30) state.delaySeconds=savedDelay; const savedFacing=readStorage("practice-mirror-facing"); if(savedFacing==="user"||savedFacing==="environment") state.facingMode=savedFacing; const savedWake=readStorage("practice-mirror-wake"); if(savedWake==="0") state.wakeEnabled=false; state.mirror=readStorage("practice-mirror-mirror")==="1"; applyMirror(); renderGuides();
     els.startIcon.src=els.appBrandIcon.src; const versionBadge=document.querySelector(".version-badge"); if(versionBadge) versionBadge.textContent=`v${APP_CONFIG.version}`;
