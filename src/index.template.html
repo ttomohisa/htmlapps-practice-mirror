@@ -388,7 +388,136 @@
     }
     function updateDelayLabels(){
       els.delayChip.textContent=state.phase==="review"||state.phase==="reviewPreparing"?t("reviewChip"):(state.language==="ja"?`${state.delaySeconds}${t("seconds")}`:`${state.delaySeconds} ${t("seconds")}`);
-      document.querySelectorAll(".delay-option").forEach(btn=>btn.setAttribute("aria-pressed",String(Number(btn.dataset.delay)===state.delaySeconds)));
+      const presets=[3,5,10,15];
+      const isPreset=presets.includes(state.delaySeconds);
+      document.querySelectorAll(".delay-option[data-delay]").forEach(btn=>btn.setAttribute("aria-pressed",String(Number(btn.dataset.delay)===state.delaySeconds)));
+      els.customDelayTrigger.setAttribute("aria-pressed",String(!isPreset));
+      els.customDelayWrap.hidden=isPreset;
+      if(document.activeElement!==els.customDelayInput) els.customDelayInput.value=String(state.delaySeconds);
+    }
+    function setDelaySeconds(value){
+      const normalized=Math.round(Number(value));
+      if(!Number.isFinite(normalized)||normalized<1||normalized>30){ els.customDelayError.textContent=t("delayInvalid"); return false; }
+      state.delaySeconds=normalized; els.customDelayInput.value=String(normalized); els.customDelayError.textContent=""; writeStorage("practice-mirror-delay",String(normalized)); updateDelayLabels(); return true;
+    }
+    function normalizeCustomDelay(){
+      if(els.customDelayInput.value===""){ els.customDelayError.textContent=t("delayInvalid"); return false; }
+      return setDelaySeconds(els.customDelayInput.value);
+    }
+
+    function shouldAutoHideControls(){
+      if(state.phase!=="practice"||state.exporting) return false;
+      const coarse=window.matchMedia?.("(pointer: coarse)")?.matches===true;
+      const shortLandscape=window.matchMedia?.("(orientation: landscape) and (max-height: 620px)")?.matches===true;
+      return Boolean(document.fullscreenElement)||Boolean(coarse&&!shortLandscape);
+    }
+    function setControlsHidden(hidden){
+      const next=Boolean(hidden&&shouldAutoHideControls());
+      els.mirrorPanel.classList.toggle("controls-hidden",next);
+      for(const node of [els.stageToolRow,els.stageControls]){
+        node.setAttribute("aria-hidden",String(next));
+        if("inert" in node) node.inert=next;
+      }
+    }
+    function clearControlsAutoHide(){
+      if(state.controlsTimer) window.clearTimeout(state.controlsTimer);
+      state.controlsTimer=0;
+    }
+    function scheduleControlsAutoHide(){
+      clearControlsAutoHide();
+      if(!shouldAutoHideControls()){ setControlsHidden(false); return; }
+      state.controlsTimer=window.setTimeout(()=>{
+        if(els.mirrorPanel.contains(document.activeElement)&&document.activeElement!==document.body) { scheduleControlsAutoHide(); return; }
+        setControlsHidden(true);
+      },4000);
+    }
+    function showControls({schedule=true}={}){
+      setControlsHidden(false);
+      if(schedule) scheduleControlsAutoHide(); else clearControlsAutoHide();
+    }
+    async function requestWakeLock(){
+      if(!state.wakeEnabled||state.phase==="idle"||document.visibilityState!=="visible"||!("wakeLock" in navigator)) return;
+      if(state.wakeLock) return;
+      try{
+        const lock=await navigator.wakeLock.request("screen");
+        state.wakeLock=lock;
+        lock.addEventListener("release",()=>{ if(state.wakeLock===lock) state.wakeLock=null; },{once:true});
+      }catch(_error){}
+      updatePracticeUxButtons();
+    }
+    async function releaseWakeLock(){
+      const lock=state.wakeLock; state.wakeLock=null;
+      if(lock){ try{ await lock.release(); }catch(_error){} }
+      updatePracticeUxButtons();
+    }
+    async function toggleWakeLock(){
+      if(!("wakeLock" in navigator)) return;
+      state.wakeEnabled=!state.wakeEnabled; writeStorage("practice-mirror-wake",state.wakeEnabled?"1":"0");
+      if(state.wakeEnabled) await requestWakeLock(); else await releaseWakeLock();
+      updatePracticeUxButtons();
+    }
+    function updatePracticeUxButtons(){
+      const active=["warming","practice","reviewPreparing","review"].includes(state.phase);
+      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting;
+      const fullscreenSupported=typeof els.mirrorPanel.requestFullscreen==="function"&&typeof document.exitFullscreen==="function";
+      els.fullscreenButton.disabled=!active||!fullscreenSupported||state.exporting;
+      const fullscreenActive=document.fullscreenElement===els.mirrorPanel;
+      els.fullscreenButton.setAttribute("aria-pressed",String(fullscreenActive));
+      const fullscreenLabel=els.fullscreenButton.querySelector("[data-i18n]");
+      if(fullscreenLabel) fullscreenLabel.textContent=t(fullscreenActive?"exitFullscreen":"fullscreen");
+      const wakeSupported="wakeLock" in navigator;
+      els.wakeButton.disabled=!active||!wakeSupported;
+      els.wakeButton.setAttribute("aria-pressed",String(wakeSupported&&state.wakeEnabled));
+      els.wakeButton.title=wakeSupported?"":t("wakeUnsupported");
+    }
+    async function toggleFullscreen(){
+      if(state.exporting) return;
+      try{
+        if(document.fullscreenElement===els.mirrorPanel) await document.exitFullscreen();
+        else if(!document.fullscreenElement&&typeof els.mirrorPanel.requestFullscreen==="function") await els.mirrorPanel.requestFullscreen();
+      }catch(_error){}
+      showControls(); updatePracticeUxButtons();
+    }
+    function cameraConstraints(facingMode=state.facingMode,{exact=false}={}){
+      return {audio:false,video:{facingMode:exact?{exact:facingMode}:{ideal:facingMode},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}};
+    }
+    async function activateCameraStream(stream){
+      state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play();
+      if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
+      state.width=els.cameraVideo.videoWidth||stream.getVideoTracks()[0].getSettings().width||1280;
+      state.height=els.cameraVideo.videoHeight||stream.getVideoTracks()[0].getSettings().height||720;
+      const settings=stream.getVideoTracks()[0].getSettings();
+      const fps=Math.min(30,Math.max(10,Number(settings.frameRate)||30));
+      state.frameIntervalUs=Math.round(1e6/fps);
+      state.codec=await chooseCodec(state.width,state.height,fps);
+      if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
+      els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); clearReviewState(); configureLivePipeline();
+      els.startPanel.hidden=true; els.mirrorPanel.classList.add("active"); clearStageError();
+      els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(fps)} fps`;
+      els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
+      await requestWakeLock(); updatePracticeUxButtons(); showControls();
+    }
+    async function switchCamera(){
+      if(!["warming","practice"].includes(state.phase)||state.exporting) return;
+      const previous=state.facingMode; const next=previous==="environment"?"user":"environment";
+      state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
+      setOverlay(t("switchingCamera"),"",{progress:false}); showControls({schedule:false});
+      stopStream();
+      try{
+        let stream;
+        try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next,{exact:true})); }
+        catch(_exactError){ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next)); }
+        state.facingMode=next; writeStorage("practice-mirror-facing",next);
+        await activateCameraStream(stream);
+      }catch(error){
+        try{
+          const recovery=await navigator.mediaDevices.getUserMedia(cameraConstraints(previous));
+          state.facingMode=previous; await activateCameraStream(recovery);
+          showNotice(els.runtimeNotice,"warning",t("cameraSwitchFailed"),normalizedCameraError(error).copy);
+        }catch(recoveryError){
+          handleRuntimeFailure(recoveryError);
+        }
+      }
     }
 
     function capabilityReport(){
@@ -693,7 +822,8 @@
       els.reviewButton.disabled=state.phase!=="practice"||!state.reviewReady; els.reviewButton.title=state.reviewReady?"":t("reviewNotReadyCopy");
       els.reviewButton.hidden=state.phase==="review"||state.phase==="reviewPreparing";
       els.reviewControls.hidden=state.phase!=="review";
-      updateDelayLabels();
+      updateDelayLabels(); updatePracticeUxButtons();
+      if(state.phase==="practice") scheduleControlsAutoHide(); else showControls({schedule:false});
     }
 
     function cloneDecoderConfig(config){
@@ -726,15 +856,17 @@
     function stopStream(){ if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
 
     async function stopPractice({message=true}={}){
-      if(state.exporting) return; state.stopping=true; state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; stopStream(); state.phase="idle"; state.stopping=false;
-      els.mirrorPanel.classList.remove("active"); els.startPanel.hidden=false; els.startButton.disabled=false; clearStageError(); hideNotice(els.runtimeNotice); resetCanvas(); updateReviewUI();
+      if(state.exporting) return; state.stopping=true; state.generation+=1; clearControlsAutoHide(); setControlsHidden(false); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; stopStream(); state.phase="idle"; state.stopping=false;
+      await releaseWakeLock();
+      if(document.fullscreenElement===els.mirrorPanel){ try{await document.exitFullscreen();}catch(_error){} }
+      els.mirrorPanel.classList.remove("active"); els.startPanel.hidden=false; els.startButton.disabled=false; clearStageError(); hideNotice(els.runtimeNotice); resetCanvas(); updateReviewUI(); updatePracticeUxButtons();
       if(message) showNotice(els.preflightNotice,"",t("stopped"),t("localOnly"));
     }
 
     function handleRuntimeFailure(error){
       if(state.stopping||state.runtimeErrorShown) return;
       state.runtimeErrorShown=true; console.error("Practice Mirror runtime error",error); state.phase="error"; updatePhaseUI(); setStageError(t("runtimeTitle"),t("runtimeCopy"));
-      showNotice(els.runtimeNotice,"error",t("runtimeTitle"),error?.message?`${t("runtimeCopy")} (${error.message})`:t("runtimeCopy")); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); stopStream();
+      showNotice(els.runtimeNotice,"error",t("runtimeTitle"),error?.message?`${t("runtimeCopy")} (${error.message})`:t("runtimeCopy")); clearControlsAutoHide(); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); stopStream(); releaseWakeLock();
     }
 
     function encoderOutput(chunk,metadata){
@@ -791,15 +923,9 @@
       if(!caps.ok){ const secureOnly=caps.missing.includes("secure-context")||caps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"error",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${caps.missing.join(", ")})`); return; }
       state.phase="requesting"; state.stopping=false; state.generation+=1; const generation=state.generation; els.startButton.disabled=true; els.startButton.textContent=t("cameraStarting");
       try{
-        const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}});
+        const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
         if(generation!==state.generation){ stream.getTracks().forEach(track=>track.stop()); return; }
-        state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play();
-        if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
-        state.width=els.cameraVideo.videoWidth||stream.getVideoTracks()[0].getSettings().width||1280; state.height=els.cameraVideo.videoHeight||stream.getVideoTracks()[0].getSettings().height||720;
-        const settings=stream.getVideoTracks()[0].getSettings(); const fps=Math.min(30,Math.max(10,Number(settings.frameRate)||30)); state.frameIntervalUs=Math.round(1e6/fps);
-        state.codec=await chooseCodec(state.width,state.height,fps); if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
-        els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); clearReviewState(); configureLivePipeline();
-        els.startPanel.hidden=true; els.mirrorPanel.classList.add("active"); clearStageError(); els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(fps)} fps`; els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
+        await activateCameraStream(stream);
       }catch(error){
         stopStream(); disposeLiveCodecs(); state.phase="idle"; els.startButton.disabled=false;
         if(error?.practiceCode==="codec") showNotice(els.preflightNotice,"error",t("codecTitle"),t("codecCopy")); else { const friendly=normalizedCameraError(error); showNotice(els.preflightNotice,"error",friendly.title,friendly.copy); }
@@ -899,24 +1025,35 @@
     async function returnToPractice(){
       if(state.phase!=="review"||state.exporting) return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice);
       const track=state.stream?.getVideoTracks?.()[0]; if(!track||track.readyState!=="live"){ await stopPractice({message:false}); showNotice(els.preflightNotice,"error",t("cameraDeniedTitle"),t("cameraBusyCopy")); return; }
-      state.runtimeErrorShown=false; configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; updateReviewUI();
+      state.runtimeErrorShown=false; configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; requestWakeLock(); updateReviewUI(); showControls();
     }
 
-    document.querySelectorAll(".delay-option").forEach(button=>button.addEventListener("click",()=>{ if(state.phase!=="idle") return; state.delaySeconds=Number(button.dataset.delay); writeStorage("practice-mirror-delay",String(state.delaySeconds)); updateDelayLabels(); }));
+    document.querySelectorAll(".delay-option[data-delay]").forEach(button=>button.addEventListener("click",()=>{ if(state.phase!=="idle") return; setDelaySeconds(button.dataset.delay); }));
+    els.customDelayTrigger.addEventListener("click",()=>{ if(state.phase!=="idle") return; els.customDelayWrap.hidden=false; els.customDelayTrigger.setAttribute("aria-pressed","true"); document.querySelectorAll(".delay-option[data-delay]").forEach(button=>button.setAttribute("aria-pressed","false")); els.customDelayInput.value=String(state.delaySeconds); els.customDelayError.textContent=""; requestAnimationFrame(()=>els.customDelayInput.focus({preventScroll:true})); });
+    els.customDelayInput.addEventListener("input",()=>{ els.customDelayError.textContent=""; });
+    els.customDelayInput.addEventListener("change",normalizeCustomDelay);
+    els.customDelayInput.addEventListener("blur",normalizeCustomDelay);
     document.querySelectorAll(".rate-button").forEach(button=>button.addEventListener("click",()=>{ const rate=Number(button.dataset.rate); if(state.phase!=="review"||!Number.isFinite(rate)) return; if(state.review.playing){ const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; state.review.positionUs=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); state.review.playbackBasePositionUs=state.review.positionUs; state.review.playbackBasePerfUs=performance.now()*1000; } state.review.rate=rate; updateReviewUI(); }));
-    els.startButton.addEventListener("click",startPractice); els.stopButton.addEventListener("click",()=>stopPractice()); els.reviewButton.addEventListener("click",startReview); els.returnButton.addEventListener("click",returnToPractice); els.saveClipButton.addEventListener("click",saveReviewClip); els.frameBackButton.addEventListener("click",()=>stepReview(-1)); els.frameForwardButton.addEventListener("click",()=>stepReview(1)); els.addVerticalGuideButton.addEventListener("click",()=>addGuide("vertical")); els.addHorizontalGuideButton.addEventListener("click",()=>addGuide("horizontal")); els.clearGuidesButton.addEventListener("click",clearGuides); els.mirrorButton.addEventListener("click",toggleMirror);
+    els.startButton.addEventListener("click",startPractice); els.stopButton.addEventListener("click",()=>stopPractice()); els.reviewButton.addEventListener("click",startReview); els.returnButton.addEventListener("click",returnToPractice); els.saveClipButton.addEventListener("click",saveReviewClip); els.frameBackButton.addEventListener("click",()=>stepReview(-1)); els.frameForwardButton.addEventListener("click",()=>stepReview(1)); els.addVerticalGuideButton.addEventListener("click",()=>addGuide("vertical")); els.addHorizontalGuideButton.addEventListener("click",()=>addGuide("horizontal")); els.clearGuidesButton.addEventListener("click",clearGuides); els.mirrorButton.addEventListener("click",toggleMirror); els.cameraSwitchButton.addEventListener("click",switchCamera); els.fullscreenButton.addEventListener("click",toggleFullscreen); els.wakeButton.addEventListener("click",toggleWakeLock);
     els.playPauseButton.addEventListener("click",()=>{ if(state.review.playing) pauseReview(); else playReview(); });
     els.reviewSeek.addEventListener("input",()=>{ if(state.review.playing) pauseReview(); const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; state.review.positionUs=position; els.reviewCurrentTime.textContent=formatReviewTime(position); });
     els.reviewSeek.addEventListener("change",()=>{ const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; seekReview(position); });
     els.languageButton.addEventListener("click",()=>applyLanguage(state.language==="ja"?"en":"ja"));
     els.helpButton.addEventListener("click",()=>els.helpDialog.showModal()); els.helpCloseButton.addEventListener("click",()=>els.helpDialog.close());
     els.helpDialog.addEventListener("click",event=>{ if(event.target===els.helpDialog){ const rect=els.helpDialog.getBoundingClientRect(); const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom; if(!inside) els.helpDialog.close(); }});
-    document.addEventListener("visibilitychange",()=>{ if(document.hidden){ state.exportGeneration+=1; state.exporting=false; if(state.phase!=="idle") stopPractice({message:false}); } });
-    window.addEventListener("pagehide",()=>{ state.exportGeneration+=1; state.exporting=false; if(state.phase!=="idle") stopPractice({message:false}); });
+    els.stageShell.addEventListener("pointerdown",()=>showControls());
+    els.mirrorPanel.addEventListener("pointermove",()=>{ if(shouldAutoHideControls()) showControls(); },{passive:true});
+    els.mirrorPanel.addEventListener("focusin",()=>showControls({schedule:false}));
+    els.mirrorPanel.addEventListener("focusout",()=>scheduleControlsAutoHide());
+    document.addEventListener("fullscreenchange",()=>{ updatePracticeUxButtons(); showControls(); });
+    window.addEventListener("resize",()=>showControls());
+    if(screen.orientation?.addEventListener) screen.orientation.addEventListener("change",()=>showControls());
+    document.addEventListener("visibilitychange",()=>{ if(document.hidden){ state.exportGeneration+=1; state.exporting=false; releaseWakeLock(); if(state.phase!=="idle") stopPractice({message:false}); } });
+    window.addEventListener("pagehide",()=>{ state.exportGeneration+=1; state.exporting=false; releaseWakeLock(); if(state.phase!=="idle") stopPractice({message:false}); });
 
-    const savedDelay=Number(readStorage("practice-mirror-delay")); if(savedDelay===5||savedDelay===10) state.delaySeconds=savedDelay; state.mirror=readStorage("practice-mirror-mirror")==="1"; applyMirror(); renderGuides();
+    const savedDelay=Number(readStorage("practice-mirror-delay")); if(Number.isInteger(savedDelay)&&savedDelay>=1&&savedDelay<=30) state.delaySeconds=savedDelay; const savedFacing=readStorage("practice-mirror-facing"); if(savedFacing==="user"||savedFacing==="environment") state.facingMode=savedFacing; const savedWake=readStorage("practice-mirror-wake"); if(savedWake==="0") state.wakeEnabled=false; state.mirror=readStorage("practice-mirror-mirror")==="1"; applyMirror(); renderGuides();
     els.startIcon.src=els.appBrandIcon.src; const versionBadge=document.querySelector(".version-badge"); if(versionBadge) versionBadge.textContent=`v${APP_CONFIG.version}`;
-    applyLanguage(detectLanguage()); updateDelayLabels(); updateReviewUI(); updateExportUI();
+    applyLanguage(detectLanguage()); updateDelayLabels(); updateReviewUI(); updateExportUI(); updatePracticeUxButtons();
     const initialCaps=capabilityReport(); if(!initialCaps.ok){ const secureOnly=initialCaps.missing.includes("secure-context")||initialCaps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"warning",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${initialCaps.missing.join(", ")})`); }
   })();
   </script>
