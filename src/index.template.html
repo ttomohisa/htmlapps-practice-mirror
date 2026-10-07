@@ -396,8 +396,8 @@
       if(document.activeElement!==els.customDelayInput) els.customDelayInput.value=String(state.delaySeconds);
     }
     function setDelaySeconds(value){
-      const normalized=Math.round(Number(value));
-      if(!Number.isFinite(normalized)||normalized<1||normalized>30){ els.customDelayError.textContent=t("delayInvalid"); return false; }
+      const normalized=Number(value);
+      if(!Number.isInteger(normalized)||normalized<1||normalized>30){ els.customDelayError.textContent=t("delayInvalid"); return false; }
       state.delaySeconds=normalized; els.customDelayInput.value=String(normalized); els.customDelayError.textContent=""; writeStorage("practice-mirror-delay",String(normalized)); updateDelayLabels(); return true;
     }
     function normalizeCustomDelay(){
