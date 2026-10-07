@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.7.0] - 2026-10-07
+
+### Added
+
+- Generation-safe live encoder/decoder callbacks.
+- Two-second live reliability watchdog with encoded/rendered progress checks.
+- Hard packet bounds for compressed Review history.
+- Live delay queue time/packet growth guard.
+- Limited automatic live recovery, capped at two attempts per minute.
+- Camera-track `ended` handling.
+- Background/foreground suspension and resume behavior.
+- BFCache-aware page lifecycle handling.
+- Review-only decoder recovery with degraded-safe fallback.
+- Session reliability diagnostics.
+- Dedicated real-device `RELIABILITY_TEST_MATRIX.md`.
+
+### Changed
+
+- Practice resume discards stale delayed media and restarts Warm-up.
+- Frozen Review can survive background suspension where possible.
+- Review decoder failure no longer automatically destroys the live camera session.
+- Camera switch, adaptive quality, recovery, and camera activation use stale-result guards.
+- Repeated Review failure disables broken Review controls while preserving Back to Practice.
+- Stop invalidates pending camera-switch/adaptive/recovery work.
+
+
 ## [0.6.0] - 2026-10-07
 
 ### Added

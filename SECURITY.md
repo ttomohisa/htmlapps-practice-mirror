@@ -1,6 +1,6 @@
 # Security and privacy
 
-Practice Mirror v0.6.0 processes camera frames, Review playback, and clip export locally in the browser.
+Practice Mirror v0.7.0 processes camera frames, Review playback, reliability state, and clip export locally in the browser.
 
 ## Trust boundary
 
@@ -8,20 +8,37 @@ Practice Mirror v0.6.0 processes camera frames, Review playback, and clip export
 - Audio is never requested or exported.
 - Camera frames and encoded chunks remain in memory and are not automatically persisted.
 - Review keeps a bounded compressed snapshot rather than raw-frame history.
+- Live and Review media queues have time / packet bounds.
 - A file is generated only after **Save Review clip**.
 - Export uses temporary browser-local media objects and revokes the temporary Blob URL.
 - Guide lines are DOM overlays and are not included in exported video.
 - Mirror is a display transform and is not included in exported video.
 - Camera switching stores no device ID or device label.
-- The app has no runtime API, analytics, telemetry, CDN, external font, or media upload.
 - CSP uses `connect-src 'none'`.
+- The app has no runtime API, analytics, telemetry, CDN, external font, or media upload.
 
-## Adaptive performance
+## Reliability data
 
-- Runtime FPS, encoder/decode queue pressure, and backpressure counters are held only in memory.
-- Broad `hardwareConcurrency` / `deviceMemory` hints may be read locally to choose an initial processing profile.
-- Performance samples and hardware hints are not persisted or transmitted.
-- Resolution reduction uses the already-authorized camera track via `applyConstraints()` when possible.
+The following values may exist transiently in memory:
+
+- last encoded/rendered progress timestamps,
+- recovery-attempt counters,
+- queue pressure/counts,
+- Review recovery state,
+- background/suspended state,
+- adaptive performance counters.
+
+They are used only for local runtime recovery and diagnostics.
+
+They are not written to localStorage, included in saved video, or sent over the network.
+
+## Background behavior
+
+When hidden, the app releases Wake Lock and suspends active encoding/decoding.
+
+A browser may keep the existing camera track alive or end it. On foreground resume the app reuses a live track when available, otherwise it may request the same generic camera-facing preference again.
+
+A frozen Review can remain in memory across a temporary background suspension. Closing/leaving the page performs cleanup.
 
 ## Local preferences
 
@@ -33,7 +50,7 @@ The app may store:
 - Mirror preference,
 - Screen Wake Lock preference.
 
-It does not automatically store media content, device identifiers, output filenames, or guide positions.
+It does not automatically store media, reliability counters, device identifiers, output filenames, or guide positions.
 
 ## Reporting a security issue
 

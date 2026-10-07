@@ -2,64 +2,89 @@
 
 A local-first delayed camera mirror for sports, dance, training, and other self-practice.
 
-> v0.6.0 adds adaptive performance. The app monitors sustained browser load and lowers processing FPS/resolution step by step when needed instead of letting a heavy session become unstable.
+> v0.7.0 focuses on reliability: generation-safe media callbacks, bounded queues, background/resume handling, camera/codec recovery, and Review failure isolation.
 
 ## Features
 
 - 3 / 5 / 10 / 15 second presets and 1–30 second custom delay
+- Adaptive processing profiles from 720p/30fps down to 360p/12fps targets
 - Front/rear camera switching on multi-camera devices
 - Fixed previous-10-second Review
 - 0.25x / 0.5x / 1x playback, seek, and frame stepping
-- Draggable vertical / horizontal guides and Mirror display
+- Draggable guides and Mirror display
 - Local Review clip saving with editable filename
-- MP4-preferred / WebM-fallback export
 - Fullscreen and optional Screen Wake Lock
-- Mobile Practice control auto-hide and short-landscape layout
-- Capability tier shown in technical diagnostics
-- Four-second runtime performance monitoring
-- Automatic 30 → 20 → 15 → 12fps load reduction
-- Progressive 720p → 540p → 360p target resolution reduction under sustained load
-- No automatic upward oscillation during a session
+- Mobile Practice auto-hide and short-landscape layout
+- Bounded live/history queues
+- Live camera/codec stall watchdog
+- Limited automatic live recovery
+- Background / foreground suspend-resume behavior
+- Review-only decoder recovery and degraded-safe fallback
+- Session reliability diagnostics
 - Japanese / English UI
 - No microphone request
 - CSP blocks runtime external connections
-- Readable and self-extracting standalone HTML builds
+- Single-HTML builds
 
-## Adaptive performance
+## Reliability behavior
 
-Practice Mirror tracks delayed render FPS, encoder/decoder queue pressure, and capture frames skipped by backpressure. It only reduces processing quality after sustained overload across multiple windows.
+Practice Mirror does not try to hide every failure.
 
-The first downgrade keeps 720p and reduces the capture cadence from 30fps to 20fps without rebuilding the delay buffer. Further sustained pressure may request 540p/15fps and later 360p/12fps. Resolution changes restart Warm-up because old and new encoded geometry must not be mixed.
+For recoverable live issues it:
 
-If a camera refuses a lower resolution constraint, the app keeps the actual camera geometry and still lowers the software processing FPS.
+1. invalidates the old media generation,
+2. clears stale delayed buffers,
+3. attempts a bounded recovery,
+4. returns through Warm-up.
+
+Automatic live recovery is limited to two attempts per minute. Repeated failure becomes a normal error instead of an endless reconnect loop.
+
+Review decoder failures are isolated from the camera session. One Review-only recovery is attempted; after repeated failure, broken Review controls are disabled while **Back to Practice** remains available.
+
+When the page is backgrounded, live media processing is suspended and Wake Lock is released. Foreground Practice restarts from a fresh Warm-up. A frozen Review is preserved where possible.
+
+## Memory bounds
+
+The app does not retain a raw-frame history.
+
+- delayed video is compressed,
+- Review history is time-bounded and packet-count bounded,
+- live delay queue growth beyond the expected delay margin triggers recovery,
+- Review clips are fixed-duration,
+- export Blob URLs are temporary.
 
 ## Privacy
 
-All performance decisions happen locally.
+Camera media and reliability data stay local.
 
-Practice Mirror does not upload:
+Practice Mirror does not upload or persist:
 
-- camera video,
-- Review clips,
-- performance samples,
-- hardware capability hints,
+- camera frames,
+- Review media,
+- recovery counters,
+- queue sizes,
+- performance windows,
+- device capability hints,
 - camera IDs or labels.
-
-Broad `hardwareConcurrency` / `deviceMemory` hints may be read once to choose a conservative starting profile. They are not stored or sent anywhere.
 
 CSP uses `connect-src 'none'`, and microphone audio is never requested.
 
+## Validation
+
+Static CI cannot prove a 60-minute real-camera session.
+
+Before release, complete [RELIABILITY_TEST_MATRIX.md](./RELIABILITY_TEST_MATRIX.md), including long-session, repeated Review, camera switching, background/resume, export, memory, and resource-release checks.
+
 ## Browser support
 
-Core delayed Practice requires camera access, `requestVideoFrameCallback()`, and WebCodecs (`VideoFrame`, `VideoEncoder`, `VideoDecoder`).
+Core delayed Practice requires camera access, `requestVideoFrameCallback()`, and WebCodecs.
 
-Optional features use Fullscreen, Screen Wake Lock, multiple camera inputs, Canvas `captureStream()`, and `MediaRecorder`. Missing optional features produce a limited/core capability tier rather than disabling the delayed mirror.
+Optional features use Fullscreen, Screen Wake Lock, multiple camera inputs, Canvas `captureStream()`, and `MediaRecorder`.
 
-## Limitations in v0.6.0
+## Limitations in v0.7.0
 
-- adaptive thresholds still require broad real-device tuning
-- automatic recovery to a higher profile is intentionally deferred to avoid quality oscillation
-- long-session reliability completion is the next milestone
+- real-device long-session matrix is still pending
+- adaptive thresholds still need broader hardware tuning
 - no audio recording
 - no AI / pose estimation
 
