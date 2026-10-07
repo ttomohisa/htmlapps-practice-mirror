@@ -3,9 +3,9 @@
   "name": "Practice Mirror",
   "nameJa": "Practice Mirror",
   "slug": "practice-mirror",
-  "version": "0.2.0",
-  "description": "See your movement a few seconds later without stopping to record and replay.",
-  "descriptionJa": "録画と再生を繰り返さず、数秒前の自分の動きをその場で確認する遅延ミラーです。",
+  "version": "0.3.0",
+  "description": "See your movement a few seconds later, review it frame by frame, and overlay simple alignment guides without uploading video.",
+  "descriptionJa": "数秒前の動きを遅延表示し、コマ送りとシンプルなガイド線でフォームを確認できるローカル処理の練習ミラーです。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
@@ -19,8 +19,8 @@
       "output": "dist/index.self-extract.html"
     },
     "sizeBudget": {
-      "readableWarningMb": 25,
-      "selfExtractWarningMb": 12
+      "readableWarningMb": 2,
+      "selfExtractWarningMb": 1
     }
   }
 }

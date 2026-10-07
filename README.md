@@ -2,15 +2,22 @@
 
 A local-first delayed camera mirror for checking sports, dance, and training form without repeatedly recording, stopping, finding, and replaying a clip.
 
-> v0.1.0 is a development milestone focused on proving the delayed-playback engine. Review, slow motion, guides, and clip saving are not implemented yet.
+> v0.3.0 adds frame-focused Review controls, movable guides, and display mirroring. Clip saving and camera switching are later milestones.
 
 ## Features
 
 - 5 and 10 second delayed camera view
+- Freeze up to the previous 10 seconds in Review
+- Play / pause / seek
+- 0.25x / 0.5x / 1x Review playback
+- Previous-frame / next-frame controls
+- Draggable vertical and horizontal guides
+- Keyboard guide adjustment and deletion
+- Clear-all guides with Undo
+- Optional mirrored display without modifying encoded video
 - Rear-camera preference
 - Runtime H.264 / VP8 capability selection
-- WebCodecs-compressed in-memory delay queue
-- Separate warm-up, permission, unsupported, and runtime-failure states
+- WebCodecs-compressed bounded in-memory video queues
 - Japanese / English UI
 - No microphone request
 - CSP blocks runtime network access
@@ -19,26 +26,30 @@ A local-first delayed camera mirror for checking sports, dance, and training for
 ## Usage
 
 1. Choose a 5 or 10 second delay.
-2. Select **Start camera**.
-3. Allow camera access.
-4. Wait for the selected delay to buffer.
-5. Practice while the screen shows the camera feed a few seconds late.
-6. Select **Stop** when finished.
+2. Select **Start camera** and allow camera access.
+3. Wait for the selected delay to buffer.
+4. Practice while the screen shows the camera feed a few seconds late.
+5. Add vertical / horizontal guides or enable **Mirror** when useful.
+6. Select **Review** after enough history is available.
+7. Use slow playback, seek, or the frame buttons to inspect the movement.
+8. Select **Back to practice** to rebuild the delay buffer and continue.
+9. Select **Stop** when finished.
+
+Guide lines can be dragged. When focused, Arrow keys move a guide, Shift + Arrow moves farther, Home / End moves to an edge, and Delete / Backspace removes it.
 
 ## Privacy
 
-Camera frames are processed in the browser.
+Camera frames and Review video are processed in the browser.
 
-v0.1.0 does not:
+Practice Mirror does not:
 
 - upload video,
 - call an external API,
 - request microphone audio,
-- automatically record,
-- persist video,
+- automatically save video,
 - send analytics or telemetry.
 
-The runtime CSP uses `connect-src 'none'`. Only language and delay preferences are stored in localStorage.
+The runtime CSP uses `connect-src 'none'`. Only language, delay, and Mirror preferences are stored in localStorage. Guide positions and media buffers are session-only.
 
 ## Browser support
 
@@ -53,18 +64,16 @@ Required APIs:
 
 The app reports missing capabilities instead of silently failing.
 
-## Limitations in v0.1.0
+## Limitations in v0.3.0
 
 Not yet included:
 
-- Review mode
-- Slow motion
-- Frame stepping
-- Guides
 - Clip saving
-- Camera switching UI
+- Front / rear camera switch UI
 - Fullscreen
 - Screen Wake Lock
+- Adaptive quality
+- AI / pose estimation
 
 ## Single HTML / offline behavior
 
