@@ -472,7 +472,7 @@
     }
     function updatePracticeUxButtons(){
       const active=["warming","practice","reviewPreparing","review"].includes(state.phase);
-      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting||state.cameraSwitching||state.cameraDeviceCount<2;
+      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting||state.cameraSwitching||state.reliability.recovering||state.qualityChanging||state.cameraDeviceCount<2;
       const fullscreenSupported=typeof els.mirrorPanel.requestFullscreen==="function"&&typeof document.exitFullscreen==="function";
       els.fullscreenButton.disabled=!active||!fullscreenSupported||state.exporting;
       const fullscreenActive=document.fullscreenElement===els.mirrorPanel;
@@ -514,8 +514,11 @@
       updatePracticeUxButtons();
     }
     async function activateCameraStream(stream){
+      const activationGeneration=state.generation;
       state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play(); bindTrackLifecycle(stream.getVideoTracks()[0]);
+      if(activationGeneration!==state.generation||state.phase==="idle"||state.reliability.suspended) return false;
       if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
+      if(activationGeneration!==state.generation||state.phase==="idle"||state.reliability.suspended) return false;
       state.width=els.cameraVideo.videoWidth||stream.getVideoTracks()[0].getSettings().width||1280;
       state.height=els.cameraVideo.videoHeight||stream.getVideoTracks()[0].getSettings().height||720;
       const settings=stream.getVideoTracks()[0].getSettings();
@@ -523,7 +526,9 @@
       const profile=qualityProfile();
       state.captureTargetFps=Math.max(8,Math.min(profile.fps,cameraFps));
       state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
-      state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+      const codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+      if(activationGeneration!==state.generation||state.phase==="idle"||state.reliability.suspended) return false;
+      state.codec=codec;
       if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
       els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); clearReviewState(); configureLivePipeline();
       els.startPanel.hidden=true; els.mirrorPanel.classList.add("active"); clearStageError();
@@ -531,6 +536,7 @@
       els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
       resetPerformanceWindow(); updateCapabilityDiagnostics();
       await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls(); if(document.hidden) await suspendSessionForBackground();
+      return true;
     }
     async function switchCamera(){
       if(!["warming","practice"].includes(state.phase)||state.exporting||state.cameraSwitching) return;
@@ -655,7 +661,7 @@
       const rel=state.reliability;
       if(rel.recovering||rel.suspended||state.stopping||state.phase==="idle"||state.phase==="review"||state.phase==="reviewPreparing") return;
       if(!takeRecoverySlot()){ handleRuntimeFailure(new Error(`Recovery limit reached after ${reason}`)); return; }
-      rel.recovering=true; updateReliabilityDiagnostics(); showControls({schedule:false});
+      rel.recovering=true; state.phase="warming"; setOverlay(t("reliabilityRecovering"),t("practiceRestarting"),{progress:false}); updatePhaseUI(); updateReliabilityDiagnostics(); showControls({schedule:false});
       const oldTrack=state.stream?.getVideoTracks?.()[0];
       try{
         state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false;
@@ -1129,7 +1135,7 @@
     async function resumeSessionFromBackground(){
       const rel=state.reliability;
       if(!rel.suspended||document.visibilityState!=="visible") return;
-      const resumeFrom=rel.suspendedFrom; rel.suspended=false; rel.suspendedFrom=null;
+      const resumeFrom=rel.suspendedFrom; rel.suspended=false; rel.suspendedFrom=null; const resumeGeneration=state.generation;
 
       try{
         if(resumeFrom==="review"&&state.review.packets.length){
@@ -1153,6 +1159,7 @@
           state.captureTargetFps=Math.max(8,Math.min(qualityProfile().fps,cameraFps));
           state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
           state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+          if(resumeGeneration!==state.generation||state.phase==="idle") return;
           if(!state.codec) throw Object.assign(new Error("No supported codec while resuming"),{practiceCode:"codec"});
           els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); configureLivePipeline();
         }else{
