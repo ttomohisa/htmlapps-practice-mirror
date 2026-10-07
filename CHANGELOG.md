@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0] - 2026-10-07
+
+### Added
+
+- 0.25x Review playback.
+- Previous-frame and next-frame Review controls.
+- Multiple draggable vertical and horizontal guide lines.
+- Keyboard guide movement, edge jumps, and deletion.
+- Clear-all guide action with Undo.
+- Mirror display toggle that flips the Canvas without changing encoded video.
+
+### Changed
+
+- Updated Japanese / English help and documentation for Frame Review & Guides.
+- Tightened standalone size warning budgets for the now-concrete application.
+
+## [0.2.0] - 2026-10-07
+
+### Added
+
+- Fixed Review snapshot of up to the previous 10 seconds.
+- Review play / pause / seek.
+- 0.5x and 1x Review playback.
+- Return-to-practice flow that reuses the live camera and rebuilds the delay buffer.
+- Bounded compressed Review history and keyframe-based seeking.
+
 ## [0.1.0] - 2026-10-07
 
 ### Added
