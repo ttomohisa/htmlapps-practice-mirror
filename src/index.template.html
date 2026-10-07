@@ -363,7 +363,7 @@
       codec:null, decoderConfig:null, decoderConfigured:false, encodedQueue:[], historyPackets:[], frameRequestId:0,
       schedulerId:0, firstEncodedTimestamp:null, latestEncodedTimestamp:null, latestRenderedTimestamp:null,
       startPerformanceUs:0, lastKeyframeUs:0, lastFrameUs:0, frameIntervalUs:33333,
-      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, cameraSwitching:false, cameraSwitchToken:0, wakeEnabled:true, wakeLock:null, controlsTimer:0, qualityIndex:0, captureTargetFps:30, qualityChanging:false, capabilityTier:"unsupported", performance:{windowStart:0,captureDue:0,encoded:0,rendered:0,backpressureSkips:0,encoderPeak:0,decoderPeak:0,overloadWindows:0,lastChangeAt:0,measuredFps:0,status:"watching"}, reliability:{suspended:false,suspendedFrom:null,recovering:false,recoveryWindowStart:0,recoveryAttempts:0,liveRecoveries:0,reviewRecoveries:0,reviewCycles:0,lastEncodedAt:0,lastRenderedAt:0,watchdogId:0,trackEndHandler:null,trackLifecycleTrack:null},
+      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, cameraSwitching:false, cameraSwitchToken:0, wakeEnabled:true, wakeLock:null, controlsTimer:0, keyboardMode:false, lastAnnouncement:"", qualityIndex:0, captureTargetFps:30, qualityChanging:false, capabilityTier:"unsupported", performance:{windowStart:0,captureDue:0,encoded:0,rendered:0,backpressureSkips:0,encoderPeak:0,decoderPeak:0,overloadWindows:0,lastChangeAt:0,measuredFps:0,status:"watching"}, reliability:{suspended:false,suspendedFrom:null,recovering:false,recoveryWindowStart:0,recoveryAttempts:0,liveRecoveries:0,reviewRecoveries:0,reviewCycles:0,lastEncodedAt:0,lastRenderedAt:0,watchdogId:0,trackEndHandler:null,trackLifecycleTrack:null},
       review:{packets:[], visibleStartUs:0, endUs:0, durationUs:0, decoder:null, decoderGeneration:0, rafId:0,
         playing:false, rate:1, positionUs:0, playbackBasePerfUs:0, playbackBasePositionUs:0, packetIndex:0,
         outputMode:"play", seekTargetUs:0, seekFrame:null, seekFrameDistance:Infinity, seekGeneration:0, recoveryAttempts:0, recovering:false, degraded:false, lastDecoderError:null}
@@ -372,7 +372,7 @@
     const $ = (id) => document.getElementById(id);
     const els = {
       languageButton:$("languageButton"), helpButton:$("helpButton"), helpDialog:$("helpDialog"), helpCloseButton:$("helpCloseButton"), appBrandIcon:$("appBrandIcon"), startIcon:$("startIcon"),
-      appToast:$("appToast"), appToastMessage:$("appToastMessage"), appToastAction:$("appToastAction"),
+      appToast:$("appToast"), appToastMessage:$("appToastMessage"), appToastAction:$("appToastAction"), appLiveRegion:$("appLiveRegion"),
       startPanel:$("startPanel"), mirrorPanel:$("mirrorPanel"), startButton:$("startButton"), stopButton:$("stopButton"), reviewButton:$("reviewButton"), preflightNotice:$("preflightNotice"), runtimeNotice:$("runtimeNotice"), customDelayTrigger:$("customDelayTrigger"), customDelayWrap:$("customDelayWrap"), customDelayInput:$("customDelayInput"), customDelayError:$("customDelayError"),
       cameraVideo:$("cameraVideo"), delayCanvas:$("delayCanvas"), stageShell:$("stageShell"), guideLayer:$("guideLayer"), stageOverlay:$("stageOverlay"), mirrorButton:$("mirrorButton"), cameraSwitchButton:$("cameraSwitchButton"), fullscreenButton:$("fullscreenButton"), wakeButton:$("wakeButton"), stageToolRow:$("stageToolRow"), stageControls:$("stageControls"), addVerticalGuideButton:$("addVerticalGuideButton"), addHorizontalGuideButton:$("addHorizontalGuideButton"), clearGuidesButton:$("clearGuidesButton"), warmupCard:$("warmupCard"), progressBar:$("progressBar"), warmupCount:$("warmupCount"),
       stageErrorCard:$("stageErrorCard"), stageErrorTitle:$("stageErrorTitle"), stageErrorCopy:$("stageErrorCopy"), stageStatus:$("stageStatus"), stageStatusText:$("stageStatusText"), delayChip:$("delayChip"),
@@ -393,6 +393,13 @@
     window.AppToast=AppToast;
 
     function t(key){ return translations[state.language][key] ?? key; }
+    function announce(message){
+      const text=String(message||"").trim();
+      if(!text||!els.appLiveRegion) return;
+      state.lastAnnouncement=text;
+      els.appLiveRegion.textContent="";
+      window.requestAnimationFrame(()=>{ if(state.lastAnnouncement===text) els.appLiveRegion.textContent=text; });
+    }
     function detectLanguage(){ const saved=readStorage("practice-mirror-language"); if(saved==="ja"||saved==="en") return saved; if(APP_CONFIG.defaultLanguage==="ja"||APP_CONFIG.defaultLanguage==="en") return APP_CONFIG.defaultLanguage; return navigator.language&&navigator.language.toLowerCase().startsWith("ja")?"ja":"en"; }
     function formatReviewTime(us){ const seconds=Math.max(0,us/1e6); const minutes=Math.floor(seconds/60); return `${minutes}:${(seconds-minutes*60).toFixed(1).padStart(4,"0")}`; }
     function applyLanguage(lang){
@@ -413,8 +420,8 @@
     }
     function setDelaySeconds(value){
       const normalized=Number(value);
-      if(!Number.isInteger(normalized)||normalized<1||normalized>30){ els.customDelayError.textContent=t("delayInvalid"); return false; }
-      state.delaySeconds=normalized; els.customDelayInput.value=String(normalized); els.customDelayError.textContent=""; writeStorage("practice-mirror-delay",String(normalized)); updateDelayLabels(); return true;
+      if(!Number.isInteger(normalized)||normalized<1||normalized>30){ els.customDelayError.textContent=t("delayInvalid"); els.customDelayInput.setAttribute("aria-invalid","true"); return false; }
+      state.delaySeconds=normalized; els.customDelayInput.value=String(normalized); els.customDelayError.textContent=""; els.customDelayInput.setAttribute("aria-invalid","false"); writeStorage("practice-mirror-delay",String(normalized)); updateDelayLabels(); return true;
     }
     function normalizeCustomDelay(){
       if(els.customDelayInput.value===""){ els.customDelayError.textContent=t("delayInvalid"); return false; }
@@ -422,10 +429,23 @@
     }
 
     function shouldAutoHideControls(){
-      if(state.phase!=="practice"||state.exporting) return false;
+      if(state.phase!=="practice"||state.exporting||state.keyboardMode) return false;
       const coarse=window.matchMedia?.("(pointer: coarse)")?.matches===true;
       const shortLandscape=window.matchMedia?.("(orientation: landscape) and (max-height: 620px)")?.matches===true;
       return Boolean(document.fullscreenElement)||Boolean(coarse&&!shortLandscape);
+    }
+    function setAutoHideAccessibility(root,hidden){
+      const focusables=root.querySelectorAll("button,input,select,textarea,a[href],[tabindex]");
+      focusables.forEach(node=>{
+        if(hidden){
+          if(!node.dataset.autoHideTabindex) node.dataset.autoHideTabindex=node.hasAttribute("tabindex")?node.getAttribute("tabindex"):"__none__";
+          node.setAttribute("tabindex","-1");
+        }else if(node.dataset.autoHideTabindex){
+          const previous=node.dataset.autoHideTabindex;
+          if(previous==="__none__") node.removeAttribute("tabindex"); else node.setAttribute("tabindex",previous);
+          delete node.dataset.autoHideTabindex;
+        }
+      });
     }
     function setControlsHidden(hidden){
       const next=Boolean(hidden&&shouldAutoHideControls());
@@ -433,6 +453,7 @@
       for(const node of [els.stageToolRow,els.stageControls]){
         node.setAttribute("aria-hidden",String(next));
         if("inert" in node) node.inert=next;
+        setAutoHideAccessibility(node,next);
       }
     }
     function clearControlsAutoHide(){
