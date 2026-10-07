@@ -53,6 +53,9 @@ Do not mark manual/device checks complete unless they were actually tested.
 
 ## Release assets
 
+The four screenshot files below were regenerated from the v0.9.0 standalone build by the pinned Playwright capture workflow and visually reviewed before this final RC validation pass.
+
+
 - [ ] current `assets/screenshot.png`.
 - [ ] current `assets/screenshot-en.png`.
 - [ ] current `assets/screenshot-mobile.png`.
