@@ -218,6 +218,34 @@ foreach ($token in $practiceMirrorReviewKeyframeTokens) {
     throw "src\index.template.html is missing Review key-frame restart marker: $token"
   }
 }
+
+# v0.9.0 Review ergonomics and seekable export regression contract.
+$practiceMirrorReviewRcTokens = @(
+  'data-rate="2"',
+  'id="toolsToggleButton"',
+  'id="reviewStopButton"',
+  'id="reviewExportDetails"',
+  "body.review-active .stage-shell",
+  ".mirror-panel:fullscreen .stage-shell{width:min(100%,155dvh);margin-inline:auto",
+  "getWebmDurationFixer",
+  "makeSeekableWebm",
+  'StandaloneAssets.blobUrlAsync("fix-webm-duration","main")',
+  "recorder.start();"
+)
+foreach ($token in $practiceMirrorReviewRcTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing v0.9.0 Review RC marker: $token"
+  }
+}
+if ($sourceText.Contains('video/mp4;codecs=avc1.42E01E') -or $sourceText.Contains('{mimeType:"video/mp4"')) {
+  throw "Practice Mirror v0.9.0 Review export must not prefer raw MediaRecorder MP4; use seekable WebM."
+}
+
+$dependencyConfig = Get-Content -Raw -LiteralPath (Join-Path $repoRoot "dependencies.json") | ConvertFrom-Json
+$webmFixDependency = @($dependencyConfig.dependencies | Where-Object { $_.id -eq "fix-webm-duration" })
+if ($webmFixDependency.Count -ne 1 -or [string]$webmFixDependency[0].version -ne "1.0.6") {
+  throw "Practice Mirror must pin fix-webm-duration exactly at 1.0.6."
+}
 foreach ($token in $practiceMirrorAccessibilityTokens) {
   if (-not $sourceText.Contains([string]$token)) {
     throw "src\index.template.html is missing Practice Mirror accessibility marker: $token"
