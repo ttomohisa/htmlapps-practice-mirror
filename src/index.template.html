@@ -515,14 +515,17 @@
       state.width=els.cameraVideo.videoWidth||stream.getVideoTracks()[0].getSettings().width||1280;
       state.height=els.cameraVideo.videoHeight||stream.getVideoTracks()[0].getSettings().height||720;
       const settings=stream.getVideoTracks()[0].getSettings();
-      const fps=Math.min(30,Math.max(10,Number(settings.frameRate)||30));
-      state.frameIntervalUs=Math.round(1e6/fps);
-      state.codec=await chooseCodec(state.width,state.height,fps);
+      const cameraFps=Math.min(60,Math.max(8,Number(settings.frameRate)||30));
+      const profile=qualityProfile();
+      state.captureTargetFps=Math.max(8,Math.min(profile.fps,cameraFps));
+      state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
+      state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
       if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
       els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); clearReviewState(); configureLivePipeline();
       els.startPanel.hidden=true; els.mirrorPanel.classList.add("active"); clearStageError();
-      els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(fps)} fps`;
+      els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(cameraFps)} fps`;
       els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
+      resetPerformanceWindow(); updateCapabilityDiagnostics();
       await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls();
     }
     async function switchCamera(){
@@ -578,6 +581,93 @@
       els.performanceMeta.textContent=`${tierLabel} · ${fps} · ${t(statusKey)}`;
     }
 
+    function resetPerformanceWindow(now=performance.now()){
+      const perf=state.performance;
+      perf.windowStart=now; perf.captureDue=0; perf.encoded=0; perf.rendered=0; perf.backpressureSkips=0; perf.encoderPeak=0; perf.decoderPeak=0;
+    }
+    function noteEncoderQueue(){
+      if(state.encoder) state.performance.encoderPeak=Math.max(state.performance.encoderPeak,Number(state.encoder.encodeQueueSize)||0);
+    }
+    function noteDecoderQueue(){
+      if(state.decoder) state.performance.decoderPeak=Math.max(state.performance.decoderPeak,Number(state.decoder.decodeQueueSize)||0);
+    }
+    async function reduceQualityForLoad(){
+      if(state.qualityChanging||state.phase!=="practice"||state.qualityIndex>=QUALITY_PROFILES.length-1) return;
+      const current=qualityProfile();
+      const nextIndex=state.qualityIndex+1;
+      const next=qualityProfile(nextIndex);
+      state.qualityChanging=true;
+      state.qualityIndex=nextIndex;
+      state.performance.lastChangeAt=performance.now();
+      state.performance.overloadWindows=0;
+      state.performance.status="watching";
+
+      try{
+        const actualCameraFps=Number(state.stream?.getVideoTracks?.()[0]?.getSettings?.().frameRate)||30;
+        state.captureTargetFps=Math.max(8,Math.min(next.fps,actualCameraFps));
+        state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
+
+        if(current.width===next.width&&current.height===next.height){
+          AppToast.show({message:t("performanceAdjusted"),tone:"warning"});
+          resetPerformanceWindow(); updateCapabilityDiagnostics();
+          return;
+        }
+
+        state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
+        setOverlay(t("performanceResolutionReset"),"",{progress:false}); showControls({schedule:false});
+
+        const track=state.stream?.getVideoTracks?.()[0];
+        if(!track||track.readyState!=="live") throw new Error("Camera track is unavailable");
+        try{
+          await track.applyConstraints({width:{ideal:next.width},height:{ideal:next.height},frameRate:{ideal:next.fps,max:next.fps}});
+        }catch(_constraintError){
+          // Continue with software frame-rate reduction if the camera cannot change resolution in place.
+        }
+
+        const settings=track.getSettings();
+        state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width||next.width;
+        state.height=Number(settings.height)||els.cameraVideo.videoHeight||state.height||next.height;
+        const cameraFps=Number(settings.frameRate)||actualCameraFps;
+        state.captureTargetFps=Math.max(8,Math.min(next.fps,cameraFps));
+        state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
+        state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+        if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
+
+        els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); configureLivePipeline();
+        els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(cameraFps)} fps`;
+        els.codecMeta.textContent=state.codec.label;
+        els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
+        AppToast.show({message:t("performanceAdjusted"),tone:"warning"});
+      }catch(error){
+        handleRuntimeFailure(error);
+      }finally{
+        state.qualityChanging=false;
+        updateCapabilityDiagnostics();
+      }
+    }
+    function evaluatePerformanceWindow(now=performance.now()){
+      if(state.phase!=="practice"||state.qualityChanging) return;
+      const perf=state.performance;
+      if(!perf.windowStart){ resetPerformanceWindow(now); return; }
+      const elapsed=now-perf.windowStart;
+      if(elapsed<PERF_WINDOW_MS) return;
+
+      const expected=Math.max(1,state.captureTargetFps*elapsed/1000);
+      const measured=perf.rendered*1000/elapsed;
+      const skipRatio=perf.backpressureSkips/Math.max(1,perf.captureDue);
+      const renderRatio=measured/Math.max(1,state.captureTargetFps);
+      const overloaded=skipRatio>=0.10||perf.encoderPeak>=3||perf.decoderPeak>=7||renderRatio<0.65;
+      const stable=skipRatio<=0.02&&perf.encoderPeak<=1&&perf.decoderPeak<=2&&renderRatio>=0.85;
+
+      perf.measuredFps=measured;
+      perf.status=overloaded?"busy":stable?"stable":"watching";
+      perf.overloadWindows=overloaded?perf.overloadWindows+1:0;
+      updateCapabilityDiagnostics();
+
+      const cooldownElapsed=now-perf.lastChangeAt>=PERF_CHANGE_COOLDOWN_MS;
+      if(perf.overloadWindows>=2&&cooldownElapsed&&state.qualityIndex<QUALITY_PROFILES.length-1) void reduceQualityForLoad();
+      resetPerformanceWindow(now);
+    }
     function showNotice(element,tone,title,copy){ element.className=`notice visible ${tone||""}`; element.innerHTML=""; const strong=document.createElement("strong"); strong.textContent=title; const p=document.createElement("p"); p.textContent=copy; element.append(strong,p); }
     function hideNotice(element){ element.className="notice"; element.textContent=""; }
 
@@ -966,6 +1056,7 @@
     async function startPractice(){
       if(els.customDelayTrigger.getAttribute("aria-pressed")==="true"&&!normalizeCustomDelay()) return;
       hideNotice(els.preflightNotice); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
+      state.qualityIndex=chooseInitialQualityIndex(); state.qualityChanging=false; state.performance.overloadWindows=0; state.performance.lastChangeAt=performance.now(); state.performance.measuredFps=0; state.performance.status="watching"; updateCapabilityDiagnostics();
       const caps=capabilityReport();
       if(!caps.ok){ const secureOnly=caps.missing.includes("secure-context")||caps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"error",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${caps.missing.join(", ")})`); return; }
       state.phase="requesting"; state.stopping=false; state.generation+=1; const generation=state.generation; els.startButton.disabled=true; els.startButton.textContent=t("cameraStarting");
