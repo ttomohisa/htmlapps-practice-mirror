@@ -3,9 +3,9 @@
   "name": "Practice Mirror",
   "nameJa": "Practice Mirror",
   "slug": "practice-mirror",
-  "version": "0.4.0",
-  "description": "See your movement a few seconds later, review it frame by frame, and save only the Review clip locally when needed.",
-  "descriptionJa": "数秒前の動きを遅延表示し、コマ送りやガイドで確認して、必要なReviewクリップだけ端末へ保存できる練習ミラーです。",
+  "version": "0.5.0",
+  "description": "Use a 1–30 second delayed camera mirror, review movement frame by frame, and save only the clips you need locally.",
+  "descriptionJa": "1〜30秒の遅延ミラーで動きを確認し、コマ送りやガイドで見返して、必要なReviewだけ端末へ保存できます。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
