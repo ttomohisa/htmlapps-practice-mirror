@@ -478,7 +478,7 @@
     function setControlsHidden(hidden){
       const next=Boolean(hidden&&shouldAutoHideControls());
       els.mirrorPanel.classList.toggle("controls-hidden",next);
-      for(const node of [els.stageToolRow,els.stageControls]){
+      for(const node of [els.practiceTools,els.stageControls]){
         node.setAttribute("aria-hidden",String(next));
         if("inert" in node) node.inert=next;
         setAutoHideAccessibility(node,next);
