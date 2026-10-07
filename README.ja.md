@@ -2,98 +2,62 @@
 
 数秒前のカメラ映像を表示し、スポーツ・ダンス・トレーニングなどのフォームをその場で確認するWebアプリです。
 
-> v0.7.0ではReliabilityを重点的に強化しました。古いmedia callbackの世代分離、バッファ上限、background復帰、カメラ/codec復旧、Review失敗の分離を追加しています。
+> v0.8.0ではMobile / Accessibilityを重点的に磨きました。タップ領域、狭いスマホ画面、横向き、キーボード時のauto-hide、フォーカス移動、読み上げ用状態通知を改善しています。
 
 ## Features
 
-- 3 / 5 / 10 / 15秒プリセット + 1〜30秒自由設定
-- 720p/30fps〜360p/12fps目標のAdaptive Performance
-- 複数カメラ端末での前面/背面切替
+- 3 / 5 / 10 / 15秒 + 1〜30秒自由設定
+- Adaptive Performance / Reliability
+- 前面/背面カメラ切替
 - 直前10秒Review
-- 0.25× / 0.5× / 1×、シーク、コマ送り
-- 縦横ガイド、左右反転
+- スロー再生、シーク、コマ送り
+- タッチ/キーボード対応の縦横ガイド
+- 左右反転
 - Reviewクリップのローカル保存
-- 全画面、Screen Wake Lock
-- スマホPracticeの操作UI自動非表示
-- live/historyバッファの上限監視
-- カメラ/codec停止を検知するwatchdog
-- 回数制限付きlive自動復旧
-- background / foregroundの一時停止・再開
-- Review decoderだけを対象にした復旧
-- Review復旧不能時でも「練習に戻る」を残す縮退状態
-- セッションReliability診断
-- 日本語 / English
-- 音声取得なし
+- Fullscreen / Screen Wake Lock
+- スマホPracticeのauto-hide
+- 狭い縦画面 / 短い横画面向けレイアウト
+- 主要操作とガイドhit areaの約44pxタップ領域
+- キーボード利用中はauto-hideを停止
+- Start / Practice / Review間のフォーカス移動
+- 専用の読み上げ用status領域
+- 日本語 / Englishのaccessible name
+- マイク取得なし
 - `connect-src 'none'`
 - 単一HTML
 
-## Reliability
+## Mobile / Accessibility
 
-復旧可能なlive異常では、
+スマホではPracticeツールを2列化し、Review/Stopや再生速度も狭い幅で崩れにくい配置にしています。
 
-1. 古いmedia generationを無効化
-2. 古い遅延バッファを破棄
-3. 限定的な自動復旧を実施
-4. Warm-upから再開
+ガイド線自体は細いままですが、ドラッグ可能な領域は44pxへ広げています。
 
-します。
+Tabなどのキーボード操作を検出するとPractice操作は自動で隠れません。pointer向けauto-hideで非表示になった操作は、`inert`非対応ブラウザでもTab移動できないようにtabindexを退避します。
 
-live自動復旧は **1分あたり最大2回** です。繰り返し失敗する場合は無限再接続せず、通常のエラー状態で停止します。
+Review開始やReview利用可能、background復帰など重要状態は、画面全体をlive regionにせず専用status領域で通知します。
 
-Review decoderはliveカメラと分離しています。Reviewだけ1回再生成を試し、それでも失敗した場合は壊れたReview操作を無効にしますが、**練習に戻る** は残します。
-
-backgroundではencode/decode処理とWake Lockを止めます。Practiceへ戻ると古い遅延映像を再利用せずWarm-upから再開します。Review中なら固定済みReviewを可能な限り保持します。
-
-## Memory bounds
-
-raw frame履歴は保持しません。
-
-- 遅延映像は圧縮状態
-- Review履歴は時間上限 + packet数上限
-- live delay queueが想定範囲を超えた場合は復旧
-- Reviewは固定長
-- export Blob URLは一時利用後に解放
-
-という構成です。
+詳しい実機確認項目は [MOBILE_ACCESSIBILITY_TEST_MATRIX.md](./MOBILE_ACCESSIBILITY_TEST_MATRIX.md) にまとめています。
 
 ## Privacy
 
-映像だけでなくReliability情報も端末内だけで扱います。
+カメラ映像、性能情報、Reliability情報、アクセシビリティ用状態は端末内だけで扱います。
 
-以下を外部送信・自動保存しません。
+映像アップロード、マイク取得、Analytics / telemetryはありません。
 
-- カメラ映像
-- Review映像
-- 復旧回数
-- queueサイズ
-- performance window
-- 端末性能ヒント
-- camera ID / label
+## Release validation
 
-CSPは `connect-src 'none'`、マイクは取得しません。
+v1.0.0前に以下を両方確認します。
 
-## Validation
+- [MOBILE_ACCESSIBILITY_TEST_MATRIX.md](./MOBILE_ACCESSIBILITY_TEST_MATRIX.md)
+- [RELIABILITY_TEST_MATRIX.md](./RELIABILITY_TEST_MATRIX.md)
 
-静的CIだけでは60分の実カメラ動作は証明できません。
+## Limitations in v0.8.0
 
-v1.0.0前に [RELIABILITY_TEST_MATRIX.md](./RELIABILITY_TEST_MATRIX.md) の長時間利用、Review反復、カメラ切替、background復帰、保存、メモリ、resource releaseを実機確認します。
-
-## Browser support
-
-コア機能にはカメラ、`requestVideoFrameCallback()`、WebCodecsが必要です。
-
-Fullscreen、Screen Wake Lock、複数カメラ、Canvas `captureStream()`、`MediaRecorder` は任意機能です。
-
-## Limitations in v0.7.0
-
-- 実機での長時間Reliabilityマトリクスはまだ未完了
-- Adaptive Performanceの閾値はより広い端末検証が必要
+- 物理端末・実screen readerでの最終確認はまだ必要
+- 長時間Reliabilityマトリクスは引き続き必要
+- Adaptive Performance閾値の幅広い端末確認が必要
 - 音声録音なし
 - AI / 姿勢推定なし
-
-## Single HTML / offline behavior
-
-`dist/index.html`、`practice-mirror.html`、`dist/index.self-extract.html` を生成します。外部ランタイムライブラリは使用しません。
 
 ## Development
 

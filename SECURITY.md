@@ -1,6 +1,6 @@
 # Security and privacy
 
-Practice Mirror v0.7.0 processes camera frames, Review playback, reliability state, and clip export locally in the browser.
+Practice Mirror v0.8.0 processes camera frames, Review playback, reliability state, and clip export locally in the browser.
 
 ## Trust boundary
 
@@ -39,6 +39,12 @@ When hidden, the app releases Wake Lock and suspends active encoding/decoding.
 A browser may keep the existing camera track alive or end it. On foreground resume the app reuses a live track when available, otherwise it may request the same generic camera-facing preference again.
 
 A frozen Review can remain in memory across a temporary background suspension. Closing/leaving the page performs cleanup.
+
+## Accessibility state
+
+Accessibility-only runtime values such as input modality, live-region message text, focus bookkeeping, and auto-hide tabindex backups exist only in the page session.
+
+They are not persisted, transmitted, or derived from camera content.
 
 ## Local preferences
 
