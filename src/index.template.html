@@ -1430,7 +1430,7 @@
     }
 
     async function returnToPractice(){
-      if(state.phase!=="review"||state.exporting) return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
+      if(state.phase!=="review"||state.exporting) return; const focusFromReturn=document.activeElement===els.returnButton; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
       const transitionGeneration=state.generation; const track=state.stream?.getVideoTracks?.()[0];
       try{
         if(!track||track.readyState!=="live"){
@@ -1441,12 +1441,13 @@
         }else{
           configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; requestWakeLock(); updateReviewUI(); showControls();
         }
+        announce(t("practiceReturned")); if(focusFromReturn) focusSafely(els.stopButton);
       }catch(error){ handleRuntimeFailure(error); }
     }
 
     document.querySelectorAll(".delay-option[data-delay]").forEach(button=>button.addEventListener("click",()=>{ if(state.phase!=="idle") return; setDelaySeconds(button.dataset.delay); }));
     els.customDelayTrigger.addEventListener("click",()=>{ if(state.phase!=="idle") return; els.customDelayWrap.hidden=false; els.customDelayTrigger.setAttribute("aria-pressed","true"); document.querySelectorAll(".delay-option[data-delay]").forEach(button=>button.setAttribute("aria-pressed","false")); els.customDelayInput.value=String(state.delaySeconds); els.customDelayError.textContent=""; requestAnimationFrame(()=>els.customDelayInput.focus({preventScroll:true})); });
-    els.customDelayInput.addEventListener("input",()=>{ els.customDelayError.textContent=""; });
+    els.customDelayInput.addEventListener("input",()=>{ els.customDelayError.textContent=""; els.customDelayInput.setAttribute("aria-invalid","false"); });
     els.customDelayInput.addEventListener("change",normalizeCustomDelay);
     els.customDelayInput.addEventListener("blur",normalizeCustomDelay);
     document.querySelectorAll(".rate-button").forEach(button=>button.addEventListener("click",()=>{ const rate=Number(button.dataset.rate); if(state.phase!=="review"||!Number.isFinite(rate)) return; if(state.review.playing){ const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; state.review.positionUs=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); state.review.playbackBasePositionUs=state.review.positionUs; state.review.playbackBasePerfUs=performance.now()*1000; } state.review.rate=rate; updateReviewUI(); }));
@@ -1455,8 +1456,12 @@
     els.reviewSeek.addEventListener("input",()=>{ if(state.review.playing) pauseReview(); const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; state.review.positionUs=position; els.reviewCurrentTime.textContent=formatReviewTime(position); });
     els.reviewSeek.addEventListener("change",()=>{ const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; seekReview(position); });
     els.languageButton.addEventListener("click",()=>applyLanguage(state.language==="ja"?"en":"ja"));
-    els.helpButton.addEventListener("click",()=>els.helpDialog.showModal()); els.helpCloseButton.addEventListener("click",()=>els.helpDialog.close());
+    els.helpButton.addEventListener("click",()=>{ els.helpDialog.showModal(); focusSafely(els.helpCloseButton); });
+    els.helpCloseButton.addEventListener("click",()=>els.helpDialog.close());
+    els.helpDialog.addEventListener("close",()=>focusSafely(els.helpButton));
     els.helpDialog.addEventListener("click",event=>{ if(event.target===els.helpDialog){ const rect=els.helpDialog.getBoundingClientRect(); const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom; if(!inside) els.helpDialog.close(); }});
+    document.addEventListener("keydown",event=>{ if(event.key==="Tab"||event.key==="Enter"||event.key===" "||event.key.startsWith("Arrow")){ state.keyboardMode=true; showControls({schedule:false}); } });
+    document.addEventListener("pointerdown",()=>{ state.keyboardMode=false; },{capture:true,passive:true});
     els.stageShell.addEventListener("pointerdown",()=>showControls());
     els.mirrorPanel.addEventListener("pointermove",()=>{ if(shouldAutoHideControls()) showControls(); },{passive:true});
     els.mirrorPanel.addEventListener("focusin",()=>showControls({schedule:false}));
