@@ -37,6 +37,12 @@ Do not mark manual/device checks complete unless they were actually tested.
 
 ## Review
 
+- [ ] Review maximum defaults to 10 seconds.
+- [ ] Review maximum accepts integer values from 10 through 180.
+- [ ] invalid Review maximum does not overwrite the last valid setting.
+- [ ] Review maximum persists across reload.
+- [ ] with 180 seconds configured, Review becomes available after about 10 seconds rather than waiting 180 seconds.
+- [ ] after sufficient Practice time, Review can freeze close to the configured maximum.
 - [ ] whole Review video and seek bar fit in one viewport on desktop.
 - [ ] whole Review video and seek bar fit in one viewport on smartphone.
 - [ ] 0.25x / 0.5x / 1x / 2x.
