@@ -514,7 +514,7 @@
       updatePracticeUxButtons();
     }
     async function activateCameraStream(stream){
-      state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play();
+      state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play(); bindTrackLifecycle(stream.getVideoTracks()[0]);
       if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
       state.width=els.cameraVideo.videoWidth||stream.getVideoTracks()[0].getSettings().width||1280;
       state.height=els.cameraVideo.videoHeight||stream.getVideoTracks()[0].getSettings().height||720;
@@ -1089,10 +1089,10 @@
       if(state.review.seekFrame){ try{ state.review.seekFrame.close(); }catch(_error){} state.review.seekFrame=null; }
     }
     function clearReviewState(){ disposeReviewDecoder(); state.review.packets=[]; state.review.visibleStartUs=0; state.review.endUs=0; state.review.durationUs=0; state.review.positionUs=0; state.review.packetIndex=0; state.review.outputMode="play"; state.review.seekGeneration+=1; }
-    function stopStream(){ if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
+    function stopStream(){ clearTrackLifecycle(); if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
 
     async function stopPractice({message=true}={}){
-      if(state.exporting) return; state.stopping=true; state.generation+=1; clearControlsAutoHide(); setControlsHidden(false); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; stopStream(); state.phase="idle"; state.stopping=false;
+      if(state.exporting) return; state.stopping=true; state.generation+=1; stopReliabilityWatchdog(); clearControlsAutoHide(); setControlsHidden(false); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; state.encodedQueue.length=0; stopStream(); state.phase="idle"; state.reliability.suspended=false; state.reliability.suspendedFrom=null; state.reliability.recovering=false; state.stopping=false;
       await releaseWakeLock();
       if(document.fullscreenElement===els.mirrorPanel){ try{await document.exitFullscreen();}catch(_error){} }
       els.mirrorPanel.classList.remove("active"); els.startPanel.hidden=false; els.startButton.disabled=false; clearStageError(); hideNotice(els.runtimeNotice); resetCanvas(); updateReviewUI(); updatePracticeUxButtons();
@@ -1102,32 +1102,40 @@
     function handleRuntimeFailure(error){
       if(state.stopping||state.runtimeErrorShown) return;
       state.runtimeErrorShown=true; console.error("Practice Mirror runtime error",error); state.phase="error"; updatePhaseUI(); setStageError(t("runtimeTitle"),t("runtimeCopy"));
-      showNotice(els.runtimeNotice,"error",t("runtimeTitle"),error?.message?`${t("runtimeCopy")} (${error.message})`:t("runtimeCopy")); clearControlsAutoHide(); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); stopStream(); releaseWakeLock();
+      showNotice(els.runtimeNotice,"error",t("runtimeTitle"),error?.message?`${t("runtimeCopy")} (${error.message})`:t("runtimeCopy")); stopReliabilityWatchdog(); clearControlsAutoHide(); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); stopStream(); releaseWakeLock(); updateReliabilityDiagnostics();
+    }
+    function handleLiveCodecFailure(error,generation){
+      if(generation!==state.generation||state.stopping||state.reliability.suspended||state.reliability.recovering) return;
+      console.error("Practice Mirror live codec error",error);
+      void attemptLiveRecovery("codec-error");
     }
 
-    function encoderOutput(chunk,metadata){
+    function encoderOutput(chunk,metadata,generation){
+      if(generation!==state.generation||state.stopping) return;
       try{
         if(metadata?.decoderConfig){ state.decoderConfig=cloneDecoderConfig(metadata.decoderConfig); if(state.decoder&&!state.decoderConfigured){ state.decoder.configure(state.decoderConfig); state.decoderConfigured=true; } }
         if(!state.decoderConfigured&&state.decoder&&state.codec){ state.decoder.configure(state.codec.decoder); state.decoderConfigured=true; }
-        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; state.performance.encoded+=1; noteEncoderQueue(); pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); }
-      }catch(error){ handleRuntimeFailure(error); }
+        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; state.reliability.lastEncodedAt=performance.now(); state.performance.encoded+=1; noteEncoderQueue(); pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); }
+      }catch(error){ handleLiveCodecFailure(error,generation); }
     }
 
-    function decoderOutput(frame){
+    function decoderOutput(frame,generation){
+      if(generation!==state.generation||state.stopping){ try{frame.close();}catch(_error){} return; }
       try{
         if(state.phase==="warming"){ state.phase="practice"; els.stageOverlay.hidden=true; resetPerformanceWindow(); updatePhaseUI(); }
-        drawFrame(frame); state.latestRenderedTimestamp=frame.timestamp; if(state.phase==="practice") state.performance.rendered+=1;
+        drawFrame(frame); state.latestRenderedTimestamp=frame.timestamp; state.reliability.lastRenderedAt=performance.now(); if(state.phase==="practice") state.performance.rendered+=1;
         if(state.latestEncodedTimestamp!==null){ const currentDelay=Math.max(0,(state.latestEncodedTimestamp-frame.timestamp)/1e6); els.delayActualMeta.textContent=`${currentDelay.toFixed(1)} s`; }
-      }catch(error){ handleRuntimeFailure(error); }
+      }catch(error){ handleLiveCodecFailure(error,generation); }
       finally{ try{ frame.close(); }catch(_error){} }
     }
 
-    function scheduleDecode(){
+    function scheduleDecode(generation){
+      if(generation!==state.generation) return;
       if(state.phase!=="warming"&&state.phase!=="practice") return;
       const nowUs=Math.round(performance.now()*1000); const delayUs=state.delaySeconds*1e6; let decoded=0;
       try{ while(state.encodedQueue.length&&nowUs-state.encodedQueue[0].timestamp>=delayUs&&decoded<12){ const chunk=state.encodedQueue.shift(); if(state.decoderConfigured&&state.decoder?.state==="configured") state.decoder.decode(chunk); decoded+=1; } noteDecoderQueue(); }
-      catch(error){ handleRuntimeFailure(error); return; }
-      updateWarmup(nowUs); evaluatePerformanceWindow(performance.now()); state.schedulerId=requestAnimationFrame(scheduleDecode);
+      catch(error){ handleLiveCodecFailure(error,generation); return; }
+      updateWarmup(nowUs); evaluatePerformanceWindow(performance.now()); state.schedulerId=requestAnimationFrame(()=>scheduleDecode(generation));
     }
     function updateWarmup(nowUs){ if(state.phase!=="warming") return; const elapsed=Math.max(0,(nowUs-state.startPerformanceUs)/1e6); const progress=Math.min(1,elapsed/state.delaySeconds); els.progressBar.style.width=`${(progress*100).toFixed(1)}%`; els.warmupCount.textContent=`${Math.min(elapsed,state.delaySeconds).toFixed(1)} / ${state.delaySeconds.toFixed(1)} s`; }
     function scheduleCapture(generation){
@@ -1144,19 +1152,19 @@
               state.performance.backpressureSkips+=1;
             }
           }
-        }catch(error){ handleRuntimeFailure(error); return; }
+        }catch(error){ handleLiveCodecFailure(error,generation); return; }
         state.frameRequestId=els.cameraVideo.requestVideoFrameCallback(callback);
       };
       state.frameRequestId=els.cameraVideo.requestVideoFrameCallback(callback);
     }
 
     function configureLivePipeline(){
-      state.decoderConfig=null; state.decoderConfigured=false;
-      state.decoder=new VideoDecoder({output:decoderOutput,error:handleRuntimeFailure});
-      state.encoder=new VideoEncoder({output:encoderOutput,error:handleRuntimeFailure}); state.encoder.configure(state.codec.encoder);
+      state.decoderConfig=null; state.decoderConfigured=false; state.generation+=1; const generation=state.generation;
+      state.decoder=new VideoDecoder({output:frame=>decoderOutput(frame,generation),error:error=>handleLiveCodecFailure(error,generation)});
+      state.encoder=new VideoEncoder({output:(chunk,metadata)=>encoderOutput(chunk,metadata,generation),error:error=>handleLiveCodecFailure(error,generation)}); state.encoder.configure(state.codec.encoder);
       state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false; state.firstEncodedTimestamp=null; state.latestEncodedTimestamp=null; state.latestRenderedTimestamp=null; state.lastKeyframeUs=0; state.lastFrameUs=0;
-      state.startPerformanceUs=Math.round(performance.now()*1000); state.phase="warming"; state.generation+=1; const generation=state.generation;
-      resetPerformanceWindow(); setWarmupOverlay(); updatePhaseUI(); els.delayActualMeta.textContent=t("actualPending"); updateCapabilityDiagnostics(); scheduleCapture(generation); scheduleDecode();
+      state.startPerformanceUs=Math.round(performance.now()*1000); state.phase="warming"; const now=performance.now(); state.reliability.lastEncodedAt=now; state.reliability.lastRenderedAt=now;
+      resetPerformanceWindow(); setWarmupOverlay(); updatePhaseUI(); els.delayActualMeta.textContent=t("actualPending"); updateCapabilityDiagnostics(); startReliabilityWatchdog(); scheduleCapture(generation); scheduleDecode(generation);
     }
 
     async function startPractice(){
@@ -1257,7 +1265,7 @@
     async function startReview(){
       if(state.phase!=="practice") return;
       if(!historyReady()){ showNotice(els.runtimeNotice,"warning",t("reviewNotReadyTitle"),t("reviewNotReadyCopy")); return; }
-      hideNotice(els.runtimeNotice); state.phase="reviewPreparing"; updatePhaseUI(); setOverlay(t("reviewPreparingTitle"),t("reviewPreparingCopy")); cancelLiveLoops();
+      hideNotice(els.runtimeNotice); state.phase="reviewPreparing"; updatePhaseUI(); setOverlay(t("reviewPreparingTitle"),t("reviewPreparingCopy")); stopReliabilityWatchdog(); cancelLiveLoops();
       try{
         if(state.encoder?.state==="configured") await state.encoder.flush();
         const snapshot=buildReviewSnapshot(); if(!snapshot) throw new Error("Review snapshot is not decodable");
