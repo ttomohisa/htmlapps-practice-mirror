@@ -673,6 +673,7 @@
           state.captureTargetFps=Math.max(8,Math.min(qualityProfile().fps,cameraFps));
           state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
           state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+          if(!rel.recovering||rel.suspended||state.phase==="idle"||document.visibilityState!=="visible") return;
           if(!state.codec) throw Object.assign(new Error("No supported codec during recovery"),{practiceCode:"codec"});
           els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); configureLivePipeline();
         }
