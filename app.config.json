@@ -3,9 +3,9 @@
   "name": "Practice Mirror",
   "nameJa": "Practice Mirror",
   "slug": "practice-mirror",
-  "version": "0.9.0",
-  "description": "A local delayed practice mirror with frame review, guides, adaptive performance, local clip saving, and release-candidate mobile accessibility.",
-  "descriptionJa": "数秒遅れの映像を見ながらフォームを確認し、Review・ガイド・ローカル保存まで端末内で完結する練習ミラーのリリース候補です。",
+  "version": "1.0.0",
+  "description": "A local delayed camera mirror for self-practice with configurable Review history, frame inspection, guides, and seekable local clip saving.",
+  "descriptionJa": "数秒遅れの映像でフォームを確認し、10〜180秒のReview、コマ送り、ガイド、シーク可能なローカル保存までブラウザ内で行える練習ミラーです。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
