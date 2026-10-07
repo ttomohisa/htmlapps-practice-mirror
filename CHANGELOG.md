@@ -11,6 +11,8 @@
 
 ### Added
 
+- Configurable Review history from 10 to 180 seconds, defaulting to 10 seconds and persisted locally.
+- Review remains available after about 10 seconds even when a longer maximum is selected.
 - 2x Review playback.
 - Smartphone Practice tools toggle with the panel closed by default.
 - Collapsed Review Save section.
@@ -18,6 +20,7 @@
 
 ### Changed
 
+- Long Review history reuses encoded packet payloads when freezing Review and batches history pruning to avoid unnecessary long-buffer overhead.
 - Review controls are grouped into a compact Review dock with Back to practice and Stop together.
 - Review saving is WebM-only in v0.9.0 so the file can be post-processed locally for seekability.
 - Release documentation and checklist updated for the revised Review/save behavior.
