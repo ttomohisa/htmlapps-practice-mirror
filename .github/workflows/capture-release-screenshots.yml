@@ -32,9 +32,9 @@ jobs:
         with:
           node-version: 24
 
-      - name: Build standalone HTML
+      - name: Build standalone HTML for capture
         shell: pwsh
-        run: ./scripts/check-repository.ps1
+        run: ./build-standalone.ps1
 
       - name: Install pinned Playwright for capture
         shell: pwsh
