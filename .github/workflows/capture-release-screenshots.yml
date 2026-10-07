@@ -35,7 +35,7 @@ jobs:
 
       - name: Sync pinned Review export dependency lock
         shell: pwsh
-        run: ./scripts/sync-dependency-lock.ps1 -Id fix-webm-duration
+        run: ./scripts/sync-dependency-lock.ps1
 
       - name: Build standalone HTML for capture
         shell: pwsh
