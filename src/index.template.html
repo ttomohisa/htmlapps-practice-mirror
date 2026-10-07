@@ -585,6 +585,102 @@
       els.performanceMeta.textContent=`${tierLabel} · ${fps} · ${t(statusKey)}`;
     }
 
+    function updateReliabilityDiagnostics(){
+      const rel=state.reliability;
+      const status=rel.suspended?t("reliabilitySuspended"):rel.recovering?t("reliabilityRecovering"):t("reliabilityStable");
+      els.reliabilityMeta.textContent=`${status} · ${t("sessionCounts").replace("{recoveries}",String(rel.liveRecoveries+rel.reviewRecoveries)).replace("{reviews}",String(rel.reviewCycles))}`;
+    }
+    function clearTrackLifecycle(){
+      const rel=state.reliability;
+      if(rel.trackLifecycleTrack&&rel.trackEndHandler){
+        try{ rel.trackLifecycleTrack.removeEventListener("ended",rel.trackEndHandler); }catch(_error){}
+      }
+      rel.trackLifecycleTrack=null; rel.trackEndHandler=null;
+    }
+    function bindTrackLifecycle(track){
+      clearTrackLifecycle();
+      if(!track) return;
+      const handler=()=>{
+        if(state.stopping||state.phase==="idle"||state.reliability.suspended) return;
+        if(state.phase==="review"){
+          showNotice(els.runtimeNotice,"warning",t("cameraInterrupted"),t("practiceRestarting"));
+          return;
+        }
+        if(state.phase==="warming"||state.phase==="practice") void attemptLiveRecovery("camera-ended",{reacquire:true});
+      };
+      track.addEventListener("ended",handler);
+      state.reliability.trackLifecycleTrack=track; state.reliability.trackEndHandler=handler;
+    }
+    function resetRecoveryBudget(now=performance.now()){
+      const rel=state.reliability;
+      if(!rel.recoveryWindowStart||now-rel.recoveryWindowStart>=60000){ rel.recoveryWindowStart=now; rel.recoveryAttempts=0; }
+    }
+    function takeRecoverySlot(){
+      const now=performance.now(); resetRecoveryBudget(now);
+      if(state.reliability.recoveryAttempts>=MAX_RECOVERIES_PER_MINUTE) return false;
+      state.reliability.recoveryAttempts+=1; return true;
+    }
+    function liveQueueExceeded(){
+      if(state.encodedQueue.length<2||state.latestEncodedTimestamp===null) return false;
+      const first=state.encodedQueue[0]?.timestamp;
+      if(!Number.isFinite(first)) return false;
+      const span=state.latestEncodedTimestamp-first;
+      const maxSpan=(state.delaySeconds+8)*1e6;
+      const maxPackets=Math.ceil((state.delaySeconds+8)*Math.max(12,state.captureTargetFps||12)*1.7);
+      return span>maxSpan||state.encodedQueue.length>maxPackets;
+    }
+    function stopReliabilityWatchdog(){
+      if(state.reliability.watchdogId) window.clearInterval(state.reliability.watchdogId);
+      state.reliability.watchdogId=0;
+    }
+    function startReliabilityWatchdog(){
+      stopReliabilityWatchdog();
+      state.reliability.watchdogId=window.setInterval(()=>{
+        if(document.visibilityState!=="visible"||state.reliability.suspended||state.reliability.recovering||state.qualityChanging) return;
+        if(state.phase!=="warming"&&state.phase!=="practice") return;
+        const track=state.stream?.getVideoTracks?.()[0];
+        if(!track||track.readyState!=="live"){ void attemptLiveRecovery("camera-ended",{reacquire:true}); return; }
+        const now=performance.now();
+        if(state.reliability.lastEncodedAt&&now-state.reliability.lastEncodedAt>LIVE_STALL_MS){ void attemptLiveRecovery("encoder-stall"); return; }
+        if(state.phase==="practice"&&state.reliability.lastRenderedAt&&now-state.reliability.lastRenderedAt>LIVE_STALL_MS){ void attemptLiveRecovery("decoder-stall"); return; }
+        if(liveQueueExceeded()) void attemptLiveRecovery("queue-bound");
+      },RELIABILITY_WATCHDOG_MS);
+    }
+    async function attemptLiveRecovery(reason,{reacquire=false}={}){
+      const rel=state.reliability;
+      if(rel.recovering||rel.suspended||state.stopping||state.phase==="idle"||state.phase==="review"||state.phase==="reviewPreparing") return;
+      if(!takeRecoverySlot()){ handleRuntimeFailure(new Error(`Recovery limit reached after ${reason}`)); return; }
+      rel.recovering=true; updateReliabilityDiagnostics(); showControls({schedule:false});
+      const oldTrack=state.stream?.getVideoTracks?.()[0];
+      try{
+        state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false;
+        if(reacquire||!oldTrack||oldTrack.readyState!=="live"){
+          showNotice(els.runtimeNotice,"warning",t("cameraInterrupted"),t("practiceRestarting"));
+          stopStream();
+          const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
+          await activateCameraStream(stream);
+        }else{
+          const settings=oldTrack.getSettings();
+          state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width;
+          state.height=Number(settings.height)||els.cameraVideo.videoHeight||state.height;
+          const cameraFps=Math.max(8,Number(settings.frameRate)||state.captureTargetFps||30);
+          state.captureTargetFps=Math.max(8,Math.min(qualityProfile().fps,cameraFps));
+          state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
+          state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+          if(!state.codec) throw Object.assign(new Error("No supported codec during recovery"),{practiceCode:"codec"});
+          els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); configureLivePipeline();
+        }
+        rel.liveRecoveries+=1; hideNotice(els.runtimeNotice); AppToast.show({message:t("liveRecovered"),tone:"warning"}); requestWakeLock();
+      }catch(error){
+        console.error("Practice Mirror live recovery failed",reason,error);
+        rel.recovering=false; updateReliabilityDiagnostics();
+        handleRuntimeFailure(error);
+        return;
+      }finally{
+        rel.recovering=false; updateReliabilityDiagnostics();
+      }
+    }
+
     function resetPerformanceWindow(now=performance.now()){
       const perf=state.performance;
       perf.windowStart=now; perf.captureDue=0; perf.encoded=0; perf.rendered=0; perf.backpressureSkips=0; perf.encoderPeak=0; perf.decoderPeak=0;
