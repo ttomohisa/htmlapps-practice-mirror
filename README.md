@@ -17,7 +17,7 @@ Mobile screenshot: [assets/screenshot-mobile-en.png](assets/screenshot-mobile-en
 ## Features
 
 - **Delayed mirror** — 3 / 5 / 10 / 15 second presets or a custom 1–30 second delay.
-- **Previous-10-second Review** — Freeze the movement you just made without a normal record/stop workflow.
+- **Configurable Review history** — Default 10 seconds; set the maximum from 10 to 180 seconds. Review becomes available after about 10 seconds and freezes whatever history is currently available up to the configured maximum.
 - **Detailed inspection** — 0.25x / 0.5x / 1x / 2x playback, seeking, and frame stepping.
 - **Compact Review dock** — Playback, speed, seek, Back to practice, and Stop are grouped together; Save clip stays collapsed until needed.
 - **Alignment guides** — Add draggable vertical/horizontal guides; keyboard users can move them with Arrow keys.
@@ -34,8 +34,8 @@ Mobile screenshot: [assets/screenshot-mobile-en.png](assets/screenshot-mobile-en
 1. Choose the delay.
 2. Select **Start camera** and allow camera access.
 3. Wait for Warm-up.
-4. Practice while the screen shows the selected delay.
-5. Select **Review** after enough history is available.
+4. Practice while the screen shows the selected delay. Open **Review settings** before starting if you want more than the default 10-second history.
+5. Select **Review** after about 10 seconds; history keeps growing up to the configured maximum.
 6. Inspect the frozen clip with slow/fast playback, seek, or frame stepping.
 7. Open **Save clip** only if you want to keep it.
 8. Select **Back to practice** to rebuild the delayed buffer.
@@ -85,6 +85,8 @@ Release gates:
 - Core delayed playback requires WebCodecs support.
 - Review export is WebM-only in v0.9.0 so the app can repair duration metadata and prioritize seekable files.
 - Camera, Wake Lock, Fullscreen, and background behavior differ by browser/OS.
+- Longer Review history uses more memory; the 180-second maximum can retain tens of megabytes of compressed video depending on the active encoder settings.
+- Saving a long Review clip can take about the clip duration because export is reconstructed locally in real time.
 - Long sessions and camera switching consume CPU/battery.
 - Audio recording and AI pose estimation are intentionally not included.
 
