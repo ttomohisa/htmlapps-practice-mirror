@@ -130,6 +130,21 @@ Verify:
 
 ## H. Form validation
 
+### Review maximum setting
+
+Test 10, 180, blank, 9, 181, and decimal input.
+
+Verify:
+
+- default is 10 seconds,
+- 10 and 180 are valid,
+- out-of-range / decimal input exposes invalid state,
+- invalid input does not replace the last valid persisted setting,
+- the collapsed Review settings summary reflects the saved value,
+- Start with invalid Review input opens the setting and focuses the field.
+
+
+
 For custom delay test:
 
 - blank,
