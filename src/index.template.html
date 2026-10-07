@@ -347,7 +347,7 @@
       codec:null, decoderConfig:null, decoderConfigured:false, encodedQueue:[], historyPackets:[], frameRequestId:0,
       schedulerId:0, firstEncodedTimestamp:null, latestEncodedTimestamp:null, latestRenderedTimestamp:null,
       startPerformanceUs:0, lastKeyframeUs:0, lastFrameUs:0, frameIntervalUs:33333,
-      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", wakeEnabled:true, wakeLock:null, controlsTimer:0,
+      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, wakeEnabled:true, wakeLock:null, controlsTimer:0,
       review:{packets:[], visibleStartUs:0, endUs:0, durationUs:0, decoder:null, decoderGeneration:0, rafId:0,
         playing:false, rate:1, positionUs:0, playbackBasePerfUs:0, playbackBasePositionUs:0, packetIndex:0,
         outputMode:"play", seekTargetUs:0, seekFrame:null, seekFrameDistance:Infinity, seekGeneration:0}
@@ -458,7 +458,7 @@
     }
     function updatePracticeUxButtons(){
       const active=["warming","practice","reviewPreparing","review"].includes(state.phase);
-      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting;
+      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting||state.cameraDeviceCount<2;
       const fullscreenSupported=typeof els.mirrorPanel.requestFullscreen==="function"&&typeof document.exitFullscreen==="function";
       els.fullscreenButton.disabled=!active||!fullscreenSupported||state.exporting;
       const fullscreenActive=document.fullscreenElement===els.mirrorPanel;
@@ -481,6 +481,13 @@
     function cameraConstraints(facingMode=state.facingMode,{exact=false}={}){
       return {audio:false,video:{facingMode:exact?{exact:facingMode}:{ideal:facingMode},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}};
     }
+    async function refreshCameraDeviceCount(){
+      try{
+        const devices=await navigator.mediaDevices.enumerateDevices();
+        state.cameraDeviceCount=devices.filter(device=>device.kind==="videoinput").length;
+      }catch(_error){ state.cameraDeviceCount=0; }
+      updatePracticeUxButtons();
+    }
     async function activateCameraStream(stream){
       state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play();
       if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
@@ -495,7 +502,7 @@
       els.startPanel.hidden=true; els.mirrorPanel.classList.add("active"); clearStageError();
       els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(fps)} fps`;
       els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
-      await requestWakeLock(); updatePracticeUxButtons(); showControls();
+      await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls();
     }
     async function switchCamera(){
       if(!["warming","practice"].includes(state.phase)||state.exporting) return;
@@ -918,6 +925,7 @@
     }
 
     async function startPractice(){
+      if(els.customDelayTrigger.getAttribute("aria-pressed")==="true"&&!normalizeCustomDelay()) return;
       hideNotice(els.preflightNotice); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
       const caps=capabilityReport();
       if(!caps.ok){ const secureOnly=caps.missing.includes("secure-context")||caps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"error",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${caps.missing.join(", ")})`); return; }
