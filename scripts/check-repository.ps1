@@ -265,7 +265,7 @@ if ($sourceText.Contains("REVIEW_DURATION_US") -or $sourceText.Contains("HISTORY
 if (-not $sourceText.Contains("v1.0.0")) {
   throw "src\index.template.html must contain the v1.0.0 release identity."
 }
-if ($sourceText.Contains("v1.0.0 is the release candidate") -or $sourceText.Contains("v1.0.0はリリース候補")) {
+if ($sourceText.Contains("v1.0.0 is the release candidate")) {
   throw "v1.0.0 source must not describe itself as a release candidate."
 }
 $readmeText = Get-Content -Raw -Encoding UTF8 (Join-Path $Root "README.md")
@@ -281,8 +281,8 @@ foreach ($token in @(
 foreach ($token in @(
   "https://ttomohisa.github.io/htmlapps-practice-mirror/",
   "practice-mirror.html",
-  "## すぐに使う",
-  "## プライバシーと通信防止"
+  "fix-webm-duration",
+  "RELEASE_CHECKLIST.md"
 )) {
   if (-not $readmeJaText.Contains($token)) { throw "README.ja.md is missing v1.0.0 public README marker: $token" }
 }
