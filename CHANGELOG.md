@@ -2,6 +2,10 @@
 
 ## [0.9.0] - 2026-10-07
 
+### Fixed
+
+- Review playback now recreates the decoder from the nearest actual key frame after seek/flush, preventing `VideoDecoder` failures when Play follows Review preparation, seeking, or frame stepping.
+
 ### Release candidate
 
 - Froze feature work for final release validation.
