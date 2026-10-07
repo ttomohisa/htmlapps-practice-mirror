@@ -550,14 +550,15 @@
         try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next,{exact:true})); }
         catch(_exactError){ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next)); }
         if(switchToken!==state.cameraSwitchToken||state.reliability.suspended||state.phase==="idle"){ stream.getTracks().forEach(track=>track.stop()); return; }
-        state.facingMode=next; writeStorage("practice-mirror-facing",next);
-        await activateCameraStream(stream);
+        state.facingMode=next;
+        const activated=await activateCameraStream(stream); if(!activated) return;
+        writeStorage("practice-mirror-facing",next);
       }catch(error){
         stopStream(); disposeLiveCodecs();
         try{
           const recovery=await navigator.mediaDevices.getUserMedia(cameraConstraints(previous));
           if(switchToken!==state.cameraSwitchToken||state.reliability.suspended||state.phase==="idle"){ recovery.getTracks().forEach(track=>track.stop()); return; }
-          state.facingMode=previous; await activateCameraStream(recovery);
+          state.facingMode=previous; const recovered=await activateCameraStream(recovery); if(!recovered) return;
           showNotice(els.runtimeNotice,"warning",t("cameraSwitchFailed"),normalizedCameraError(error).copy);
         }catch(recoveryError){
           if(state.phase!=="idle"&&!state.reliability.suspended) handleRuntimeFailure(recoveryError);
@@ -670,7 +671,7 @@
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
           if(rel.suspended||!rel.recovering||state.phase==="idle"||document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); return; }
-          await activateCameraStream(stream);
+          const activated=await activateCameraStream(stream); if(!activated||rel.suspended||!rel.recovering) return;
         }else{
           const settings=oldTrack.getSettings();
           state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width;
@@ -1169,7 +1170,7 @@
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
           if(document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); rel.suspended=true; rel.suspendedFrom="practice"; state.phase="suspended"; updatePhaseUI(); return; }
           if(state.phase==="idle"||resumeGeneration!==state.generation){ stream.getTracks().forEach(track=>track.stop()); return; }
-          await activateCameraStream(stream);
+          const activated=await activateCameraStream(stream); if(!activated||state.reliability.suspended) return;
         }
         await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"});
       }catch(error){
@@ -1402,7 +1403,7 @@
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
           if(transitionGeneration!==state.generation||state.phase==="idle"){ stream.getTracks().forEach(item=>item.stop()); return; }
-          await activateCameraStream(stream);
+          const activated=await activateCameraStream(stream); if(!activated) return;
         }else{
           configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; requestWakeLock(); updateReviewUI(); showControls();
         }
