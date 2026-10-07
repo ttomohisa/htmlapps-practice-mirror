@@ -204,6 +204,20 @@ $practiceMirrorAccessibilityTokens = @(
   ".guide-line.horizontal{left:0;right:0;height:44px",
   ".secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px"
 )
+
+# Review playback must restart a freshly configured decoder from an actual key frame.
+$practiceMirrorReviewKeyframeTokens = @(
+  "prepareReviewPlaybackDecoder",
+  "playbackFloorUs",
+  'let index=-1;',
+  'if(keyIndex<0)',
+  'if(startIndex<0)'
+)
+foreach ($token in $practiceMirrorReviewKeyframeTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing Review key-frame restart marker: $token"
+  }
+}
 foreach ($token in $practiceMirrorAccessibilityTokens) {
   if (-not $sourceText.Contains([string]$token)) {
     throw "src\index.template.html is missing Practice Mirror accessibility marker: $token"
