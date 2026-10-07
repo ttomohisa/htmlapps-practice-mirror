@@ -1,71 +1,95 @@
 # Practice Mirror
 
-数秒前のカメラ映像を表示し、スポーツ・ダンス・トレーニングなどのフォームをその場で確認するWebアプリです。
+[![GitHub Pages](https://github.com/ttomohisa/htmlapps-practice-mirror/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/ttomohisa/htmlapps-practice-mirror/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Single HTML](https://img.shields.io/badge/distribution-single%20HTML-16624F)](practice-mirror.html)
 
-> v0.8.0ではMobile / Accessibilityを重点的に磨きました。タップ領域、狭いスマホ画面、横向き、キーボード時のauto-hide、フォーカス移動、読み上げ用状態通知を改善しています。
+[English README](README.md)
 
-## Features
+スポーツ・ダンス・トレーニングなどの自主練で、カメラ映像を数秒遅らせて表示する練習ミラーです。動き終わって画面を見ると、ちょうどさっきの自分を確認できます。
 
-- 3 / 5 / 10 / 15秒 + 1〜30秒自由設定
-- Adaptive Performance / Reliability
-- 前面/背面カメラ切替
-- 直前10秒Review
-- スロー再生、シーク、コマ送り
-- タッチ/キーボード対応の縦横ガイド
-- 左右反転
-- Reviewクリップのローカル保存
-- Fullscreen / Screen Wake Lock
-- スマホPracticeのauto-hide
-- 狭い縦画面 / 短い横画面向けレイアウト
-- 主要操作とガイドhit areaの約44pxタップ領域
-- キーボード利用中はauto-hideを停止
-- Start / Practice / Review間のフォーカス移動
-- 専用の読み上げ用status領域
-- 日本語 / Englishのaccessible name
-- マイク取得なし
-- `connect-src 'none'`
-- 単一HTML
+## スクリーンショット
 
-## Mobile / Accessibility
+[![Practice Mirror screenshot](assets/screenshot.png)](practice-mirror.html)
 
-スマホではPracticeツールを2列化し、Review/Stopや再生速度も狭い幅で崩れにくい配置にしています。
+スマートフォン版: [assets/screenshot-mobile.png](assets/screenshot-mobile.png)
 
-ガイド線自体は細いままですが、ドラッグ可能な領域は44pxへ広げています。
+## 主な機能
 
-Tabなどのキーボード操作を検出するとPractice操作は自動で隠れません。pointer向けauto-hideで非表示になった操作は、`inert`非対応ブラウザでもTab移動できないようにtabindexを退避します。
+- **遅延ミラー** — 3 / 5 / 10 / 15秒、または1〜30秒の自由設定。
+- **直前10秒Review** — 通常の録画開始/停止をせず、気になった動きを固定して確認。
+- **細かく見返す** — 0.25× / 0.5× / 1×、シーク、1コマ戻る/進む。
+- **縦横ガイド** — ドラッグとキーボード操作に対応。
+- **左右反転** — 表示だけを反転し、圧縮映像自体は変更しません。
+- **必要な場面だけ保存** — Reviewクリップを明示操作で端末へ保存。MP4対応時はMP4を優先し、それ以外ではWebM。
+- **Practice向けUI** — カメラ切替、全画面、Screen Wake Lock、スマホauto-hide、横向きレイアウト。
+- **Adaptive / Reliability** — 継続負荷時の品質調整、bounded buffer、カメラ/codec異常の限定復旧。
+- **日本語 / English** — 同じ単一HTML内で切り替え。
+- **ローカル処理** — カメラ映像、Review、ガイド、性能/Reliability情報はブラウザ内で扱います。
 
-Review開始やReview利用可能、background復帰など重要状態は、画面全体をlive regionにせず専用status領域で通知します。
+## 使い方
 
-詳しい実機確認項目は [MOBILE_ACCESSIBILITY_TEST_MATRIX.md](./MOBILE_ACCESSIBILITY_TEST_MATRIX.md) にまとめています。
+1. 遅延秒数を選びます。
+2. **カメラを開始** を押し、カメラ利用を許可します。
+3. Warm-upを待ちます。
+4. 遅延映像を見ながら練習します。
+5. 履歴がたまったら **Review** を押します。
+6. スロー再生、シーク、コマ送りで確認します。
+7. 残したい場合だけReviewクリップを保存します。
+8. **練習に戻る** で遅延バッファを作り直します。
+9. 終わったら **終了** を押します。
 
-## Privacy
+## プライバシー
 
-カメラ映像、性能情報、Reliability情報、アクセシビリティ用状態は端末内だけで扱います。
+単一HTML版はカメラ映像を外部サーバーへアップロードせず、マイク音声も要求しません。
 
-映像アップロード、マイク取得、Analytics / telemetryはありません。
+- CSPは `connect-src 'none'`。
+- 外部runtime script/style/fontなし。
+- アプリ独自のAnalytics / telemetryなし。
+- 動画の自動永続保存なし。
+- 明示保存時だけ一時Blob URLを使用し、後で解放。
 
-## Release validation
+## 対応ブラウザ条件
 
-v1.0.0前に以下を両方確認します。
+コア機能には安全なカメラ利用環境と `getUserMedia()`、`requestVideoFrameCallback()`、`VideoFrame`、`VideoEncoder`、`VideoDecoder`、WebCodecsのH.264またはVP8対応が必要です。
 
-- [MOBILE_ACCESSIBILITY_TEST_MATRIX.md](./MOBILE_ACCESSIBILITY_TEST_MATRIX.md)
-- [RELIABILITY_TEST_MATRIX.md](./RELIABILITY_TEST_MATRIX.md)
+Fullscreen、Screen Wake Lock、複数カメラ、Canvas `captureStream()`、`MediaRecorder` は任意機能です。
 
-## Limitations in v0.8.0
+## 単一HTML
 
-- 物理端末・実screen readerでの最終確認はまだ必要
-- 長時間Reliabilityマトリクスは引き続き必要
-- Adaptive Performance閾値の幅広い端末確認が必要
-- 音声録音なし
-- AI / 姿勢推定なし
+ビルドすると以下を生成します。
+
+- `dist/index.html`
+- `practice-mirror.html`
+- `dist/index.self-extract.html`
+
+リポジトリ直下の `practice-mirror.html` は読みやすいstandalone buildと同一内容です。
+
+## v0.9.0 Release Candidate
+
+機能追加を止め、公開前の最終確認を行います。スマートフォン/PC、日本語/English、保存、カメラ生命周期、アクセシビリティ、長時間利用、単一HTML、CSP/外部通信、README、favicon、スクリーンショットを確認します。
+
+確認項目:
+
+- [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
+- [MOBILE_ACCESSIBILITY_TEST_MATRIX.md](MOBILE_ACCESSIBILITY_TEST_MATRIX.md)
+- [RELIABILITY_TEST_MATRIX.md](RELIABILITY_TEST_MATRIX.md)
+
+## 制限
+
+- 遅延ミラー本体にはWebCodecs対応が必要です。
+- MP4保存対応はブラウザ差があり、必要に応じてWebMを使用します。
+- カメラ、Wake Lock、Fullscreen、background動作にはブラウザ/OS差があります。
+- 長時間利用やカメラ切替はCPU/バッテリーを使用します。
+- 音声録音とAI姿勢推定は意図的に含めていません。
 
 ## Development
 
-```powershell
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-powershell-syntax.ps1
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-repository.ps1
-```
+    powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-powershell-syntax.ps1
+    powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-repository.ps1
 
 ## License
 
-MIT License. See `LICENSE`.
+Copyright © 2026 ttomohisa
+
+[MIT License](LICENSE)
