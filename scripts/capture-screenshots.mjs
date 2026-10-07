@@ -16,7 +16,7 @@ function mime(filePath) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", "http://127.0.0.1");
-    const relative = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\\/+/, "");
+    const relative = url.pathname === "/" ? "index.html" : url.pathname.replace(/^[/]+/, "");
     const filePath = path.resolve(root, relative);
     if (!filePath.startsWith(root)) {
       res.writeHead(403);
