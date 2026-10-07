@@ -384,7 +384,7 @@
       document.querySelectorAll("[data-i18n]").forEach(node=>{ const key=node.dataset.i18n; if(translations[lang][key]) node.textContent=translations[lang][key]; });
       document.querySelectorAll("[data-i18n-aria]").forEach(node=>{ const key=node.dataset.i18nAria; if(translations[lang][key]) node.setAttribute("aria-label",translations[lang][key]); });
       document.querySelectorAll("[data-lang-block]").forEach(node=>{ node.hidden=node.dataset.langBlock!==lang; });
-      els.languageButton.textContent=lang==="ja"?"EN":"JA"; document.title=lang==="ja"?APP_CONFIG.nameJa:APP_CONFIG.name; renderGuides(); updatePhaseUI(); updateReviewUI();
+      els.languageButton.textContent=lang==="ja"?"EN":"JA"; document.title=lang==="ja"?APP_CONFIG.nameJa:APP_CONFIG.name; if(els.customDelayError.textContent) els.customDelayError.textContent=t("delayInvalid"); renderGuides(); updatePhaseUI(); updateReviewUI();
     }
     function updateDelayLabels(){
       els.delayChip.textContent=state.phase==="review"||state.phase==="reviewPreparing"?t("reviewChip"):(state.language==="ja"?`${state.delaySeconds}${t("seconds")}`:`${state.delaySeconds} ${t("seconds")}`);
@@ -517,6 +517,7 @@
         state.facingMode=next; writeStorage("practice-mirror-facing",next);
         await activateCameraStream(stream);
       }catch(error){
+        stopStream(); disposeLiveCodecs();
         try{
           const recovery=await navigator.mediaDevices.getUserMedia(cameraConstraints(previous));
           state.facingMode=previous; await activateCameraStream(recovery);
