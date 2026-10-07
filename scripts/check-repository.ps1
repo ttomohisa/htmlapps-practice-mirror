@@ -123,6 +123,31 @@ foreach ($token in @("bytesAsync", "blobUrlAsync", "outputFilename", "window.App
   if (-not $sourceText.Contains($token)) { throw "src\index.template.html is missing required template behavior marker: $token" }
 }
 
+# Practice Mirror reliability regression contract.
+$practiceMirrorReliabilityTokens = @(
+  "RELIABILITY_WATCHDOG_MS",
+  "MAX_RECOVERIES_PER_MINUTE",
+  "liveQueueExceeded",
+  "attemptLiveRecovery",
+  "suspendSessionForBackground",
+  "resumeSessionFromBackground",
+  "attemptReviewRecovery",
+  "cameraSwitchToken",
+  "state.review.degraded",
+  'window.addEventListener("pageshow"'
+)
+foreach ($token in $practiceMirrorReliabilityTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing Practice Mirror reliability marker: $token"
+  }
+}
+if (-not $sourceText.Contains("connect-src 'none'")) {
+  throw "Practice Mirror must keep runtime network access blocked."
+}
+if (-not $sourceText.Contains("audio:false")) {
+  throw "Practice Mirror camera capture must keep microphone audio disabled."
+}
+
 $builderText = Get-Content -Raw -Encoding UTF8 (Join-Path $Root "build-standalone.ps1")
 foreach ($token in @("compressionSetting", "Compress-GzipBytes", "build-size-report.json", "sizeBudget", "DependencyLockPath", "tarballSha256", "__EMBEDDED_ASSET_BUNDLE_JSON__", "AppIconPath", "__APP_ICON_DATA_URI__", "rootHtmlOutputPath", 'StartsWith("htmlapps-"')) {
   if (-not $builderText.Contains($token)) { throw "build-standalone.ps1 is missing required asset pipeline marker: $token" }
