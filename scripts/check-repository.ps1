@@ -148,6 +148,29 @@ if (-not $sourceText.Contains("audio:false")) {
   throw "Practice Mirror camera capture must keep microphone audio disabled."
 }
 
+# Practice Mirror mobile/accessibility regression contract.
+$practiceMirrorAccessibilityTokens = @(
+  'id="appLiveRegion"',
+  "setAutoHideAccessibility",
+  "keyboardMode",
+  'aria-valuetext',
+  'aria-invalid="false"',
+  'aria-keyshortcuts',
+  'guide.orientation==="vertical"?"horizontal":"vertical"',
+  "safe-area-inset-left",
+  ".guide-line.vertical{top:0;bottom:0;width:44px",
+  ".guide-line.horizontal{left:0;right:0;height:44px",
+  ".secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px"
+)
+foreach ($token in $practiceMirrorAccessibilityTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing Practice Mirror accessibility marker: $token"
+  }
+}
+if ($sourceText.Contains('<section class="workspace" aria-live="polite">')) {
+  throw "Practice Mirror must not make the entire workspace an aria-live region."
+}
+
 $builderText = Get-Content -Raw -Encoding UTF8 (Join-Path $Root "build-standalone.ps1")
 foreach ($token in @("compressionSetting", "Compress-GzipBytes", "build-size-report.json", "sizeBudget", "DependencyLockPath", "tarballSha256", "__EMBEDDED_ASSET_BUNDLE_JSON__", "AppIconPath", "__APP_ICON_DATA_URI__", "rootHtmlOutputPath", 'StartsWith("htmlapps-"')) {
   if (-not $builderText.Contains($token)) { throw "build-standalone.ps1 is missing required asset pipeline marker: $token" }
