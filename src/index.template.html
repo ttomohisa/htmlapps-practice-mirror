@@ -1163,7 +1163,7 @@
 
       state.phase="suspended";
       setOverlay(t("suspendedStatus"),t("backgroundPaused"),{progress:false});
-      updatePhaseUI(); updateReviewUI(); updateExportUI(); updateReliabilityDiagnostics();
+      updatePhaseUI(); updateReviewUI(); updateExportUI(); updateReliabilityDiagnostics(); announce(t("backgroundPaused"));
     }
     async function resumeSessionFromBackground(){
       const rel=state.reliability;
@@ -1203,7 +1203,7 @@
           if(state.phase==="idle"||resumeGeneration!==state.generation){ stream.getTracks().forEach(track=>track.stop()); return; }
           const activated=await activateCameraStream(stream); if(!activated||state.reliability.suspended) return;
         }
-        await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"});
+        await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"}); announce(t("backgroundResumed"));
       }catch(error){
         rel.suspended=false; rel.suspendedFrom=null; updateReliabilityDiagnostics();
         handleRuntimeFailure(error);
