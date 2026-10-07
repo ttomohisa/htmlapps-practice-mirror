@@ -1,4 +1,4 @@
-# Practice Mirror v0.7.0 — Reliability Test Matrix
+# Practice Mirror v1.0.0 — Reliability Test Matrix
 
 This file defines the real-device reliability gate that static CI cannot prove.
 

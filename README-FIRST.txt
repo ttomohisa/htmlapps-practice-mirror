@@ -1,24 +1,22 @@
 Practice Mirror
 ===============
 
-v0.9.0 is the release candidate.
+Current release target: v1.0.0.
 
-Read APP_SPEC.md, RELEASE_CHECKLIST.md, MOBILE_ACCESSIBILITY_TEST_MATRIX.md, and RELIABILITY_TEST_MATRIX.md.
+Public demo:
+https://ttomohisa.github.io/htmlapps-practice-mirror/
 
-Canonical artwork: assets/favicon.svg.
-The build embeds that SVG into both browser favicon and upper-left app icon.
+Read README.md / README.ja.md for public usage.
+Read APP_SPEC.md for product/build scope.
+Use RELEASE_CHECKLIST.md, MOBILE_ACCESSIBILITY_TEST_MATRIX.md, and RELIABILITY_TEST_MATRIX.md for release validation.
 
-Release screenshots:
-- assets/screenshot.png
-- assets/screenshot-en.png
-- assets/screenshot-mobile.png
-- assets/screenshot-mobile-en.png
-
-Review history defaults to 10 seconds and is configurable from 10 to 180 seconds.
-Review becomes available after about 10 seconds; longer settings extend the retained compressed history.
-
-Feature work is frozen for v0.9.0.
-Fix release-blocking bugs, packaging/documentation issues, and validation failures only.
+Canonical icon/favicon: assets/favicon.svg.
+Generated readable standalone: practice-mirror.html.
+Generated Pages artifact: dist/index.html.
+Generated self-extracting standalone: dist/index.self-extract.html.
+The v1.0.0 practice-mirror.html and the four release screenshots have been generated from the current source and should not be hand-edited.
+The screenshot workflow regenerates the four screenshots; the tracked standalone HTML is refreshed as part of release preparation.
 
 Edit src/index.template.html, not generated HTML.
-The user merges the PR. Do not merge, publish a release/tag, or change Browser Kitty itself.
+Run the repository checks before completion.
+The user merges the PR. Do not merge or create the release tag without the user's instruction.

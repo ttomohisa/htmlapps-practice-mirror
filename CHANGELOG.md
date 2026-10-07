@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0] - 2026-10-07
+
+### Stable release
+
+- Promoted the v0.9.0 release-candidate feature set to the first stable Practice Mirror release.
+- Published the verified GitHub Pages demo and repository-root single HTML download path.
+- Rewrote Japanese / English README files using the public-app structure established by PDF Organizer: demo, quick start, usage, Pages publishing, build layout, privacy, limitations, dependencies, and contribution guidance.
+- The release includes the generated repository-root `practice-mirror.html`; release CI regenerates and verifies the current Japanese / English desktop/mobile screenshots.
+- Core behavior remains: configurable delayed Practice, 10–180 second Review history, frame inspection, guides/Mirror, seekable WebM save, adaptive performance, reliability recovery, and mobile/accessibility support.
+
+
 ## [0.9.0] - 2026-10-07
 
 ### Fixed
