@@ -1,0 +1,56 @@
+name: Capture release screenshots
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "app.config.json"
+      - "assets/favicon.svg"
+      - "scripts/capture-screenshots.mjs"
+      - ".github/workflows/capture-release-screenshots.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Build standalone HTML
+        shell: pwsh
+        run: ./scripts/check-repository.ps1
+
+      - name: Install pinned Playwright for capture
+        shell: bash
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Capture Japanese and English screenshots
+        shell: bash
+        run: node ./scripts/capture-screenshots.mjs
+
+      - name: Upload screenshot artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: practice-mirror-screenshots-${{ github.event.pull_request.head.sha }}
+          path: |
+            assets/screenshot.png
+            assets/screenshot-en.png
+            assets/screenshot-mobile.png
+            assets/screenshot-mobile-en.png
+          if-no-files-found: error
+          retention-days: 14
