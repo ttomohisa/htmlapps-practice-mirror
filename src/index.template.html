@@ -142,7 +142,12 @@
             </div>
           </div>
         </div>
-        <div id="stageToolRow" class="stage-tool-row" role="toolbar" data-i18n-aria="viewToolsAria" aria-label="表示とガイド">
+        <div id="practiceTools" class="practice-tools">
+          <button id="toolsToggleButton" class="secondary-button tools-toggle-button" type="button" aria-expanded="false" aria-controls="stageToolRow">
+            <span data-i18n="toolsButton">操作</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div id="stageToolRow" class="stage-tool-row" role="toolbar" data-i18n-aria="viewToolsAria" aria-label="表示とガイド">
           <button id="addVerticalGuideButton" class="secondary-button tool-button" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M7 8h10M7 16h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             <span data-i18n="verticalGuide">縦ガイド</span>
@@ -171,6 +176,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
             <span data-i18n="keepAwake">画面を点灯</span>
           </button>
+          </div>
         </div>
         <div id="stageControls" class="stage-controls">
           <div class="stage-summary">
@@ -191,10 +197,13 @@
               <strong class="review-title" data-i18n="reviewTitle">直前10秒を確認</strong>
               <span id="reviewDurationMeta" class="review-subtitle"></span>
             </div>
-            <button id="returnButton" class="secondary-button" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7-5 5 5 5M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span data-i18n="returnButton">練習に戻る</span>
-            </button>
+            <div class="review-head-actions">
+              <button id="returnButton" class="secondary-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7-5 5 5 5M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span data-i18n="returnButton">練習に戻る</span>
+              </button>
+              <button id="reviewStopButton" class="secondary-button" type="button" data-i18n="stopButton">終了</button>
+            </div>
           </div>
           <div class="review-transport">
             <div class="frame-group" role="group" data-i18n-aria="frameStepAria" aria-label="コマ送り">
@@ -213,6 +222,7 @@
               <button class="secondary-button rate-button" type="button" data-rate="0.25" aria-pressed="false">0.25×</button>
               <button class="secondary-button rate-button" type="button" data-rate="0.5" aria-pressed="false">0.5×</button>
               <button class="secondary-button rate-button" type="button" data-rate="1" aria-pressed="true">1×</button>
+              <button class="secondary-button rate-button" type="button" data-rate="2" aria-pressed="false">2×</button>
             </div>
           </div>
           <label class="seek-wrap">
@@ -220,7 +230,9 @@
             <input id="reviewSeek" class="review-seek" type="range" min="0" max="1000" value="0" step="1">
           </label>
           <div class="review-time"><span id="reviewCurrentTime">0:00.0</span><span id="reviewTotalTime">0:10.0</span></div>
-          <div class="export-panel">
+          <details id="reviewExportDetails" class="review-export-details">
+            <summary data-i18n="saveOptions">クリップ保存</summary>
+            <div class="export-panel">
             <div class="export-row">
               <label class="export-field" for="outputFilename">
                 <span class="export-label" data-i18n="outputFilenameLabel">保存ファイル名</span>
@@ -239,7 +251,8 @@
               <span id="exportProgressText" class="export-progress-text"></span>
             </div>
             <p id="exportMeta" class="export-meta"></p>
-          </div>
+            </div>
+          </details>
         </div>
         <div id="runtimeNotice" class="notice" role="status"></div>
         <details class="diagnostics">
