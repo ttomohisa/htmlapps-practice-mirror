@@ -1,6 +1,6 @@
 # Offline / local-processing verification
 
-Practice Mirror must perform delayed video, Review, export, adaptive performance, and reliability recovery without runtime network access.
+Practice Mirror must perform delayed video, Review, export, adaptive performance, reliability recovery, and accessibility UI behavior without runtime network access.
 
 ## Static checks
 
@@ -8,23 +8,28 @@ Practice Mirror must perform delayed video, Review, export, adaptive performance
 - no external runtime script/style/font/API dependency
 - `dependencies.json` remains empty
 - camera capture uses `audio: false`
-- no fetch/XHR/WebSocket/EventSource/telemetry endpoint
-- camera IDs/labels are not persisted
-- reliability/performance counters are not persisted
-- Review/live buffers are bounded in source logic
-- background lifecycle has no server dependency
+- no analytics / telemetry endpoint
+- dedicated `appLiveRegion` exists
+- entire workspace is not an aria-live region
+- auto-hide has explicit keyboard-focus fallback
+- guide hit areas and primary action sizes meet the app's touch-target contract
+- custom delay exposes aria-invalid / described-by
+- Review seek exposes aria-valuetext
 
 ## Runtime checks
 
 1. Build `dist/index.html`.
-2. Open DevTools Network.
-3. Start Practice and confirm no runtime application request.
-4. Enter Review, export, switch camera, rotate, use Fullscreen, and background/resume.
-5. Confirm no network request is introduced by recovery paths.
-6. Confirm background Practice returns through a new Warm-up rather than stale delayed frames.
-7. Confirm background Review can resume its frozen clip where supported.
-8. Confirm Stop releases camera and Wake Lock.
-9. Confirm no reliability/performance key is added to localStorage.
-10. Complete the real-device cases in `RELIABILITY_TEST_MATRIX.md`.
+2. Confirm no runtime network request after load.
+3. Run Japanese and English Start → Practice → Review → Back flows.
+4. Verify mobile portrait and landscape without horizontal scrolling.
+5. Verify keyboard navigation does not allow controls to auto-hide.
+6. Verify focus transitions out of hidden panels.
+7. Verify Help restores focus.
+8. Verify custom-delay invalid state and focus.
+9. Verify guide keyboard operation.
+10. Verify Review seek accessible value text.
+11. Verify important state announcements do not spam on every frame/timer tick.
+12. Complete `MOBILE_ACCESSIBILITY_TEST_MATRIX.md`.
+13. Complete relevant `RELIABILITY_TEST_MATRIX.md` cases.
 
-Static/CI verification does not replace long-session camera testing.
+Static/CI checks do not replace physical-device or screen-reader testing.

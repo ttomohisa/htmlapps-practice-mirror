@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0] - 2026-10-07
+
+### Added
+
+- Dedicated polite screen-reader status region for important state changes.
+- Keyboard-modality detection that prevents Practice auto-hide.
+- Explicit tabindex fallback for hidden controls when `inert` is unavailable.
+- Accessible current/total value text for Review seek.
+- Guide keyboard shortcut metadata and movement-axis slider orientation.
+- Custom-delay `aria-describedby` / `aria-invalid` behavior.
+- `MOBILE_ACCESSIBILITY_TEST_MATRIX.md`.
+
+### Changed
+
+- Primary touch targets and guide drag hit areas increased to approximately 44px.
+- Smartphone Practice toolbar uses a two-column grid.
+- Review transport and speed controls are more stable at narrow widths.
+- Short-landscape control rail is narrower and hardened against horizontal overflow.
+- Mobile/fullscreen/dialog/toast spacing respects safe-area insets.
+- Start / Review / Back to Practice / Stop / Help transitions restore focus to visible controls.
+- Whole-workspace `aria-live` usage was removed in favor of targeted status announcements.
+- Long output filenames remain contained within the export control.
+
+
 ## [0.7.0] - 2026-10-07
 
 ### Added
