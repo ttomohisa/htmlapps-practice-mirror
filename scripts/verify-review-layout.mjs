@@ -69,6 +69,9 @@ async function validateFullscreen(){
     const stageCenter=stage.x+stage.width/2; const controlsCenter=controls.x+controls.width/2;
     if(Math.abs(stageCenter-viewport.width/2)>10) throw new Error(`fullscreen stage off center: ${stageCenter}`);
     if(Math.abs(stageCenter-controlsCenter)>10) throw new Error(`fullscreen controls not aligned: ${JSON.stringify({stage,controls})}`);
+    if(controls.y+controls.height>viewport.height-4) throw new Error(`fullscreen bottom controls outside viewport: ${JSON.stringify({stage,controls,viewport})}`);
+    const tools=await page.locator("#practiceTools").boundingBox();
+    if(!tools||tools.y+tools.height>viewport.height-4) throw new Error(`fullscreen tool row outside viewport: ${JSON.stringify({tools,viewport})}`);
     await page.screenshot({path:path.join(out,"fullscreen.png"),fullPage:false});
   }else{ console.log("Fullscreen API unavailable in headless browser; skipped fullscreen assertion."); }
   await context.close();
