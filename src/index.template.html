@@ -400,6 +400,7 @@
       els.appLiveRegion.textContent="";
       window.requestAnimationFrame(()=>{ if(state.lastAnnouncement===text) els.appLiveRegion.textContent=text; });
     }
+    function focusSafely(node){ window.requestAnimationFrame(()=>{ if(node&&!node.disabled&&!node.hidden) node.focus({preventScroll:true}); }); }
     function detectLanguage(){ const saved=readStorage("practice-mirror-language"); if(saved==="ja"||saved==="en") return saved; if(APP_CONFIG.defaultLanguage==="ja"||APP_CONFIG.defaultLanguage==="en") return APP_CONFIG.defaultLanguage; return navigator.language&&navigator.language.toLowerCase().startsWith("ja")?"ja":"en"; }
     function formatReviewTime(us){ const seconds=Math.max(0,us/1e6); const minutes=Math.floor(seconds/60); return `${minutes}:${(seconds-minutes*60).toFixed(1).padStart(4,"0")}`; }
     function applyLanguage(lang){
@@ -538,6 +539,7 @@
     }
     async function activateCameraStream(stream){
       const activationGeneration=state.generation;
+      const focusFromStart=document.activeElement===els.startButton;
       state.stream=stream; els.cameraVideo.srcObject=stream; await els.cameraVideo.play(); bindTrackLifecycle(stream.getVideoTracks()[0]);
       if(activationGeneration!==state.generation||state.phase==="idle"||state.reliability.suspended) return false;
       if(!els.cameraVideo.videoWidth||!els.cameraVideo.videoHeight) await new Promise(resolve=>els.cameraVideo.addEventListener("loadedmetadata",resolve,{once:true}));
@@ -559,6 +561,8 @@
       els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
       resetPerformanceWindow(); updateCapabilityDiagnostics();
       await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls(); if(document.hidden) await suspendSessionForBackground();
+      if(focusFromStart) focusSafely(els.stopButton);
+      announce(t("cameraReady"));
       return true;
     }
     async function switchCamera(){
@@ -1211,7 +1215,7 @@
       await releaseWakeLock();
       if(document.fullscreenElement===els.mirrorPanel){ try{await document.exitFullscreen();}catch(_error){} }
       els.mirrorPanel.classList.remove("active"); els.startPanel.hidden=false; els.startButton.disabled=false; clearStageError(); hideNotice(els.runtimeNotice); resetCanvas(); updateReviewUI(); updatePracticeUxButtons();
-      if(message) showNotice(els.preflightNotice,"",t("stopped"),t("localOnly"));
+      if(message){ showNotice(els.preflightNotice,"",t("stopped"),t("localOnly")); announce(t("stopped")); focusSafely(els.startButton); }
     }
 
     function handleRuntimeFailure(error){
@@ -1230,7 +1234,7 @@
       try{
         if(metadata?.decoderConfig){ state.decoderConfig=cloneDecoderConfig(metadata.decoderConfig); if(state.decoder&&!state.decoderConfigured){ state.decoder.configure(state.decoderConfig); state.decoderConfigured=true; } }
         if(!state.decoderConfigured&&state.decoder&&state.codec){ state.decoder.configure(state.codec.decoder); state.decoderConfigured=true; }
-        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; state.reliability.lastEncodedAt=performance.now(); state.performance.encoded+=1; noteEncoderQueue(); pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); }
+        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; state.reliability.lastEncodedAt=performance.now(); state.performance.encoded+=1; noteEncoderQueue(); pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); announce(t("reviewAvailable")); }
       }catch(error){ handleLiveCodecFailure(error,generation); }
     }
 
@@ -1283,7 +1287,7 @@
     }
 
     async function startPractice(){
-      if(els.customDelayTrigger.getAttribute("aria-pressed")==="true"&&!normalizeCustomDelay()) return;
+      if(els.customDelayTrigger.getAttribute("aria-pressed")==="true"&&!normalizeCustomDelay()){ focusSafely(els.customDelayInput); return; }
       hideNotice(els.preflightNotice); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
       state.cameraSwitchToken+=1; state.cameraSwitching=false; stopReliabilityWatchdog(); state.reliability.suspended=false; state.reliability.suspendedFrom=null; state.reliability.recovering=false; state.reliability.recoveryWindowStart=performance.now(); state.reliability.recoveryAttempts=0; state.reliability.liveRecoveries=0; state.reliability.reviewRecoveries=0; state.reliability.reviewCycles=0; updateReliabilityDiagnostics();
       state.qualityIndex=chooseInitialQualityIndex(); state.qualityChanging=false; state.performance.overloadWindows=0; state.performance.lastChangeAt=performance.now(); state.performance.measuredFps=0; state.performance.status="watching"; updateCapabilityDiagnostics();
@@ -1326,6 +1330,7 @@
       console.error("Practice Mirror Review degraded",error);
       state.review.recovering=false; state.review.degraded=true; pauseReview({update:false}); disposeReviewDecoder(); state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); updateReliabilityDiagnostics();
       showNotice(els.runtimeNotice,"warning",t("reviewDegraded"),error?.message?error.message:t("reviewFailedCopy"));
+      focusSafely(els.returnButton);
     }
     async function attemptReviewRecovery(error){
       if(state.phase!=="review"||state.review.recovering||!state.review.packets.length) return;
@@ -1411,6 +1416,7 @@
 
     async function startReview(){
       if(state.phase!=="practice") return;
+      const focusFromReview=document.activeElement===els.reviewButton;
       if(!historyReady()){ showNotice(els.runtimeNotice,"warning",t("reviewNotReadyTitle"),t("reviewNotReadyCopy")); return; }
       const liveGeneration=state.generation;
       hideNotice(els.runtimeNotice); state.phase="reviewPreparing"; updatePhaseUI(); setOverlay(t("reviewPreparingTitle"),t("reviewPreparingCopy")); stopReliabilityWatchdog(); cancelLiveLoops();
@@ -1419,8 +1425,8 @@
         if(state.reliability.suspended||liveGeneration!==state.generation) return;
         const snapshot=buildReviewSnapshot(); if(!snapshot) throw new Error("Review snapshot is not decodable");
         disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.review.packets=snapshot.packets; state.review.visibleStartUs=snapshot.visibleStartUs; state.review.endUs=snapshot.endUs; state.review.durationUs=snapshot.durationUs; state.review.positionUs=0; state.review.rate=1; state.review.packetIndex=0; state.review.recoveryAttempts=0; state.review.recovering=false; state.review.degraded=false; state.review.lastDecoderError=null;
-        updateReviewUI(); await seekReview(0); if(state.reliability.suspended) return; state.phase="review"; state.reliability.reviewCycles+=1; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); updateReliabilityDiagnostics();
-      }catch(error){ if(state.reliability.suspended) return; console.error("Practice Mirror review error",error); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.review.degraded=true; state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); showNotice(els.runtimeNotice,"error",t("reviewFailedTitle"),t("reviewFailedCopy")); }
+        updateReviewUI(); await seekReview(0); if(state.reliability.suspended) return; state.phase="review"; state.reliability.reviewCycles+=1; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); updateReliabilityDiagnostics(); announce(t("reviewOpened")); if(focusFromReview) focusSafely(els.playPauseButton);
+      }catch(error){ if(state.reliability.suspended) return; console.error("Practice Mirror review error",error); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false; state.review.degraded=true; state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI(); updateReviewUI(); showNotice(els.runtimeNotice,"error",t("reviewFailedTitle"),t("reviewFailedCopy")); if(focusFromReview) focusSafely(els.returnButton); }
     }
 
     async function returnToPractice(){
