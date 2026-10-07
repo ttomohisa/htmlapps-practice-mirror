@@ -719,7 +719,7 @@
           return;
         }
 
-        state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
+        state.generation+=1; const adaptationGeneration=state.generation; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
         setOverlay(t("performanceResolutionReset"),"",{progress:false}); showControls({schedule:false});
 
         const track=state.stream?.getVideoTracks?.()[0];
@@ -729,7 +729,7 @@
         }catch(_constraintError){
           // Continue with software frame-rate reduction if the camera cannot change resolution in place.
         }
-        if(state.reliability.suspended||state.stopping||state.phase!=="practice") return;
+        if(state.reliability.suspended||state.stopping||state.phase!=="practice"||adaptationGeneration!==state.generation) return;
 
         const settings=track.getSettings();
         state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width||next.width;
@@ -738,6 +738,7 @@
         state.captureTargetFps=Math.max(8,Math.min(next.fps,cameraFps));
         state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
         state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+        if(adaptationGeneration!==state.generation||state.phase!=="practice"||state.reliability.suspended) return;
         if(!state.codec) throw Object.assign(new Error("No supported encoder/decoder configuration"),{practiceCode:"codec"});
 
         els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); configureLivePipeline();
