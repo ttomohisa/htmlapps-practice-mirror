@@ -241,6 +241,29 @@ if ($sourceText.Contains('video/mp4;codecs=avc1.42E01E') -or $sourceText.Contain
   throw "Practice Mirror v0.9.0 Review export must not prefer raw MediaRecorder MP4; use seekable WebM."
 }
 
+# Configurable Review history must remain 10 seconds by default and support up to 180 seconds.
+$practiceMirrorReviewDurationTokens = @(
+  'reviewSeconds:10',
+  'id="reviewSecondsInput"',
+  'min="10" max="180"',
+  "MIN_REVIEW_READY_US = 10_000_000",
+  "REVIEW_HISTORY_MARGIN_US = 4_000_000",
+  "reviewTargetDurationUs",
+  "reviewHistoryKeepUs",
+  'practice-mirror-review-seconds'
+)
+foreach ($token in $practiceMirrorReviewDurationTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing configurable Review history marker: $token"
+  }
+}
+if ($sourceText.Contains("REVIEW_DURATION_US") -or $sourceText.Contains("HISTORY_KEEP_US")) {
+  throw "Practice Mirror must not return to fixed 10-second Review history constants."
+}
+if ($sourceText.Contains("data:packet.data.slice()")) {
+  throw "Practice Mirror must not duplicate every encoded Review packet when freezing long history."
+}
+
 $dependencyConfig = Get-Content -Raw -LiteralPath (Join-Path $Root "dependencies.json") | ConvertFrom-Json
 $webmFixDependency = @($dependencyConfig.dependencies | Where-Object { $_.id -eq "fix-webm-duration" })
 if ($webmFixDependency.Count -ne 1 -or [string]$webmFixDependency[0].version -ne "1.0.6") {
