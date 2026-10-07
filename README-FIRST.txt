@@ -15,6 +15,7 @@ Generated readable standalone: practice-mirror.html.
 Generated Pages artifact: dist/index.html.
 Generated self-extracting standalone: dist/index.self-extract.html.
 The release-assets workflow keeps practice-mirror.html and the four release screenshots synchronized with the source.
+The v1.0.0 release assets have been generated from the current source and should not be hand-edited.
 
 Edit src/index.template.html, not generated HTML.
 Run the repository checks before completion.
