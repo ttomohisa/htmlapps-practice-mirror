@@ -2,72 +2,92 @@
 
 数秒前のカメラ映像を表示し、スポーツ・ダンス・トレーニングなどのフォームをその場で確認するWebアプリです。
 
-> v0.6.0ではAdaptive Performanceを追加しました。端末負荷が継続して高い場合、処理fpsや解像度を段階的に下げ、重い端末でもセッションが破綻しにくい方向へ自動調整します。
+> v0.7.0ではReliabilityを重点的に強化しました。古いmedia callbackの世代分離、バッファ上限、background復帰、カメラ/codec復旧、Review失敗の分離を追加しています。
 
 ## Features
 
 - 3 / 5 / 10 / 15秒プリセット + 1〜30秒自由設定
+- 720p/30fps〜360p/12fps目標のAdaptive Performance
 - 複数カメラ端末での前面/背面切替
-- 直前10秒を固定するReview
+- 直前10秒Review
 - 0.25× / 0.5× / 1×、シーク、コマ送り
 - 縦横ガイド、左右反転
 - Reviewクリップのローカル保存
-- MP4優先 / WebMフォールバック
 - 全画面、Screen Wake Lock
 - スマホPracticeの操作UI自動非表示
-- 短い横画面向け2カラムUI
-- 動作情報内のCapability tier
-- 4秒単位の端末負荷監視
-- 30 → 20 → 15 → 12fpsの段階的な自動負荷低減
-- 継続負荷時の720p → 540p → 360p目標への段階的調整
-- セッション中の自動画質上昇を行わず、上下往復を防止
+- live/historyバッファの上限監視
+- カメラ/codec停止を検知するwatchdog
+- 回数制限付きlive自動復旧
+- background / foregroundの一時停止・再開
+- Review decoderだけを対象にした復旧
+- Review復旧不能時でも「練習に戻る」を残す縮退状態
+- セッションReliability診断
 - 日本語 / English
 - 音声取得なし
 - `connect-src 'none'`
 - 単一HTML
 
-## Adaptive Performance
+## Reliability
 
-Practice中に以下を端末内で確認します。
+復旧可能なlive異常では、
 
-- 遅延映像の実測描画fps
-- encoder queueの混雑
-- decoder queueの混雑
-- backpressureにより処理を見送ったフレーム数
+1. 古いmedia generationを無効化
+2. 古い遅延バッファを破棄
+3. 限定的な自動復旧を実施
+4. Warm-upから再開
 
-一瞬の負荷では画質を落としません。複数の監視区間で負荷が続いた場合だけ段階を下げます。
+します。
 
-最初の自動調整は720pのまま30fps → 20fpsに下げるため、遅延バッファを作り直しません。それでも重い場合は540p/15fps、その後360p/12fpsを試します。解像度を変更した場合は古い映像と混在させないためWarm-upをやり直します。
+live自動復旧は **1分あたり最大2回** です。繰り返し失敗する場合は無限再接続せず、通常のエラー状態で停止します。
 
-カメラが解像度変更を受け付けない場合でも、それだけを理由に停止せず、実際のカメラ解像度を維持したまま処理fpsを下げます。
+Review decoderはliveカメラと分離しています。Reviewだけ1回再生成を試し、それでも失敗した場合は壊れたReview操作を無効にしますが、**練習に戻る** は残します。
+
+backgroundではencode/decode処理とWake Lockを止めます。Practiceへ戻ると古い遅延映像を再利用せずWarm-upから再開します。Review中なら固定済みReviewを可能な限り保持します。
+
+## Memory bounds
+
+raw frame履歴は保持しません。
+
+- 遅延映像は圧縮状態
+- Review履歴は時間上限 + packet数上限
+- live delay queueが想定範囲を超えた場合は復旧
+- Reviewは固定長
+- export Blob URLは一時利用後に解放
+
+という構成です。
 
 ## Privacy
 
-性能判定もすべて端末内です。
+映像だけでなくReliability情報も端末内だけで扱います。
 
-以下を外部へ送りません。
+以下を外部送信・自動保存しません。
 
 - カメラ映像
-- Review
-- 性能サンプル
-- CPUコア数 / device-memoryのヒント
-- カメラID / ラベル
+- Review映像
+- 復旧回数
+- queueサイズ
+- performance window
+- 端末性能ヒント
+- camera ID / label
 
-開始時の初期品質選択に `hardwareConcurrency` や `deviceMemory` の大まかな値を利用する場合がありますが、保存・送信しません。
+CSPは `connect-src 'none'`、マイクは取得しません。
 
-CSPは `connect-src 'none'`、マイク音声は取得しません。
+## Validation
+
+静的CIだけでは60分の実カメラ動作は証明できません。
+
+v1.0.0前に [RELIABILITY_TEST_MATRIX.md](./RELIABILITY_TEST_MATRIX.md) の長時間利用、Review反復、カメラ切替、background復帰、保存、メモリ、resource releaseを実機確認します。
 
 ## Browser support
 
 コア機能にはカメラ、`requestVideoFrameCallback()`、WebCodecsが必要です。
 
-Fullscreen、Screen Wake Lock、複数カメラ、Canvas `captureStream()`、`MediaRecorder` は任意機能です。これらの一部がない場合は「基本」Capabilityとして表示し、遅延ミラー本体は使える設計です。
+Fullscreen、Screen Wake Lock、複数カメラ、Canvas `captureStream()`、`MediaRecorder` は任意機能です。
 
-## Limitations in v0.6.0
+## Limitations in v0.7.0
 
-- 自動調整の閾値は実機の幅広い検証がまだ必要
-- セッション中の品質自動回復は、頻繁な上下動を防ぐため意図的に未実装
-- 長時間Reliability検証は次のマイルストーン
+- 実機での長時間Reliabilityマトリクスはまだ未完了
+- Adaptive Performanceの閾値はより広い端末検証が必要
 - 音声録音なし
 - AI / 姿勢推定なし
 
