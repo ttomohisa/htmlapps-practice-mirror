@@ -1,6 +1,6 @@
 # Third-party notices
 
-Practice Mirror v0.9.0 embeds one runtime helper through the repository's pinned dependency pipeline.
+Practice Mirror v1.0.0 embeds one runtime helper through the repository's pinned dependency pipeline.
 
 ## fix-webm-duration
 

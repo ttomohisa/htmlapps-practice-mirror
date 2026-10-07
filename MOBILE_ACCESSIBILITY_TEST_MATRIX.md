@@ -1,4 +1,4 @@
-# Practice Mirror v0.8.0 — Mobile & Accessibility Test Matrix
+# Practice Mirror v1.0.0 — Mobile & Accessibility Test Matrix
 
 Record browser/device, viewport or orientation, language, result, and notes for each case.
 
@@ -181,4 +181,4 @@ Verify:
 
 Also complete the relevant items in `RELIABILITY_TEST_MATRIX.md`.
 
-v0.8.0 is not a substitute for the long-session reliability gate.
+This matrix is part of the v1.0.0 release validation and does not replace the long-session reliability gate.

@@ -1,10 +1,10 @@
-# Practice Mirror v0.9.0 — Release Checklist
+# Practice Mirror v1.0.0 — Release Checklist
 
 Do not mark manual/device checks complete unless they were actually tested.
 
 ## Repository / packaging
 
-- [ ] app.config/UI/help/footer are v0.9.0.
+- [ ] app.config/UI/help/footer are v1.0.0.
 - [ ] User-approved `assets/favicon.svg` is canonical.
 - [ ] Favicon and upper-left app icon use the same SVG.
 - [ ] `fix-webm-duration` is pinned at 1.0.6 and lock hash verifies.
@@ -79,6 +79,6 @@ Do not mark manual/device checks complete unless they were actually tested.
 - [ ] current `assets/screenshot-mobile-en.png`.
 - [ ] README screenshot references resolve.
 
-## v1.0.0 promotion
+## v1.0.0 release decision
 
-Promote only when static checks pass, the required device gates are completed or explicitly excepted, and no Critical/High issue remains.
+Release only when static checks pass, the required device gates are completed or explicitly excepted, and no Critical/High issue remains.

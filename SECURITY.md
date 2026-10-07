@@ -1,6 +1,6 @@
 # Security and privacy
 
-Practice Mirror v0.9.0 processes camera frames, Review playback, reliability state, and clip export locally in the browser.
+Practice Mirror v1.0.0 processes camera frames, Review playback, reliability state, and clip export locally in the browser.
 
 ## Trust boundary
 
