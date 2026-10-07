@@ -32,7 +32,7 @@ The normal build generates:
 - `practice-mirror.html` — byte-identical repository-root copy.
 - `dist/index.self-extract.html` — gzip self-extracting standalone.
 
-The release asset workflow keeps `practice-mirror.html` and the Japanese/English desktop/mobile screenshots current on release PRs.
+The v1.0.0 release branch includes the generated `practice-mirror.html`. The screenshot workflow regenerates and verifies the Japanese/English desktop/mobile screenshots on release PRs.
 
 ## Privacy boundary
 
