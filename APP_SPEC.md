@@ -1,7 +1,7 @@
 # Practice Mirror — Application Specification
 
 Status: implementation specification  
-Current development version: v0.5.0  
+Current development version: v0.6.0  
 Target: Browser Kitty
 
 ## Product definition
@@ -22,107 +22,146 @@ Practice Mirror is not a video editor, sports scoring system, medical device, or
 - Camera frames stay in the browser.
 - No runtime CDN, API, analytics, telemetry, or media upload.
 - Smartphone is a first-class target.
-- Practice controls must remain usable at a distance.
-- Prefer stable delayed playback over higher resolution or feature count.
-- Long-lived video buffers use compressed chunks rather than raw frame history.
-- Saving is explicit and limited to the frozen Review clip.
+- Stable long-running Practice is more important than maximum resolution.
+- Long-lived media buffers use compressed video chunks.
+- Performance adaptation should degrade gracefully rather than crash or freeze.
+- Automatic adaptation must avoid rapid quality oscillation.
 
-## Current scope — v0.5.0 Practice UX
+## Existing Practice / Review behavior
 
-v0.5.0 retains Practice, Review, frame stepping, guides, Mirror, and local clip saving from v0.4.0 and improves the actual practice workflow.
+v0.6.0 retains:
 
-### Delay setting
+- 3 / 5 / 10 / 15 second delay presets.
+- Integer custom delay from 1–30 seconds.
+- Front / rear camera switching when multiple inputs are available.
+- Fullscreen workspace and optional Screen Wake Lock.
+- Practice control auto-hide and short-landscape mobile layout.
+- Fixed previous-10-second Review.
+- 0.25x / 0.5x / 1x playback, seek, and frame stepping.
+- Draggable vertical / horizontal guides and Mirror display.
+- Explicit local Review clip saving with editable filename.
+- MP4-preferred / WebM-fallback browser-native export.
+- No microphone access and no runtime network access.
 
-- Presets: 3, 5, 10, and 15 seconds.
-- Custom delay: integer 1–30 seconds.
-- 10 seconds remains the default.
-- Custom input follows the template preset/custom-setting behavior:
-  - do not clamp every keystroke,
-  - validate and normalize on change/blur/start,
-  - show the accepted range quietly,
-  - show a field-local error for invalid input.
-- The selected delay is persisted locally.
+## v0.6.0 — Adaptive Performance
 
-Review history remains a separate fixed 10-second window. A short Practice delay does not reduce the Review window.
+### Capability tier
 
-### Camera switching
+At runtime classify the current browser into:
 
-- Initial camera preference is rear/environment.
-- After camera permission, enumerate video inputs.
-- Show the camera switch as usable only when at least two video inputs are available.
-- Switch between user/front and environment/rear preferences.
-- Switching discards the current delayed buffer and starts a fresh warm-up.
-- If switching fails, attempt to recover the previous camera.
-- Do not store device IDs or labels.
-- Only the generic front/rear preference may be persisted.
+- **Full**: core delayed-camera APIs plus Review saving, Fullscreen, and Screen Wake Lock.
+- **Limited/Core**: the core delayed-camera APIs are available, but one or more optional capabilities are missing.
+- **Unsupported**: one or more APIs required for the delayed-camera core are missing.
 
-### Fullscreen
+The tier is shown only inside the collapsed technical diagnostics. Optional capability loss must not disable the delayed mirror.
 
-- Fullscreen applies to the complete Practice Mirror workspace rather than the video alone so controls remain accessible.
-- Fullscreen is disabled when the browser does not expose the standard Fullscreen API.
-- Exiting or entering fullscreen restores Practice controls and restarts the auto-hide timer.
-- Stop exits the app fullscreen state when possible.
+### Initial processing profile
 
-### Screen Wake Lock
+Use the following profiles:
 
-- Screen Wake Lock is enabled by default when supported.
-- The user can toggle the preference from Practice controls.
-- The lock is requested only while an active Practice/Review session exists and the document is visible.
-- Stop, page hide, or runtime failure releases the lock.
-- Unsupported browsers keep the rest of the app usable and disable the Wake Lock control.
+| Profile | Target resolution | Target capture/encode FPS |
+| --- | ---: | ---: |
+| High | 1280×720 | 30 |
+| Balanced | 1280×720 | 20 |
+| Efficient | 960×540 | 15 |
+| Low load | 640×360 | 12 |
 
-### Practice control auto-hide
+Initial profile is selected locally from broad browser/device hints and requested delay:
 
-- During Practice, controls auto-hide after approximately four seconds of inactivity on coarse-pointer/mobile devices.
-- Fullscreen Practice also uses auto-hide.
-- Short-height landscape mode keeps the side control rail visible rather than auto-hiding it.
-- Touch/pointer interaction with the video restores controls.
-- Review does not auto-hide its controls.
-- Focused controls are never hidden.
-- Hidden control groups are removed from keyboard focus where `inert` is supported.
+- normal modern device: High,
+- lower core count / device-memory hint: Balanced or Efficient,
+- long delays (15s+) start no higher than Balanced,
+- very long delays (24s+) start no higher than Efficient.
 
-### Orientation / responsive layout
+These hints are used only in memory. They are not stored or transmitted.
 
-Portrait and normal desktop layouts keep controls directly below the video.
+### Runtime performance window
 
-For short landscape mobile viewports:
+While the app is in **Practice** (not Warm-up or Review), evaluate performance every 4 seconds.
 
-- hide the nonessential page intro,
-- use a two-column layout,
-- keep the video in the larger left region,
-- keep Practice/Review controls in a scrollable right rail,
-- preserve guide coordinates as percentages so rotation does not move guides semantically,
-- avoid horizontal page scrolling and bottom-control overlap.
+Track at minimum:
 
-### Existing Review and save behavior
+- rendered delayed-video FPS,
+- encoder queue peak,
+- decoder queue peak,
+- capture frames that became due,
+- capture frames skipped because encoder backpressure was already high.
 
-- Review freezes up to the previous 10 seconds.
-- Review supports play, pause, seek, 0.25x / 0.5x / 1x playback and frame stepping.
-- Multiple vertical and horizontal guides may be added and dragged.
-- Mirror flips only the rendered Canvas.
-- Review saving prefers supported MP4 MediaRecorder output and falls back to WebM.
-- Audio is never requested or exported.
-- Guides and Mirror are not baked into the saved file.
+Do not use a single slow frame as a downgrade signal.
 
-## State model
+### Sustained overload detection
+
+Treat a window as overloaded when any strong signal is present, including:
+
+- backpressure-skip ratio at or above approximately 10%,
+- encoder queue repeatedly reaching the high-pressure range,
+- decoder queue reaching a sustained backlog,
+- measured delayed render FPS falling substantially below the current target.
+
+Require two consecutive overloaded windows before automatically reducing the profile.
+
+After a quality change, apply a cooldown (approximately 12 seconds) before another automatic change.
+
+### Downgrade order
+
+Automatic adaptation only moves downward during one Practice session:
 
 ```text
-IDLE
-  ↓
-REQUESTING_CAMERA
-  ↓
-WARMING_UP
-  ↓
-PRACTICE
-  ├─ Switch camera → WARMING_UP
-  ├─ Fullscreen / Wake Lock / auto-hide are UI/session capabilities
-  ↓ Review
-REVIEW_PREPARING
-  ↓
-REVIEW
-  ├─ Save Review → EXPORTING → REVIEW
-  └─ Back to practice → WARMING_UP
+High 720p / 30fps
+↓ sustained load
+Balanced 720p / 20fps
+↓ sustained load
+Efficient target 540p / 15fps
+↓ sustained load
+Low-load target 360p / 12fps
 ```
+
+Do not automatically move upward during the same session. A new Start-camera session recalculates the initial profile. This avoids repeated Warm-up cycles and quality oscillation.
+
+### FPS-only downgrade
+
+High → Balanced keeps the same target resolution.
+
+- Reduce software capture/encode cadence to 20fps.
+- Do not discard the delayed buffer.
+- Do not force a new Warm-up.
+
+The encoder may remain configured for a higher nominal frame rate; actual encoded cadence is governed by the capture scheduler.
+
+### Resolution downgrade
+
+Balanced → Efficient and Efficient → Low load may change camera constraints.
+
+When resolution is reduced:
+
+1. stop live capture/decode loops,
+2. discard delayed/Review history for the old geometry,
+3. attempt `MediaStreamTrack.applyConstraints()` with the lower target resolution and FPS,
+4. if the camera refuses the resolution constraint, keep the actual camera geometry and still reduce the software target FPS,
+5. choose a compatible WebCodecs configuration for the resulting track settings,
+6. resize the display Canvas,
+7. restart the delayed pipeline and Warm-up,
+8. explain that the delay buffer is being rebuilt.
+
+Do not reacquire a new camera permission merely for an adaptive quality reduction.
+
+### Diagnostics
+
+The collapsed technical details show:
+
+- actual camera geometry / camera FPS,
+- selected codec,
+- current measured delay,
+- current processing profile + actual processing geometry + target FPS,
+- capability tier + measured delayed render FPS + performance state.
+
+Performance state values are approximately:
+
+- Watching,
+- Stable,
+- High load.
+
+Diagnostics must not include camera labels, device IDs, video content, or personally identifying data.
 
 ## Privacy and persistence
 
@@ -130,62 +169,54 @@ May persist:
 
 - language,
 - selected delay,
-- generic front/rear camera preference,
+- generic front/rear preference,
 - Mirror preference,
 - Wake Lock preference.
 
-Must not persist automatically:
+Do not persist or transmit:
 
-- camera device IDs or labels,
-- frames,
-- encoded chunks,
+- performance samples,
+- device-memory / CPU-core hints,
+- camera IDs or labels,
+- frames or encoded buffers,
 - Review clips,
 - guide positions,
-- screenshots,
 - output filename,
-- biometric / pose data.
+- adaptive quality profile.
 
-## Accessibility
+## v0.6.0 acceptance criteria
 
-- Keyboard-operable controls and visible focus.
-- SVG icons instead of emoji controls.
-- Custom delay has a visible unit, range helper, and field-local error.
-- Hidden auto-hide controls are not intentionally left keyboard-focusable.
-- Guide lines expose slider semantics and keyboard movement.
-- Review save filename has a visible label and separate extension.
-- Help dialog remains scrollable on smartphone and short viewports.
-- Reduced-motion preference is respected.
-
-## v0.5.0 acceptance criteria
-
-1. 3 / 5 / 10 / 15 second delay presets work.
-2. Custom delay accepts whole-number values from 1 through 30 seconds and persists the normalized value.
-3. Invalid custom delay cannot start Practice.
-4. Camera switch is disabled until multiple video inputs are known.
-5. Camera switching restarts warm-up without reloading the page.
-6. A failed switch attempts to recover the previous camera.
-7. Fullscreen contains both video and the app controls.
-8. Screen Wake Lock can be toggled and is released on Stop/page hide.
-9. Practice controls auto-hide only in appropriate Practice contexts and reappear on interaction.
-10. Review controls stay visible.
-11. Short landscape smartphone layout keeps video and controls usable without horizontal page scrolling.
-12. v0.4.0 Review saving and filename behavior remain functional.
-13. Camera/video data remains local with `connect-src 'none'`.
+1. Core v0.5.0 Practice, Review, guides, Mirror, export, camera switching, Fullscreen, and Wake Lock remain functional.
+2. A capability tier is computed without sending capability data off-device.
+3. Performance is evaluated in repeated multi-second windows rather than per-frame spikes.
+4. Runtime monitoring includes encoder pressure, decoder pressure, backpressure skips, and rendered FPS.
+5. One overloaded window alone does not reduce quality.
+6. Two consecutive overloaded windows can reduce the profile.
+7. High → Balanced lowers target FPS without rebuilding the delay buffer.
+8. A later sustained overload may attempt lower camera resolution and restart Warm-up safely.
+9. Failure of `applyConstraints()` falls back to lower software FPS rather than ending the session solely because resolution could not change.
+10. Automatic adaptation is downward-only during one session and observes a cooldown between changes.
+11. Diagnostics reflect current profile and measured performance.
+12. No adaptive-performance data is persisted or transmitted.
+13. `connect-src 'none'` and `audio:false` remain intact.
 14. Readable and self-extracting standalone builds are generated from source.
 
 ## Validation note
 
-Real-device validation remains required for:
+Actual performance thresholds require device validation. Before release progression, test:
 
-- 1, 3, 5, 10, 15, and 30 second delays,
-- front/rear camera switching on a multi-camera phone,
-- portrait ↔ landscape rotation,
-- fullscreen enter/exit,
-- Wake Lock behavior,
-- control auto-hide / restore,
-- 10+ minute delayed Practice,
-- Review and saved-file playback,
-- Stop releasing camera and wake lock.
+- recent high-end phone,
+- mid-range Android phone,
+- iPhone/Safari,
+- desktop Chrome/Edge/Safari where available,
+- 3s, 10s, and 30s delay,
+- long Practice session,
+- forced CPU throttling where a browser tool supports it,
+- observed 30 → 20fps downgrade without Warm-up restart,
+- observed resolution downgrade with clean Warm-up restart,
+- camera switch after a downgrade,
+- Review and export after adaptive changes,
+- Stop releasing camera and Wake Lock.
 
 ## Development roadmap
 
@@ -196,16 +227,16 @@ Stable delayed playback and capability/error handling.
 Freeze the previous 10 seconds for playback and seek.
 
 ### v0.3.0 — Frame Review & Guides
-0.25x playback, frame stepping, guides, Mirror.
+Slow playback, frame stepping, guides, Mirror.
 
 ### v0.4.0 — Save Clip
 Save only the frozen Review clip locally.
 
 ### v0.5.0 — Practice UX
-1–30 second delay, camera switching, fullscreen, Wake Lock, control auto-hide, orientation polish.
+1–30 second delay, camera switching, Fullscreen, Wake Lock, control auto-hide, orientation polish.
 
 ### v0.6.0 — Adaptive Performance
-Runtime capability tiers, FPS/queue monitoring, adaptive frame rate and resolution.
+Capability tiers, runtime pressure monitoring, adaptive FPS and resolution.
 
 ### v0.7.0 — Reliability
 Long-session, lifecycle, repeated-transition, and memory regression testing.

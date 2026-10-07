@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.0] - 2026-10-07
+
+### Added
+
+- Full / Core / Unsupported runtime capability tier.
+- Four-second Practice performance monitoring using rendered FPS, encoder/decode queue pressure, and backpressure skips.
+- Local initial-quality selection using broad device hints and requested delay.
+- Automatic sustained-load downgrade profiles: 720p/30 → 720p/20 → 540p/15 → 360p/12 targets.
+- Processing-quality and performance diagnostics.
+
+### Changed
+
+- A single overloaded window no longer triggers a quality change; two consecutive overload windows are required.
+- Quality changes observe a cooldown to avoid rapid repeated adaptation.
+- 30 → 20fps adaptation keeps the existing delayed buffer.
+- Resolution reductions restart Warm-up and fall back to software FPS reduction when camera constraints cannot be changed.
+- Automatic quality changes are downward-only within one Practice session.
+
+
 ## [0.5.0] - 2026-10-07
 
 ### Added

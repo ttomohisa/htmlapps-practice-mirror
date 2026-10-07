@@ -1,6 +1,6 @@
 # Security and privacy
 
-Practice Mirror v0.5.0 processes camera frames, Review playback, and clip export locally in the browser.
+Practice Mirror v0.6.0 processes camera frames, Review playback, and clip export locally in the browser.
 
 ## Trust boundary
 
@@ -15,6 +15,13 @@ Practice Mirror v0.5.0 processes camera frames, Review playback, and clip export
 - Camera switching stores no device ID or device label.
 - The app has no runtime API, analytics, telemetry, CDN, external font, or media upload.
 - CSP uses `connect-src 'none'`.
+
+## Adaptive performance
+
+- Runtime FPS, encoder/decode queue pressure, and backpressure counters are held only in memory.
+- Broad `hardwareConcurrency` / `deviceMemory` hints may be read locally to choose an initial processing profile.
+- Performance samples and hardware hints are not persisted or transmitted.
+- Resolution reduction uses the already-authorized camera track via `applyConstraints()` when possible.
 
 ## Local preferences
 
