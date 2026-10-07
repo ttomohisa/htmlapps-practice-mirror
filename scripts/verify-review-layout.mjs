@@ -29,6 +29,32 @@ async function forceReview(page){
   });
 }
 
+async function validateReviewSettings(){
+  const context=await browser.newContext({viewport:{width:900,height:800},deviceScaleFactor:1});
+  const page=await context.newPage();
+  await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:"networkidle"});
+  const input=page.locator("#reviewSecondsInput");
+  const summary=page.locator("#reviewSettingsSummary");
+  if(await input.inputValue()!=="10") throw new Error("Review maximum must default to 10 seconds");
+  if(!(await summary.textContent())?.includes("10")) throw new Error("Review settings summary must show 10 seconds by default");
+  await page.locator("#reviewSettings summary").click();
+  await input.fill("180");
+  await input.blur();
+  if(await input.getAttribute("aria-invalid")!=="false") throw new Error("180-second Review maximum should be valid");
+  const stored=await page.evaluate(()=>localStorage.getItem("practice-mirror-review-seconds"));
+  if(stored!=="180") throw new Error(`Review maximum was not persisted: ${stored}`);
+  await page.reload({waitUntil:"networkidle"});
+  if(await page.locator("#reviewSecondsInput").inputValue()!=="180") throw new Error("Review maximum did not restore from localStorage");
+  if(!(await page.locator("#reviewSettingsSummary").textContent())?.includes("180")) throw new Error("Review settings summary did not restore 180 seconds");
+  await page.locator("#reviewSettings summary").click();
+  await page.locator("#reviewSecondsInput").fill("181");
+  await page.locator("#reviewSecondsInput").blur();
+  if(await page.locator("#reviewSecondsInput").getAttribute("aria-invalid")!=="true") throw new Error("181-second Review maximum must be invalid");
+  const afterInvalid=await page.evaluate(()=>localStorage.getItem("practice-mirror-review-seconds"));
+  if(afterInvalid!=="180") throw new Error("Invalid Review value must not overwrite the last valid setting");
+  await context.close();
+}
+
 async function validateReview(viewport,mobile,name){
   const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile,deviceScaleFactor:1});
   const page=await context.newPage(); await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:"networkidle"}); await forceReview(page);
@@ -78,6 +104,7 @@ async function validateFullscreen(){
 }
 
 try{
+  await validateReviewSettings();
   await validateReview({width:1440,height:900},false,"review-desktop");
   await validateReview({width:390,height:844},true,"review-mobile");
   await validateFullscreen();
