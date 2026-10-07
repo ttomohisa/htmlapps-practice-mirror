@@ -14,7 +14,12 @@ Move → delayed view → Review if needed → adjust → move again.
 
 - 3 / 5 / 10 / 15 second presets and 1–30 second custom delay.
 - Local camera capture with `audio:false`.
-- Previous-10-second Review.
+- Configurable Review history:
+  - default: 10 seconds,
+  - valid setting: integer 10–180 seconds,
+  - Review becomes usable after approximately 10 seconds,
+  - before the configured maximum has accumulated, Review freezes the history currently available,
+  - after enough time, Review freezes up to the configured maximum.
 - 0.25x / 0.5x / 1x / 2x playback, seeking, and frame stepping.
 - Review playback restarts decoders from an actual key frame after seek/flush.
 - Review UI is compact enough to keep the whole video and seek bar in one viewport on normal desktop/mobile review layouts.
@@ -25,6 +30,9 @@ Move → delayed view → Review if needed → adjust → move again.
 - Guides and Mirror are not burned into exported video.
 - On smartphones the general Practice tools panel starts collapsed.
 - Fullscreen centers the video horizontally and aligns controls to the video width.
+- Review history remains compressed; raw VideoFrames are not retained.
+- Entering Review reuses the existing encoded packet buffers instead of duplicating every packet payload, avoiding a temporary near-2x memory spike for long history.
+- History pruning is batched at roughly one-second intervals once the buffer is populated, while hard packet limits still apply immediately.
 - Existing Adaptive Performance, Reliability, and Accessibility behavior remains intact.
 
 ## Export privacy / trust boundary
@@ -61,7 +69,10 @@ If seekable WebM save is unavailable, Review remains usable and only Save is dis
 9. `fix-webm-duration` is exact-version pinned and lock-verified.
 10. `connect-src 'none'` and `audio:false` remain intact.
 11. Reliability and Accessibility regression contracts pass.
-12. Standalone/self-extract builds and PR Preview pass.
+12. Review maximum defaults to 10 seconds, validates 10–180, persists locally, and restores on reload.
+13. Review can be entered after about 10 seconds even when a longer maximum is configured.
+14. History retention is bounded to the configured Review maximum plus key-frame margin and does not duplicate packet payloads when freezing Review.
+15. Standalone/self-extract builds and PR Preview pass.
 
 ## v1.0.0 gate
 
