@@ -56,20 +56,20 @@ jobs:
         shell: pwsh
         run: node .\scripts\capture-screenshots.mjs
 
-      - name: Commit refreshed release assets
+      - name: Commit refreshed screenshots
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add practice-mirror.html assets/screenshot.png assets/screenshot-en.png assets/screenshot-mobile.png assets/screenshot-mobile-en.png
+          git add assets/screenshot.png assets/screenshot-en.png assets/screenshot-mobile.png assets/screenshot-mobile-en.png
 
           git diff --cached --quiet
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "Release assets are already current."
+            Write-Host "Release screenshots are already current."
             exit 0
           }
 
-          git commit -m "release: refresh Practice Mirror standalone and screenshots"
+          git commit -m "docs: refresh Practice Mirror release screenshots"
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
 
       - name: Upload screenshot artifact
