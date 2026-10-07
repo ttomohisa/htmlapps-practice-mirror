@@ -282,7 +282,7 @@ foreach ($token in @(
   "https://ttomohisa.github.io/htmlapps-practice-mirror/",
   "practice-mirror.html",
   "fix-webm-duration",
-  "RELEASE_CHECKLIST.md"
+  "CONTRIBUTING.md"
 )) {
   if (-not $readmeJaText.Contains($token)) { throw "README.ja.md is missing v1.0.0 public README marker: $token" }
 }
