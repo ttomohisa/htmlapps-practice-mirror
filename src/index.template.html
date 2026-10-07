@@ -1365,7 +1365,13 @@
     }
 
     function nearestKeyIndex(targetAbsUs){
-      let index=0; for(let i=0;i<state.review.packets.length;i+=1){ if(state.review.packets[i].timestamp>targetAbsUs) break; if(state.review.packets[i].type==="key") index=i; } return index;
+      let index=-1;
+      for(let i=0;i<state.review.packets.length;i+=1){
+        if(state.review.packets[i].timestamp>targetAbsUs) break;
+        if(state.review.packets[i].type==="key") index=i;
+      }
+      if(index>=0) return index;
+      return state.review.packets.findIndex(packet=>packet.type==="key");
     }
 
     async function seekReview(positionUs,{resume=false,recoveryAttempt=false}={}){
@@ -1373,7 +1379,7 @@
       if(state.phase!=="review"&&state.phase!=="reviewPreparing") return; const seekGeneration=++state.review.seekGeneration; pauseReview({update:false});
       const clamped=Math.max(0,Math.min(state.review.durationUs,positionUs)); const targetAbsUs=state.review.visibleStartUs+clamped; state.review.positionUs=clamped; updateReviewUI();
       const decoder=createReviewDecoder(); state.review.outputMode="seek"; state.review.seekTargetUs=targetAbsUs; state.review.seekFrameDistance=Infinity; if(state.review.seekFrame){ state.review.seekFrame.close(); state.review.seekFrame=null; }
-      const startIndex=nearestKeyIndex(targetAbsUs); let index=startIndex; const decodeUntil=targetAbsUs+state.frameIntervalUs;
+      const startIndex=nearestKeyIndex(targetAbsUs); if(startIndex<0) throw new Error("Review key frame is unavailable"); let index=startIndex; const decodeUntil=targetAbsUs+state.frameIntervalUs;
       try{
         for(;index<state.review.packets.length&&state.review.packets[index].timestamp<=decodeUntil;index+=1) decoder.decode(chunkFromPacket(state.review.packets[index]));
         await decoder.flush(); if(state.review.lastDecoderError) throw state.review.lastDecoderError; if(seekGeneration!==state.review.seekGeneration||(state.phase!=="review"&&state.phase!=="reviewPreparing")) return;
@@ -1397,7 +1403,9 @@
       const decoder=createReviewDecoder();
       state.review.outputMode="play";
       state.review.playbackFloorUs=Math.max(state.review.visibleStartUs,targetAbsUs-Math.max(1000,state.frameIntervalUs*0.35));
-      state.review.packetIndex=nearestKeyIndex(targetAbsUs);
+      const keyIndex=nearestKeyIndex(targetAbsUs);
+      if(keyIndex<0){ try{decoder.close();}catch(_error){} state.review.decoder=null; throw new Error("Review key frame is unavailable"); }
+      state.review.packetIndex=keyIndex;
       return decoder;
     }
 
