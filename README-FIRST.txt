@@ -14,8 +14,8 @@ Canonical icon/favicon: assets/favicon.svg.
 Generated readable standalone: practice-mirror.html.
 Generated Pages artifact: dist/index.html.
 Generated self-extracting standalone: dist/index.self-extract.html.
-The release-assets workflow keeps practice-mirror.html and the four release screenshots synchronized with the source.
-The v1.0.0 release assets have been generated from the current source and should not be hand-edited.
+The v1.0.0 practice-mirror.html and the four release screenshots have been generated from the current source and should not be hand-edited.
+The screenshot workflow regenerates the four screenshots; the tracked standalone HTML is refreshed as part of release preparation.
 
 Edit src/index.template.html, not generated HTML.
 Run the repository checks before completion.
