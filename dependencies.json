@@ -1,4 +1,24 @@
 {
   "$schema": "./schemas/dependencies.schema.json",
-  "dependencies": []
+  "dependencies": [
+    {
+      "id": "fix-webm-duration",
+      "package": "fix-webm-duration",
+      "version": "1.0.6",
+      "license": "MIT",
+      "homepage": "https://github.com/yusitnikov/fix-webm-duration",
+      "assets": [
+        {
+          "key": "main",
+          "path": "fix-webm-duration.js",
+          "mime": "text/javascript",
+          "compression": "auto"
+        }
+      ],
+      "updates": {
+        "enabled": true,
+        "policy": "manual"
+      }
+    }
+  ]
 }
