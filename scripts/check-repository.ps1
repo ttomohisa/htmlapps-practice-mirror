@@ -42,6 +42,13 @@ $required = @(
   "README.ja.md",
   "LICENSE",
   "THIRD_PARTY_NOTICES.md",
+  "RELEASE_CHECKLIST.md",
+  "MOBILE_ACCESSIBILITY_TEST_MATRIX.md",
+  "RELIABILITY_TEST_MATRIX.md",
+  "assets\screenshot.png",
+  "assets\screenshot-en.png",
+  "assets\screenshot-mobile.png",
+  "assets\screenshot-mobile-en.png",
   "schemas\app-config.schema.json",
   "schemas\dependencies.schema.json",
   "schemas\dependencies-lock.schema.json"
@@ -146,6 +153,41 @@ if (-not $sourceText.Contains("connect-src 'none'")) {
 }
 if (-not $sourceText.Contains("audio:false")) {
   throw "Practice Mirror camera capture must keep microphone audio disabled."
+}
+
+# Practice Mirror v0.9.0 release-asset contract.
+$approvedIconSha256 = "1b1b88edb9dcb1da5e42b294577fb1a5cf8d3ce023ab19096180bb087004229e"
+$iconPath = Join-Path $Root "assets\favicon.svg"
+$iconStream = [System.IO.File]::OpenRead($iconPath)
+$iconHashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+try {
+  $iconSha256 = (($iconHashAlgorithm.ComputeHash($iconStream) | ForEach-Object { $_.ToString("x2") }) -join "")
+} finally {
+  $iconHashAlgorithm.Dispose()
+  $iconStream.Dispose()
+}
+if ($iconSha256 -ne $approvedIconSha256) {
+  throw "assets\favicon.svg does not match the approved Practice Mirror artwork."
+}
+
+$releaseScreenshots = @(
+  "assets\screenshot.png",
+  "assets\screenshot-en.png",
+  "assets\screenshot-mobile.png",
+  "assets\screenshot-mobile-en.png"
+)
+$pngSignature = @(0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a)
+foreach ($relative in $releaseScreenshots) {
+  $screenshotPath = Join-Path $Root $relative
+  $bytes = [System.IO.File]::ReadAllBytes($screenshotPath)
+  if ($bytes.Length -lt 10000) {
+    throw "$relative is too small to be a release screenshot."
+  }
+  for ($index = 0; $index -lt $pngSignature.Count; $index += 1) {
+    if ($bytes[$index] -ne $pngSignature[$index]) {
+      throw "$relative is not a valid PNG release screenshot."
+    }
+  }
 }
 
 # Practice Mirror mobile/accessibility regression contract.
