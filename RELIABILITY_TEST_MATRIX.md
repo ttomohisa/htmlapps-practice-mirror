@@ -62,7 +62,7 @@ Create 20 Review files across one session.
 Pass when:
 
 - each completed download is non-empty,
-- exported files remain playable,
+- exported WebM files remain playable and seekable in a normal player,
 - Blob/export memory is released between saves,
 - Review remains usable after each export.
 
