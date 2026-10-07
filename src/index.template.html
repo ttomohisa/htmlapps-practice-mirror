@@ -488,8 +488,19 @@
       }catch(_error){}
       showControls(); updatePracticeUxButtons();
     }
-    function cameraConstraints(facingMode=state.facingMode,{exact=false}={}){
-      return {audio:false,video:{facingMode:exact?{exact:facingMode}:{ideal:facingMode},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}};
+    function qualityProfile(index=state.qualityIndex){ return QUALITY_PROFILES[Math.max(0,Math.min(QUALITY_PROFILES.length-1,index))]; }
+    function chooseInitialQualityIndex(){
+      const cores=Number(navigator.hardwareConcurrency)||8;
+      const memory=Number(navigator.deviceMemory)||8;
+      let index=0;
+      if(cores<=4||memory<=4) index=1;
+      if(cores<=2||memory<=2) index=2;
+      if(state.delaySeconds>=15) index=Math.max(index,1);
+      if(state.delaySeconds>=24) index=Math.max(index,2);
+      return index;
+    }
+    function cameraConstraints(facingMode=state.facingMode,{exact=false,profile=qualityProfile()}={}){
+      return {audio:false,video:{facingMode:exact?{exact:facingMode}:{ideal:facingMode},width:{ideal:profile.width},height:{ideal:profile.height},frameRate:{ideal:profile.fps,max:profile.fps}}};
     }
     async function refreshCameraDeviceCount(){
       try{
@@ -547,7 +558,24 @@
       if(!window.VideoFrame) missing.push("VideoFrame");
       if(!window.EncodedVideoChunk) missing.push("EncodedVideoChunk");
       if(!HTMLVideoElement.prototype.requestVideoFrameCallback) missing.push("requestVideoFrameCallback");
-      return {ok:missing.length===0,missing};
+      const ok=missing.length===0;
+      const optional={
+        save:supportedExportFormats().length>0,
+        fullscreen:typeof els.mirrorPanel.requestFullscreen==="function"&&typeof document.exitFullscreen==="function",
+        wakeLock:"wakeLock" in navigator
+      };
+      const tier=!ok?"unsupported":(optional.save&&optional.fullscreen&&optional.wakeLock?"full":"limited");
+      return {ok,missing,optional,tier};
+    }
+    function updateCapabilityDiagnostics(){
+      const report=capabilityReport();
+      state.capabilityTier=report.tier;
+      const tierLabel=report.tier==="full"?t("capabilityFull"):report.tier==="limited"?t("capabilityLimited"):"—";
+      const profile=qualityProfile();
+      els.qualityMeta.textContent=`${t(profile.labelKey)} · ${state.width||profile.width}×${state.height||profile.height} · ${Math.round(state.captureTargetFps||profile.fps)} fps`;
+      const statusKey=state.performance.status==="busy"?"performanceBusy":state.performance.status==="stable"?"performanceStable":"performanceWatching";
+      const fps=state.performance.measuredFps>0?`${state.performance.measuredFps.toFixed(1)} fps`:`${Math.round(state.captureTargetFps||profile.fps)} fps`;
+      els.performanceMeta.textContent=`${tierLabel} · ${fps} · ${t(statusKey)}`;
     }
 
     function showNotice(element,tone,title,copy){ element.className=`notice visible ${tone||""}`; element.innerHTML=""; const strong=document.createElement("strong"); strong.textContent=title; const p=document.createElement("p"); p.textContent=copy; element.append(strong,p); }
