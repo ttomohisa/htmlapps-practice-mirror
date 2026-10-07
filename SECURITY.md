@@ -16,6 +16,7 @@ Practice Mirror v0.9.0 processes camera frames, Review playback, reliability sta
 - Camera switching stores no device ID or device label.
 - CSP uses `connect-src 'none'`.
 - The app has no runtime API, analytics, telemetry, CDN, external font, or media upload.
+- `fix-webm-duration` 1.0.6 is exact-version pinned, hash-locked, embedded at build time, and loaded only from a local Blob URL during explicit Review export.
 
 ## Reliability data
 
