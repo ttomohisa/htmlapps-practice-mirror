@@ -241,7 +241,7 @@ if ($sourceText.Contains('video/mp4;codecs=avc1.42E01E') -or $sourceText.Contain
   throw "Practice Mirror v0.9.0 Review export must not prefer raw MediaRecorder MP4; use seekable WebM."
 }
 
-$dependencyConfig = Get-Content -Raw -LiteralPath (Join-Path $repoRoot "dependencies.json") | ConvertFrom-Json
+$dependencyConfig = Get-Content -Raw -LiteralPath (Join-Path $Root "dependencies.json") | ConvertFrom-Json
 $webmFixDependency = @($dependencyConfig.dependencies | Where-Object { $_.id -eq "fix-webm-duration" })
 if ($webmFixDependency.Count -ne 1 -or [string]$webmFixDependency[0].version -ne "1.0.6") {
   throw "Practice Mirror must pin fix-webm-duration exactly at 1.0.6."
