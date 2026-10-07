@@ -361,7 +361,7 @@
       codec:null, decoderConfig:null, decoderConfigured:false, encodedQueue:[], historyPackets:[], frameRequestId:0,
       schedulerId:0, firstEncodedTimestamp:null, latestEncodedTimestamp:null, latestRenderedTimestamp:null,
       startPerformanceUs:0, lastKeyframeUs:0, lastFrameUs:0, frameIntervalUs:33333,
-      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, wakeEnabled:true, wakeLock:null, controlsTimer:0, qualityIndex:0, captureTargetFps:30, qualityChanging:false, capabilityTier:"unsupported", performance:{windowStart:0,captureDue:0,encoded:0,rendered:0,backpressureSkips:0,encoderPeak:0,decoderPeak:0,overloadWindows:0,lastChangeAt:0,measuredFps:0,status:"watching"}, reliability:{suspended:false,suspendedFrom:null,recovering:false,recoveryWindowStart:0,recoveryAttempts:0,liveRecoveries:0,reviewRecoveries:0,reviewCycles:0,lastEncodedAt:0,lastRenderedAt:0,watchdogId:0,trackEndHandler:null,trackLifecycleTrack:null},
+      width:0, height:0, stopping:false, generation:0, runtimeErrorShown:false, reviewReady:false, mirror:false, guides:[], nextGuideId:1, exporting:false, exportGeneration:0, facingMode:"environment", cameraDeviceCount:0, cameraSwitching:false, wakeEnabled:true, wakeLock:null, controlsTimer:0, qualityIndex:0, captureTargetFps:30, qualityChanging:false, capabilityTier:"unsupported", performance:{windowStart:0,captureDue:0,encoded:0,rendered:0,backpressureSkips:0,encoderPeak:0,decoderPeak:0,overloadWindows:0,lastChangeAt:0,measuredFps:0,status:"watching"}, reliability:{suspended:false,suspendedFrom:null,recovering:false,recoveryWindowStart:0,recoveryAttempts:0,liveRecoveries:0,reviewRecoveries:0,reviewCycles:0,lastEncodedAt:0,lastRenderedAt:0,watchdogId:0,trackEndHandler:null,trackLifecycleTrack:null},
       review:{packets:[], visibleStartUs:0, endUs:0, durationUs:0, decoder:null, decoderGeneration:0, rafId:0,
         playing:false, rate:1, positionUs:0, playbackBasePerfUs:0, playbackBasePositionUs:0, packetIndex:0,
         outputMode:"play", seekTargetUs:0, seekFrame:null, seekFrameDistance:Infinity, seekGeneration:0, recoveryAttempts:0, recovering:false, lastDecoderError:null}
@@ -472,7 +472,7 @@
     }
     function updatePracticeUxButtons(){
       const active=["warming","practice","reviewPreparing","review"].includes(state.phase);
-      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting||state.cameraDeviceCount<2;
+      els.cameraSwitchButton.disabled=!["warming","practice"].includes(state.phase)||state.exporting||state.cameraSwitching||state.cameraDeviceCount<2;
       const fullscreenSupported=typeof els.mirrorPanel.requestFullscreen==="function"&&typeof document.exitFullscreen==="function";
       els.fullscreenButton.disabled=!active||!fullscreenSupported||state.exporting;
       const fullscreenActive=document.fullscreenElement===els.mirrorPanel;
@@ -533,28 +533,31 @@
       await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls(); if(document.hidden) await suspendSessionForBackground();
     }
     async function switchCamera(){
-      if(!["warming","practice"].includes(state.phase)||state.exporting) return;
+      if(!["warming","practice"].includes(state.phase)||state.exporting||state.cameraSwitching) return;
       const previous=state.facingMode; const next=previous==="environment"?"user":"environment";
-      state.generation+=1; const transitionGeneration=state.generation; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
+      state.cameraSwitching=true; updatePracticeUxButtons();
+      state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); state.historyPackets.length=0; state.reviewReady=false;
       setOverlay(t("switchingCamera"),"",{progress:false}); showControls({schedule:false});
       stopStream();
       try{
         let stream;
         try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next,{exact:true})); }
         catch(_exactError){ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next)); }
-        if(state.reliability.suspended||transitionGeneration!==state.generation){ stream.getTracks().forEach(track=>track.stop()); return; }
+        if(state.reliability.suspended||state.phase==="idle"){ stream.getTracks().forEach(track=>track.stop()); return; }
         state.facingMode=next; writeStorage("practice-mirror-facing",next);
         await activateCameraStream(stream);
       }catch(error){
         stopStream(); disposeLiveCodecs();
         try{
           const recovery=await navigator.mediaDevices.getUserMedia(cameraConstraints(previous));
-          if(state.reliability.suspended||transitionGeneration!==state.generation){ recovery.getTracks().forEach(track=>track.stop()); return; }
+          if(state.reliability.suspended||state.phase==="idle"){ recovery.getTracks().forEach(track=>track.stop()); return; }
           state.facingMode=previous; await activateCameraStream(recovery);
           showNotice(els.runtimeNotice,"warning",t("cameraSwitchFailed"),normalizedCameraError(error).copy);
         }catch(recoveryError){
-          handleRuntimeFailure(recoveryError);
+          if(state.phase!=="idle"&&!state.reliability.suspended) handleRuntimeFailure(recoveryError);
         }
+      }finally{
+        state.cameraSwitching=false; updatePracticeUxButtons();
       }
     }
 
@@ -660,7 +663,7 @@
           showNotice(els.runtimeNotice,"warning",t("cameraInterrupted"),t("practiceRestarting"));
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
-          if(rel.suspended||document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); return; }
+          if(rel.suspended||!rel.recovering||state.phase==="idle"||document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); return; }
           await activateCameraStream(stream);
         }else{
           const settings=oldTrack.getSettings();
@@ -726,7 +729,7 @@
         }catch(_constraintError){
           // Continue with software frame-rate reduction if the camera cannot change resolution in place.
         }
-        if(state.reliability.suspended||state.stopping||state.phase==="suspended") return;
+        if(state.reliability.suspended||state.stopping||state.phase!=="practice") return;
 
         const settings=track.getSettings();
         state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width||next.width;
@@ -1154,6 +1157,7 @@
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
           if(document.visibilityState!=="visible"){ stream.getTracks().forEach(track=>track.stop()); rel.suspended=true; rel.suspendedFrom="practice"; state.phase="suspended"; updatePhaseUI(); return; }
+          if(state.phase==="idle"){ stream.getTracks().forEach(track=>track.stop()); return; }
           await activateCameraStream(stream);
         }
         await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"});
@@ -1292,6 +1296,7 @@
       try{
         disposeReviewDecoder();
         await seekReview(position,{recoveryAttempt:true});
+        if(state.phase!=="review"||!state.review.recovering) return;
         if(state.review.lastDecoderError) throw state.review.lastDecoderError;
         hideNotice(els.runtimeNotice); AppToast.show({message:t("reviewRecovered"),tone:"warning"});
       }catch(recoveryError){
@@ -1379,11 +1384,12 @@
 
     async function returnToPractice(){
       if(state.phase!=="review"||state.exporting) return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
-      const track=state.stream?.getVideoTracks?.()[0];
+      const transitionGeneration=state.generation; const track=state.stream?.getVideoTracks?.()[0];
       try{
         if(!track||track.readyState!=="live"){
           stopStream();
           const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
+          if(transitionGeneration!==state.generation||state.phase==="idle"){ stream.getTracks().forEach(item=>item.stop()); return; }
           await activateCameraStream(stream);
         }else{
           configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; requestWakeLock(); updateReviewUI(); showControls();
