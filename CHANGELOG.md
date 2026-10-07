@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0] - 2026-10-07
+
+### Added
+
+- Explicit local saving of the frozen Review clip.
+- Editable output filename with a separate predictable extension.
+- Runtime MP4-preferred / WebM-fallback MediaRecorder format detection.
+- Local export progress while the clip is reconstructed.
+- Clear unsupported-save state without disabling Review.
+
+### Changed
+
+- Review save uses a separate temporary Canvas so guides and CSS Mirror are not baked into the exported file.
+- Conflicting Review / Stop actions are disabled during export.
+
 ## [0.3.0] - 2026-10-07
 
 ### Added
