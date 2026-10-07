@@ -4,28 +4,30 @@ Practice Mirror is intended to run without runtime network access after the HTML
 
 ## Static checks
 
-- Confirm the generated HTML contains `connect-src 'none'`.
-- Confirm it contains no external `<script src>`, stylesheet link, font URL, image URL, fetch call, XHR, WebSocket, EventSource, analytics, or telemetry endpoint.
+- Confirm generated HTML contains `connect-src 'none'`.
+- Confirm no external runtime script/style/font/image/API dependency.
 - Confirm `dependencies.json` is empty.
 - Confirm camera capture uses `audio: false`.
-- Confirm clip save uses only Canvas capture, VideoDecoder, MediaRecorder, Blob, and a local download URL.
+- Confirm clip saving uses browser-local Canvas / VideoDecoder / MediaRecorder / Blob APIs.
+- Confirm camera switching stores only generic facing preference, not device IDs.
 
 ## Runtime checks
 
 1. Build `dist/index.html`.
-2. Open browser DevTools > Network.
-3. Load the HTML from a trusted local/HTTPS environment that permits camera access.
-4. Start the camera and let the delay view run.
-5. Confirm no application network requests occur after the initial document load.
-6. Enter Review and test 0.25x / 0.5x / 1x playback, seek, previous frame, and next frame.
-7. Add guides and toggle Mirror.
-8. Edit the save filename and create a Review clip.
-9. Confirm the chosen extension matches the reported MP4/WebM save format.
-10. Open the saved file in a normal video player and confirm duration and playback.
-11. Confirm the saved file contains neither guide overlays nor mirrored display.
-12. Confirm no audio track is present.
-13. Repeat with a browser/environment that uses the WebM fallback when available.
-14. Return to Practice and confirm the delay buffer warms up again without another camera permission prompt.
-15. Stop and confirm the camera indicator turns off.
+2. Open DevTools > Network.
+3. Start with 3 seconds, then test presets 5 / 10 / 15.
+4. Test custom values 1 and 30 seconds.
+5. Confirm invalid values such as 0, 31, blank, and non-integer input cannot start as entered.
+6. On a multi-camera phone, switch rear → front → rear and confirm each switch restarts warm-up.
+7. Confirm single-camera environments keep Switch camera disabled.
+8. Enter and exit fullscreen.
+9. Toggle Screen Wake Lock and confirm Stop releases it.
+10. On a smartphone, wait for Practice controls to auto-hide, then tap the video to restore them.
+11. Rotate portrait ↔ landscape and verify there is no horizontal page scroll or covered control.
+12. Enter Review and test slow playback, seek, frame stepping, guides, and Mirror.
+13. Save a Review clip and open it in a normal player.
+14. Confirm no audio, guide overlay, or Mirror transform is present in the saved file.
+15. Confirm no application network requests occur after initial document load.
+16. Stop and confirm camera use ends.
 
-Camera permission behavior for `file://` differs by browser. A local HTTPS/localhost test environment may be required for camera access even though the application itself has no runtime server dependency.
+Camera permission behavior for `file://` differs by browser. A local HTTPS/localhost environment may be required for camera access even though the app itself has no runtime server dependency.

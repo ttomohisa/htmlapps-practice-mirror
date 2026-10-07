@@ -1,59 +1,58 @@
 # Practice Mirror
 
-A local-first delayed camera mirror for checking sports, dance, and training form without repeatedly recording, stopping, finding, and replaying a clip.
+A local-first delayed camera mirror for sports, dance, training, and other self-practice.
 
-> v0.4.0 adds explicit local saving for the frozen Review clip. MP4 is preferred when the browser supports it; otherwise WebM is used.
+> v0.5.0 expands the Practice workflow with 1–30 second delay settings, camera switching, fullscreen, Screen Wake Lock, auto-hiding controls, and a landscape-focused mobile layout.
 
 ## Features
 
-- 5 and 10 second delayed camera view
-- Freeze up to the previous 10 seconds in Review
-- Play / pause / seek
-- 0.25x / 0.5x / 1x Review playback
+- 3 / 5 / 10 / 15 second delay presets
+- Custom delay from 1 to 30 seconds
+- Rear-camera preference and front/rear switching on multi-camera devices
+- Fixed previous-10-second Review
+- Play / pause / seek and 0.25x / 0.5x / 1x playback
 - Previous-frame / next-frame controls
 - Draggable vertical and horizontal guides
 - Keyboard guide adjustment and deletion
-- Clear-all guides with Undo
-- Optional mirrored display without modifying encoded video
+- Mirror display
+- Fullscreen workspace
+- Optional Screen Wake Lock
+- Practice controls that auto-hide on appropriate mobile/fullscreen layouts
+- Two-column short-landscape mobile layout
 - Editable Review output filename
 - MP4-preferred / WebM-fallback local clip saving
-- Save progress and explicit unsupported-save state
-- Rear-camera preference
-- Runtime H.264 / VP8 capability selection
-- WebCodecs-compressed bounded in-memory video queues
 - Japanese / English UI
 - No microphone request
-- CSP blocks runtime network access
-- Readable standalone HTML plus gzip self-extracting HTML build
+- Runtime CSP blocks external connections
+- Readable and self-extracting standalone HTML builds
 
 ## Usage
 
-1. Choose a 5 or 10 second delay.
+1. Choose 3, 5, 10, or 15 seconds, or enter a custom delay from 1 to 30 seconds.
 2. Select **Start camera** and allow camera access.
-3. Wait for the selected delay to buffer.
-4. Practice while the screen shows the camera feed a few seconds late.
-5. Add guides or enable **Mirror** when useful.
+3. After warm-up, practice while the display shows the selected delay.
+4. Use **Switch camera**, **Fullscreen**, **Keep screen awake**, guides, or **Mirror** when useful.
+5. On mobile Practice, controls may hide automatically; tap/interact with the video to show them again.
 6. Select **Review** after enough history is available.
-7. Use slow playback, seek, or frame stepping to inspect the movement.
-8. Edit the filename and select **Save Review clip** if you want to keep it.
-9. Select **Back to practice** to rebuild the delay buffer and continue.
-10. Select **Stop** when finished.
-
-Creating a saved clip takes roughly the duration of the Review because the browser-native recorder runs on wall-clock timing. Guides and mirrored display are not baked into the saved video.
+7. Inspect the previous 10 seconds using slow playback, seek, or frame stepping.
+8. Save the Review clip locally if needed.
+9. Select **Back to practice** to rebuild the delay buffer.
 
 ## Privacy
 
-Camera frames, Review playback, and clip creation are processed in the browser.
+Camera frames, Review, and clip creation stay in the browser.
 
 Practice Mirror does not:
 
 - upload video,
-- call an external API,
+- send camera frames to an API,
 - request microphone audio,
 - automatically save video,
 - send analytics or telemetry.
 
-A video file is created only after the explicit save action. The runtime CSP uses `connect-src 'none'`. Only language, delay, and Mirror preferences are stored in localStorage.
+CSP uses `connect-src 'none'`.
+
+Local settings may store language, delay, generic front/rear camera preference, Mirror preference, and Wake Lock preference. Device IDs, device labels, media buffers, Review clips, and guide positions are not persisted automatically.
 
 ## Browser support
 
@@ -64,26 +63,25 @@ Core Practice / Review requires:
 - `VideoFrame`
 - `VideoEncoder`
 - `VideoDecoder`
-- an H.264 or VP8 encoder/decoder pair supported by WebCodecs
+- a supported H.264 or VP8 WebCodecs pair
 
-Clip saving additionally requires:
+Optional capabilities:
 
-- `HTMLCanvasElement.captureStream()`
-- `MediaRecorder`
-- at least one supported MP4 or WebM MediaRecorder MIME type
+- Fullscreen API
+- Screen Wake Lock API
+- multiple `videoinput` devices for camera switching
+- Canvas `captureStream()` + `MediaRecorder` for Review saving
 
-Saving is disabled without those APIs; Review remains available.
+Unsupported optional capabilities are disabled without disabling the core delayed mirror.
 
-## Limitations in v0.4.0
+## Limitations in v0.5.0
 
 Not yet included:
 
-- Front / rear camera switch UI
-- Fullscreen
-- Screen Wake Lock
-- Adaptive quality
-- Audio recording
-- Guide / Mirror burn-in
+- adaptive frame rate / resolution
+- long-session reliability completion
+- audio recording
+- guide / Mirror burn-in
 - AI / pose estimation
 
 ## Single HTML / offline behavior
@@ -96,7 +94,7 @@ practice-mirror.html
 dist/index.self-extract.html
 ```
 
-`dist/index.html` and `practice-mirror.html` are byte-identical. No third-party runtime library is used.
+No third-party runtime library is used.
 
 ## Development
 

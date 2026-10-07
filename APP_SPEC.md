@@ -1,17 +1,17 @@
 # Practice Mirror — Application Specification
 
 Status: implementation specification  
-Current development version: v0.4.0  
+Current development version: v0.5.0  
 Target: Browser Kitty
 
 ## Product definition
 
-Practice Mirror is a local-first delayed camera mirror for self-practice. It removes the repeated “record → stop → find → replay” loop by continuously showing the camera feed a few seconds late and, when needed, freezing the previous few seconds for detailed Review.
+Practice Mirror is a local-first delayed camera mirror for self-practice. It removes the repeated “record → stop → find → replay” loop by showing the camera feed a few seconds late and freezing the previous 10 seconds for Review when needed.
 
 Core loop:
 
 ```text
-Move → see the movement a few seconds later → Review if needed → save only if needed → adjust → move again
+Move → see the movement later → Review if needed → save only if needed → adjust → move again
 ```
 
 Practice Mirror is not a video editor, sports scoring system, medical device, or cloud coaching service.
@@ -20,242 +20,201 @@ Practice Mirror is not a video editor, sports scoring system, medical device, or
 
 - No account or installation.
 - Camera frames stay in the browser.
-- No runtime CDN, API, analytics, telemetry, or media upload in the standalone app.
+- No runtime CDN, API, analytics, telemetry, or media upload.
 - Smartphone is a first-class target.
-- Keep practice controls minimal and close to the video.
+- Practice controls must remain usable at a distance.
 - Prefer stable delayed playback over higher resolution or feature count.
 - Long-lived video buffers use compressed chunks rather than raw frame history.
 - Saving is explicit and limited to the frozen Review clip.
 
-## Current scope — v0.4.0 Save Clip
+## Current scope — v0.5.0 Practice UX
 
-v0.4.0 retains delayed Practice, Review, frame stepping, guides, and Mirror from v0.3.0 and adds local Review clip export.
+v0.5.0 retains Practice, Review, frame stepping, guides, Mirror, and local clip saving from v0.4.0 and improves the actual practice workflow.
 
-### Review clip save
+### Delay setting
 
-- Saving is available only in Review.
-- The output filename is editable before export.
-- The app prefers a browser-supported MP4 MediaRecorder type.
-- When MP4 is unavailable, the app falls back to a supported WebM MediaRecorder type.
-- Saving uses browser-native `MediaRecorder` plus `HTMLCanvasElement.captureStream()`; no runtime dependency is downloaded.
-- The frozen Review packets are decoded locally into a separate export Canvas.
-- Export runs at normal clip timing because MediaRecorder timestamps are wall-clock based.
-- A 10-second Review therefore takes roughly 10 seconds to create.
-- Export progress is shown while the file is being created.
-- Only video is exported; audio is never requested or written.
-- Guide lines are DOM overlays and are not baked into the saved clip.
-- Mirror is a display-only CSS transform and is not baked into the saved clip.
-- The export Canvas and MediaStream are temporary and released after export.
-- The resulting Blob URL is temporary, used only to trigger the explicit user download, and revoked afterward.
-- If no suitable MediaRecorder container is supported, Review remains usable and Save is disabled with a clear explanation.
+- Presets: 3, 5, 10, and 15 seconds.
+- Custom delay: integer 1–30 seconds.
+- 10 seconds remains the default.
+- Custom input follows the template preset/custom-setting behavior:
+  - do not clamp every keystroke,
+  - validate and normalize on change/blur/start,
+  - show the accepted range quietly,
+  - show a field-local error for invalid input.
+- The selected delay is persisted locally.
 
-### Delayed Practice
+Review history remains a separate fixed 10-second window. A short Practice delay does not reduce the Review window.
 
-- User-initiated camera permission request.
-- Rear-camera preference where `facingMode: environment` is supported.
-- 5 second delay preset.
-- 10 second delay preset (default).
-- `getUserMedia()` capture with `audio: false`.
-- `requestVideoFrameCallback()` + `VideoFrame` capture.
-- WebCodecs encoding with H.264 preference and VP8 fallback.
-- Timestamp-based compressed delay queue.
-- WebCodecs decoding to Canvas.
-- Explicit warm-up, permission, unsupported-codec, and runtime-error states.
-- Japanese / English UI in one HTML.
+### Camera switching
 
-### Review
+- Initial camera preference is rear/environment.
+- After camera permission, enumerate video inputs.
+- Show the camera switch as usable only when at least two video inputs are available.
+- Switch between user/front and environment/rear preferences.
+- Switching discards the current delayed buffer and starts a fresh warm-up.
+- If switching fails, attempt to recover the previous camera.
+- Do not store device IDs or labels.
+- Only the generic front/rear preference may be persisted.
 
-- Review becomes available only after a complete 10-second compressed history exists.
-- Selecting Review freezes up to the previous 10 seconds.
-- New camera frames cannot mutate a frozen Review clip.
-- Review supports play, pause, seek, 0.25x, 0.5x, and 1x playback.
-- Review supports previous-frame and next-frame controls.
-- Frame stepping pauses playback and seeks by the measured frame interval.
-- Review seeking and frame stepping restart decoding from the nearest prior keyframe; the app does not retain a raw-frame history.
-- Returning to Practice discards Review media and rebuilds the delayed buffer while reusing the live camera stream when possible.
+### Fullscreen
 
-### Guides and Mirror
+- Fullscreen applies to the complete Practice Mirror workspace rather than the video alone so controls remain accessible.
+- Fullscreen is disabled when the browser does not expose the standard Fullscreen API.
+- Exiting or entering fullscreen restores Practice controls and restarts the auto-hide timer.
+- Stop exits the app fullscreen state when possible.
 
-- Multiple vertical and horizontal guides may be added, dragged, keyboard-adjusted, individually removed, or cleared with Undo.
-- Guides remain in screen coordinates.
-- Mirror horizontally flips only the rendered Canvas.
-- Encoded media data is unchanged by guides or Mirror.
+### Screen Wake Lock
 
-### Not included in v0.4.0
+- Screen Wake Lock is enabled by default when supported.
+- The user can toggle the preference from Practice controls.
+- The lock is requested only while an active Practice/Review session exists and the document is visible.
+- Stop, page hide, or runtime failure releases the lock.
+- Unsupported browsers keep the rest of the app usable and disable the Wake Lock control.
 
-- Front / rear camera switch UI.
-- Wake Lock.
-- Fullscreen.
-- Adaptive quality.
-- AI / pose estimation.
-- Audio recording.
-- Guide or Mirror burn-in during export.
+### Practice control auto-hide
+
+- During Practice, controls auto-hide after approximately four seconds of inactivity on coarse-pointer/mobile devices.
+- Fullscreen Practice also uses auto-hide.
+- Short-height landscape mode keeps the side control rail visible rather than auto-hiding it.
+- Touch/pointer interaction with the video restores controls.
+- Review does not auto-hide its controls.
+- Focused controls are never hidden.
+- Hidden control groups are removed from keyboard focus where `inert` is supported.
+
+### Orientation / responsive layout
+
+Portrait and normal desktop layouts keep controls directly below the video.
+
+For short landscape mobile viewports:
+
+- hide the nonessential page intro,
+- use a two-column layout,
+- keep the video in the larger left region,
+- keep Practice/Review controls in a scrollable right rail,
+- preserve guide coordinates as percentages so rotation does not move guides semantically,
+- avoid horizontal page scrolling and bottom-control overlap.
+
+### Existing Review and save behavior
+
+- Review freezes up to the previous 10 seconds.
+- Review supports play, pause, seek, 0.25x / 0.5x / 1x playback and frame stepping.
+- Multiple vertical and horizontal guides may be added and dragged.
+- Mirror flips only the rendered Canvas.
+- Review saving prefers supported MP4 MediaRecorder output and falls back to WebM.
+- Audio is never requested or exported.
+- Guides and Mirror are not baked into the saved file.
 
 ## State model
 
 ```text
 IDLE
-  ↓ Start camera
+  ↓
 REQUESTING_CAMERA
-  ↓ camera + codec ready
+  ↓
 WARMING_UP
-  ↓ delayed output begins
+  ↓
 PRACTICE
+  ├─ Switch camera → WARMING_UP
+  ├─ Fullscreen / Wake Lock / auto-hide are UI/session capabilities
   ↓ Review
 REVIEW_PREPARING
-  ↓ snapshot fixed + decoder ready
+  ↓
 REVIEW
-  ├─ Save Review clip → EXPORTING → REVIEW
+  ├─ Save Review → EXPORTING → REVIEW
   └─ Back to practice → WARMING_UP
 ```
-
-Stopping or leaving the page releases camera/media state. A background/page-hide during export cancels the in-progress export rather than leaving hidden media work running.
-
-## Save pipeline
-
-```text
-Frozen compressed Review packets
-  ↓
-temporary VideoDecoder
-  ↓
-temporary export Canvas
-  ↓ captureStream()
-browser MediaRecorder
-  ↓
-MP4 when supported / WebM fallback
-  ↓
-Blob
-  ↓
-user-initiated download
-```
-
-The export pipeline does not reuse the visible Canvas. This prevents CSS Mirror and DOM guide overlays from being accidentally baked into the file.
-
-## Video pipeline
-
-```text
-getUserMedia()
-  ↓
-HTMLVideoElement
-  ↓ requestVideoFrameCallback()
-VideoFrame
-  ↓
-VideoEncoder
-  ├─ delayed playback queue
-  └─ bounded compressed history
-        ↓
-VideoDecoder
-  ↓
-Canvas
-  ↓
-optional CSS mirror transform
-  ↓
-DOM guide overlay
-```
-
-Rules:
-
-- Do not retain raw RGBA frame history.
-- Close captured and decoded `VideoFrame` objects when no longer needed.
-- Target a keyframe at least every 2 seconds.
-- Apply encoder backpressure.
-- Delay timing uses monotonic timestamps.
-- Keep approximately 14 seconds of compressed history so Review can include a valid keyframe before its visible 10-second range.
 
 ## Privacy and persistence
 
 May persist:
 
 - language,
-- selected delay preset,
-- Mirror preference.
+- selected delay,
+- generic front/rear camera preference,
+- Mirror preference,
+- Wake Lock preference.
 
 Must not persist automatically:
 
+- camera device IDs or labels,
 - frames,
-- encoded video chunks,
+- encoded chunks,
 - Review clips,
-- guides,
+- guide positions,
 - screenshots,
 - output filename,
-- camera labels,
-- derived biometric / pose data.
-
-A clip file is created only after the user presses the explicit Review save button.
+- biometric / pose data.
 
 ## Accessibility
 
-- Keyboard-operable buttons and range input.
-- Visible focus.
+- Keyboard-operable controls and visible focus.
 - SVG icons instead of emoji controls.
+- Custom delay has a visible unit, range helper, and field-local error.
+- Hidden auto-hide controls are not intentionally left keyboard-focusable.
 - Guide lines expose slider semantics and keyboard movement.
-- Save filename has a visible label and predictable extension.
-- Save is disabled while export is running.
-- Help dialog closes with its close button, Escape, and backdrop interaction.
-- Reduced-motion preference respected.
-- Smartphone controls remain close to the video.
+- Review save filename has a visible label and separate extension.
+- Help dialog remains scrollable on smartphone and short viewports.
+- Reduced-motion preference is respected.
 
-## v0.4.0 acceptance criteria
+## v0.5.0 acceptance criteria
 
-1. v0.3.0 Practice, Review, frame stepping, guides, and Mirror behavior remain functional.
-2. Review exposes an editable output filename.
-3. The chosen file extension is shown separately from the editable filename.
-4. MP4 is preferred when supported by MediaRecorder; otherwise a supported WebM type is selected.
-5. Saving a Review produces a non-empty local video file.
-6. Export contains no audio.
-7. Guide lines and CSS Mirror are not baked into the saved file.
-8. Export progress is visible and conflicting Review/Stop actions are disabled while export is active.
-9. Unsupported export environments keep Review usable and clearly disable Save.
-10. Temporary export decoder, stream, and Blob URL are released after use.
-11. Camera and Review media are never uploaded.
-12. Japanese and English controls fit at smartphone width without horizontal scrolling.
-13. Readable and self-extracting standalone builds are generated from source rather than manually edited.
+1. 3 / 5 / 10 / 15 second delay presets work.
+2. Custom delay accepts whole-number values from 1 through 30 seconds and persists the normalized value.
+3. Invalid custom delay cannot start Practice.
+4. Camera switch is disabled until multiple video inputs are known.
+5. Camera switching restarts warm-up without reloading the page.
+6. A failed switch attempts to recover the previous camera.
+7. Fullscreen contains both video and the app controls.
+8. Screen Wake Lock can be toggled and is released on Stop/page hide.
+9. Practice controls auto-hide only in appropriate Practice contexts and reappear on interaction.
+10. Review controls stay visible.
+11. Short landscape smartphone layout keeps video and controls usable without horizontal page scrolling.
+12. v0.4.0 Review saving and filename behavior remain functional.
+13. Camera/video data remains local with `connect-src 'none'`.
+14. Readable and self-extracting standalone builds are generated from source.
 
 ## Validation note
 
-Real-camera and actual saved-file playback remain device validation gates. Verify on actual supported devices:
+Real-device validation remains required for:
 
-- 720p / target 30fps / 10 second delay,
-- at least 10 minutes continuous Practice,
-- repeated Practice → Review → Practice transitions,
-- repeated seeks and frame steps,
-- MP4 output where reported supported,
-- WebM fallback where MP4 is not supported,
-- saved file duration approximately matches Review duration,
-- saved file opens in the platform's normal video player,
-- output filename edits are respected,
-- guides and Mirror are not present in the saved file,
-- no memory growth proportional to total session duration,
-- Stop releases the camera.
+- 1, 3, 5, 10, 15, and 30 second delays,
+- front/rear camera switching on a multi-camera phone,
+- portrait ↔ landscape rotation,
+- fullscreen enter/exit,
+- Wake Lock behavior,
+- control auto-hide / restore,
+- 10+ minute delayed Practice,
+- Review and saved-file playback,
+- Stop releasing camera and wake lock.
 
 ## Development roadmap
 
 ### v0.1.0 — Core Delay Mirror
-Stable 5 / 10 second delayed playback and capability / error handling.
+Stable delayed playback and capability/error handling.
 
 ### v0.2.0 — Review
-Freeze the previous 10 seconds for play / pause / seek and return safely to practice.
+Freeze the previous 10 seconds for playback and seek.
 
 ### v0.3.0 — Frame Review & Guides
-0.25x playback, frame stepping, draggable horizontal / vertical guides, and mirror display.
+0.25x playback, frame stepping, guides, Mirror.
 
 ### v0.4.0 — Save Clip
-Save only the frozen Review clip locally with runtime MP4 / WebM capability detection.
+Save only the frozen Review clip locally.
 
 ### v0.5.0 — Practice UX
-3 / 5 / 10 / 15 second presets, custom delay, camera switching, fullscreen, Wake Lock, control auto-hide, orientation polish.
+1–30 second delay, camera switching, fullscreen, Wake Lock, control auto-hide, orientation polish.
 
 ### v0.6.0 — Adaptive Performance
-Runtime capability tiers, FPS / queue monitoring, adaptive frame rate, adaptive resolution.
+Runtime capability tiers, FPS/queue monitoring, adaptive frame rate and resolution.
 
 ### v0.7.0 — Reliability
-Long-session, repeated transition, lifecycle, and memory regression testing.
+Long-session, lifecycle, repeated-transition, and memory regression testing.
 
 ### v0.8.0 — Mobile Polish & Accessibility
-Mobile / tablet / desktop polish, keyboard access, focus states, final Japanese / English UI.
+Final mobile/tablet/desktop polish and accessibility review.
 
 ### v0.9.0 — Release Candidate
-Browser Kitty integration checks, CSP / privacy audit, README, screenshots, icon, and production build review.
+Browser Kitty integration, privacy/CSP audit, screenshots, README, and production build review.
 
 ### v1.0.0 — Practice Mirror
-Stable `Move → delayed view → Review → adjust → move again` loop ready for public release.
+Stable public release of the complete practice loop.

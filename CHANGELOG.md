@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0] - 2026-10-07
+
+### Added
+
+- 3 / 5 / 10 / 15 second delay presets and 1–30 second custom delay.
+- Front/rear camera switching when multiple video inputs are available.
+- Fullscreen workspace mode.
+- Optional Screen Wake Lock.
+- Practice control auto-hide on appropriate mobile/fullscreen layouts.
+- Two-column short-landscape mobile layout.
+
+### Changed
+
+- Delay selection now follows preset + custom numeric-field behavior.
+- Camera switching rebuilds the delay buffer and attempts to recover the previous camera if switching fails.
+- Generic camera-facing and Wake Lock preferences can be stored locally without storing device IDs.
+
 ## [0.4.0] - 2026-10-07
 
 ### Added
@@ -26,11 +43,6 @@
 - Clear-all guide action with Undo.
 - Mirror display toggle that flips the Canvas without changing encoded video.
 
-### Changed
-
-- Updated Japanese / English help and documentation for Frame Review & Guides.
-- Tightened standalone size warning budgets for the now-concrete application.
-
 ## [0.2.0] - 2026-10-07
 
 ### Added
@@ -45,12 +57,8 @@
 
 ### Added
 
-- Initial Practice Mirror implementation based on the current Browser Kitty single-HTML app template contract.
-- User-initiated camera access with rear-camera preference.
-- 5 second and 10 second delayed playback modes.
-- WebCodecs H.264 / VP8 capability selection.
-- Timestamp-based encoded delay queue and Canvas playback.
-- Warm-up progress and explicit failure states.
+- Initial delayed-camera implementation.
+- User-initiated camera access.
+- WebCodecs delayed playback.
 - Japanese and English UI.
 - Local-only CSP with `connect-src 'none'`.
-- Standalone and self-extract build scripts.
