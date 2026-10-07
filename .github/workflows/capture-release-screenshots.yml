@@ -9,6 +9,8 @@ on:
       - "app.config.json"
       - "assets/favicon.svg"
       - "scripts/capture-screenshots.mjs"
+      - "scripts/verify-review-export.mjs"
+      - "scripts/verify-review-layout.mjs"
       - ".github/workflows/capture-release-screenshots.yml"
 
 permissions:
@@ -42,6 +44,14 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install chromium
 
+      - name: Verify seekable Review export
+        shell: pwsh
+        run: node .\scripts\verify-review-export.mjs
+
+      - name: Verify Review and fullscreen layout
+        shell: pwsh
+        run: node .\scripts\verify-review-layout.mjs
+
       - name: Capture Japanese and English screenshots
         shell: pwsh
         run: node .\scripts\capture-screenshots.mjs
@@ -71,5 +81,6 @@ jobs:
             assets/screenshot-en.png
             assets/screenshot-mobile.png
             assets/screenshot-mobile-en.png
+            tmp-review-ui/*.png
           if-no-files-found: error
           retention-days: 14
