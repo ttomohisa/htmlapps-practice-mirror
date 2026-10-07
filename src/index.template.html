@@ -44,10 +44,13 @@
     body.review-active .main{padding-top:8px;padding-bottom:16px}
     body.review-active .workspace{padding:10px}
     body.review-active .stage-shell{width:min(100%,calc((100dvh - 330px) * 16 / 9));margin-inline:auto}
+    body.review-active .practice-tools,body.review-active .review-controls,body.review-active .notice,body.review-active .diagnostics{width:min(100%,calc((100dvh - 330px) * 16 / 9));margin-left:auto;margin-right:auto}
     body.review-active .stage-controls{display:none}
-    body.review-active .tools-toggle-button{display:flex}
-    body.review-active .stage-tool-row{display:none}
-    body.review-active .practice-tools.tools-open .stage-tool-row{display:flex;margin-top:8px}
+    body.review-active .practice-tools{margin-top:8px;margin-bottom:0}
+    body.review-active .tools-toggle-button{display:flex;border-radius:14px 14px 0 0}
+    body.review-active .stage-tool-row{display:none;padding:8px;border:1px solid var(--line);border-top:0;background:var(--surface)}
+    body.review-active .practice-tools.tools-open .stage-tool-row{display:flex;margin-top:0}
+    body.review-active .review-controls{margin-top:-1px;border-radius:0 0 16px 16px}
     body.review-active footer{display:none}
     footer{width:min(1180px,100%);margin:0 auto;padding:0 clamp(14px,2.8vw,30px) 34px;color:var(--muted);font-size:12px}
     .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
