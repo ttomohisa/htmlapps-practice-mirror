@@ -1058,7 +1058,7 @@
       els.reviewButton.disabled=state.phase!=="practice"||!state.reviewReady; els.reviewButton.title=state.reviewReady?"":t("reviewNotReadyCopy");
       els.reviewButton.hidden=state.phase==="review"||state.phase==="reviewPreparing";
       els.reviewControls.hidden=state.phase!=="review";
-      updateDelayLabels(); updatePracticeUxButtons(); updateCapabilityDiagnostics();
+      updateDelayLabels(); updatePracticeUxButtons(); updateCapabilityDiagnostics(); updateReliabilityDiagnostics();
       if(state.phase==="practice") scheduleControlsAutoHide(); else showControls({schedule:false});
     }
 
@@ -1070,7 +1070,15 @@
     }
     function packetFromChunk(chunk){ const data=new Uint8Array(chunk.byteLength); chunk.copyTo(data); return {type:chunk.type,timestamp:chunk.timestamp,duration:chunk.duration??0,data}; }
     function chunkFromPacket(packet){ const init={type:packet.type,timestamp:packet.timestamp,data:packet.data}; if(packet.duration) init.duration=packet.duration; return new EncodedVideoChunk(init); }
-    function pruneHistory(){ if(!state.historyPackets.length||state.latestEncodedTimestamp===null) return; const cutoff=state.latestEncodedTimestamp-HISTORY_KEEP_US; let remove=0; while(remove<state.historyPackets.length&&state.historyPackets[remove].timestamp<cutoff) remove+=1; if(remove>0) state.historyPackets.splice(0,remove); }
+    function pruneHistory(){
+      if(!state.historyPackets.length||state.latestEncodedTimestamp===null) return;
+      const cutoff=state.latestEncodedTimestamp-HISTORY_KEEP_US;
+      let remove=0;
+      while(remove<state.historyPackets.length&&state.historyPackets[remove].timestamp<cutoff) remove+=1;
+      if(remove>0) state.historyPackets.splice(0,remove);
+      const maxPackets=Math.ceil((HISTORY_KEEP_US/1e6+4)*Math.max(12,state.captureTargetFps||12)*1.7);
+      if(state.historyPackets.length>maxPackets) state.historyPackets.splice(0,state.historyPackets.length-maxPackets);
+    }
 
     function cancelLiveLoops(){
       if(state.frameRequestId&&els.cameraVideo.cancelVideoFrameCallback){ try{ els.cameraVideo.cancelVideoFrameCallback(state.frameRequestId); }catch(_error){} }
@@ -1170,6 +1178,7 @@
     async function startPractice(){
       if(els.customDelayTrigger.getAttribute("aria-pressed")==="true"&&!normalizeCustomDelay()) return;
       hideNotice(els.preflightNotice); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
+      stopReliabilityWatchdog(); state.reliability.suspended=false; state.reliability.suspendedFrom=null; state.reliability.recovering=false; state.reliability.recoveryWindowStart=performance.now(); state.reliability.recoveryAttempts=0; state.reliability.liveRecoveries=0; state.reliability.reviewRecoveries=0; state.reliability.reviewCycles=0; updateReliabilityDiagnostics();
       state.qualityIndex=chooseInitialQualityIndex(); state.qualityChanging=false; state.performance.overloadWindows=0; state.performance.lastChangeAt=performance.now(); state.performance.measuredFps=0; state.performance.status="watching"; updateCapabilityDiagnostics();
       const caps=capabilityReport();
       if(!caps.ok){ const secureOnly=caps.missing.includes("secure-context")||caps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"error",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${caps.missing.join(", ")})`); return; }
