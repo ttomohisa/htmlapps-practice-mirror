@@ -210,7 +210,7 @@
         <div id="reviewControls" class="review-controls" hidden>
           <div class="review-head">
             <div class="review-copy">
-              <strong class="review-title" data-i18n="reviewTitle">直前10秒を確認</strong>
+              <strong class="review-title" data-i18n="reviewTitle">直前の動きを確認</strong>
               <span id="reviewDurationMeta" class="review-subtitle"></span>
             </div>
             <div class="review-head-actions">
@@ -305,7 +305,7 @@
       <!-- APP:HELP:BEGIN -->
       <div data-lang-block="ja">
         <h3>基本操作</h3>
-        <ol><li>3秒・5秒・10秒・15秒、または自由設定で1〜30秒の遅延を選びます。</li><li>「カメラを開始」を押して、ブラウザのカメラ利用を許可します。</li><li>準備が終わると、選択した秒数だけ遅れた映像が表示されます。複数カメラがある端末ではカメラ切替も使えます。</li><li>全画面や画面スリープ防止を必要に応じて切り替えられます。スマートフォンの練習中は操作UIが自動的に隠れ、画面をタップすると再表示されます。</li><li>直前10秒を見返したいときは「Review」を押します。Reviewでは0.25×/0.5×/1×/2×再生、シーク、1コマ戻る・進むができます。スマートフォンではガイド・左右反転・カメラ切替などの操作パネルは初期状態で閉じています。「操作」から展開できます。保存設定は「クリップ保存」を開き、seek情報を補正したWebMとして端末へ保存します。</li><li>「練習に戻る」を押すと遅延バッファを作り直して練習を再開します。</li></ol>
+        <ol><li>3秒・5秒・10秒・15秒、または自由設定で1〜30秒の遅延を選びます。</li><li>「カメラを開始」を押して、ブラウザのカメラ利用を許可します。</li><li>準備が終わると、選択した秒数だけ遅れた映像が表示されます。複数カメラがある端末ではカメラ切替も使えます。</li><li>全画面や画面スリープ防止を必要に応じて切り替えられます。スマートフォンの練習中は操作UIが自動的に隠れ、画面をタップすると再表示されます。</li><li>約10秒たまると「Review」を使えます。Review履歴は設定で10〜180秒まで指定でき、たまっている範囲を見返せます。Reviewでは0.25×/0.5×/1×/2×再生、シーク、1コマ戻る・進むができます。スマートフォンではガイド・左右反転・カメラ切替などの操作パネルは初期状態で閉じています。「操作」から展開できます。保存設定は「クリップ保存」を開き、seek情報を補正したWebMとして端末へ保存します。</li><li>「練習に戻る」を押すと遅延バッファを作り直して練習を再開します。</li></ol>
         <h3>プライバシー</h3><p>カメラ映像とReview保存処理はブラウザ内だけで行います。外部API送信やアップロードは行いません。保存はユーザーが押したReviewクリップだけを端末へ書き出します。ランタイム通信はCSPで禁止しています。</p>
         <h3>対応ブラウザ</h3><p>カメラ、WebCodecs、<code>requestVideoFrameCallback()</code> が利用できるブラウザが必要です。必要な機能がない場合は開始前に案内します。</p>
         <h3>キーボード・読み上げ</h3><p>Tabキーなどのキーボード操作を使っている間は、練習中の操作ボタンを自動で隠しません。ガイド線はフォーカス後に矢印キーで移動でき、Shift + 矢印で大きく移動、Home / Endで端へ移動、Delete / Backspaceで削除できます。Review開始や利用可能になったタイミングなど、重要な状態は読み上げ用の通知でも伝えます。</p><h3>現在の制限</h3><p>v0.9.0はリリース候補です。主要機能の追加は止め、スマートフォン・日本語/English・単一HTML・外部通信・保存・エラー状態・アクセシビリティ・長時間利用の最終確認を行います。</p>
@@ -313,7 +313,7 @@
       </div>
       <div data-lang-block="en" hidden>
         <h3>Basic use</h3>
-        <ol><li>Choose a 3, 5, 10, or 15 second preset, or enter a custom delay from 1 to 30 seconds.</li><li>Select “Start camera” and allow camera access.</li><li>After warm-up, the view shows the camera feed with the selected delay. Switch camera is available when the browser reports multiple video inputs.</li><li>Use fullscreen or screen wake lock when helpful. On smartphones, Practice controls auto-hide and reappear when you tap or interact with the view.</li><li>Select “Review” to freeze up to the previous 10 seconds. Review supports 0.25× / 0.5× / 1× / 2× playback, seeking, and frame stepping. On smartphones, the guide/mirror/camera tools panel starts collapsed and opens from “Controls.” Open “Save clip” only when you want to export a seekable WebM clip.</li><li>Select “Back to practice” to rebuild the delay buffer and continue practicing.</li></ol>
+        <ol><li>Choose a 3, 5, 10, or 15 second preset, or enter a custom delay from 1 to 30 seconds.</li><li>Select “Start camera” and allow camera access.</li><li>After warm-up, the view shows the camera feed with the selected delay. Switch camera is available when the browser reports multiple video inputs.</li><li>Use fullscreen or screen wake lock when helpful. On smartphones, Practice controls auto-hide and reappear when you tap or interact with the view.</li><li>Review becomes available after about 10 seconds. Configure the Review history maximum from 10 to 180 seconds; Review freezes the history currently available up to that maximum. Review supports 0.25× / 0.5× / 1× / 2× playback, seeking, and frame stepping. On smartphones, the guide/mirror/camera tools panel starts collapsed and opens from “Controls.” Open “Save clip” only when you want to export a seekable WebM clip.</li><li>Select “Back to practice” to rebuild the delay buffer and continue practicing.</li></ol>
         <h3>Privacy</h3><p>Camera frames and Review export are processed only in this browser. Nothing is uploaded or sent to an external API. A file is created only when you explicitly save a Review clip. Runtime network access is blocked by CSP.</p>
         <h3>Browser requirements</h3><p>A browser with camera access, WebCodecs, and <code>requestVideoFrameCallback()</code> is required. Missing capabilities are reported before the camera starts.</p>
         <h3>Keyboard & screen readers</h3><p>Practice controls do not auto-hide while keyboard navigation is active. Focus a guide and use Arrow keys to move it, Shift + Arrow for larger moves, Home / End for an edge, and Delete / Backspace to remove it. Important state changes such as Review availability and Review start are also announced through a dedicated status region.</p><h3>Current limitations</h3><p>v0.9.0 is the release candidate. Feature work is frozen while smartphone/desktop, Japanese/English, standalone HTML, runtime networking, saving, error states, accessibility, and long-session behavior receive final validation.</p>
