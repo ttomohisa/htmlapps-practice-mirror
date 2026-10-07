@@ -396,6 +396,198 @@
       return null;
     }
 
+    function supportedExportFormats(){
+      if(typeof MediaRecorder!=="function"||typeof MediaRecorder.isTypeSupported!=="function"||typeof HTMLCanvasElement.prototype.captureStream!=="function") return [];
+      const candidates=[
+        {mimeType:"video/mp4;codecs=avc1.42E01E",extension:"mp4",label:"MP4"},
+        {mimeType:"video/mp4",extension:"mp4",label:"MP4"},
+        {mimeType:"video/webm;codecs=vp9",extension:"webm",label:"WebM"},
+        {mimeType:"video/webm;codecs=vp8",extension:"webm",label:"WebM"},
+        {mimeType:"video/webm",extension:"webm",label:"WebM"}
+      ];
+      return candidates.filter(candidate=>{ try{return MediaRecorder.isTypeSupported(candidate.mimeType);}catch{return false;} });
+    }
+    function preferredExportFormat(){ return supportedExportFormats()[0]||null; }
+    function normalizedOutputFilename(extension){
+      const fallback="practice-mirror-review";
+      const raw=(els.outputFilename.value||"").trim();
+      const cleaned=raw.replace(/[\\/:*?"<>|\u0000-\u001f]/g,"-").replace(/\.+$/g,"").trim();
+      let base=cleaned.replace(/\.(mp4|webm)$/i,"")||fallback;
+      if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(base)) base=base+"-clip";
+      base=base.slice(0,120).trim()||fallback;
+      if(!raw) els.outputFilename.value=base;
+      return base+"."+extension;
+    }
+    function updateExportUI(){
+      if(!els.saveClipButton) return;
+      const format=preferredExportFormat();
+      const available=state.phase==="review"&&!state.exporting&&Boolean(format)&&state.review.packets.length>0;
+      els.saveClipButton.disabled=!available;
+      els.outputFilename.disabled=state.exporting;
+      els.returnButton.disabled=state.exporting;
+      els.stopButton.disabled=state.exporting;
+      els.reviewSeek.disabled=state.exporting;
+      document.querySelectorAll(".rate-button").forEach(button=>button.disabled=state.exporting);
+      if(format){
+        els.outputExtension.textContent="."+format.extension;
+        els.exportMeta.textContent=t("exportMeta").replace("{format}",format.label);
+      }else{
+        els.outputExtension.textContent=".video";
+        els.exportMeta.textContent=t("exportUnsupported");
+      }
+      els.exportProgress.hidden=!state.exporting;
+      els.saveClipLabel.textContent=state.exporting?t("savingClip"):t("saveClipButton");
+    }
+    function waitUntilExport(targetPerformanceMs,generation){
+      return new Promise((resolve,reject)=>{
+        const tick=()=>{
+          if(generation!==state.exportGeneration||state.phase!=="review"){ reject(new Error("Export interrupted")); return; }
+          const remaining=targetPerformanceMs-performance.now();
+          if(remaining<=0){ resolve(); return; }
+          window.setTimeout(tick,Math.min(remaining,40));
+        };
+        tick();
+      });
+    }
+    async function drawExportStartFrame(canvas,packets,decoderConfig,visibleStartUs){
+      const exportContext=canvas.getContext("2d",{alpha:false});
+      let bestFrame=null,bestDistance=Infinity,decodeError=null;
+      const decoder=new VideoDecoder({
+        output:frame=>{
+          if(frame.timestamp>=visibleStartUs-state.frameIntervalUs&&frame.timestamp<=visibleStartUs+state.frameIntervalUs*2){
+            const distance=Math.abs(frame.timestamp-visibleStartUs);
+            if(distance<bestDistance){ if(bestFrame) bestFrame.close(); bestFrame=frame; bestDistance=distance; return; }
+          }
+          frame.close();
+        },
+        error:error=>{ decodeError=error; }
+      });
+      try{
+        decoder.configure(decoderConfig);
+        const limit=visibleStartUs+state.frameIntervalUs*2;
+        for(const packet of packets){ decoder.decode(chunkFromPacket(packet)); if(packet.timestamp>limit) break; }
+        await decoder.flush();
+        if(decodeError) throw decodeError;
+        if(!bestFrame) throw new Error("No export start frame");
+        exportContext.drawImage(bestFrame,0,0,canvas.width,canvas.height);
+      }finally{
+        if(bestFrame) try{bestFrame.close();}catch(_error){}
+        try{if(decoder.state!=="closed") decoder.close();}catch(_error){}
+      }
+    }
+    async function saveReviewClip(){
+      if(state.phase!=="review"||state.exporting||!state.review.packets.length) return;
+      const formats=supportedExportFormats();
+      if(!formats.length){ updateExportUI(); return; }
+      pauseReview();
+      state.exporting=true;
+      const generation=++state.exportGeneration;
+      els.exportProgressBar.value=0;
+      els.exportProgressText.textContent=t("exportProgress").replace("{percent}","0");
+      updateExportUI();
+
+      const packets=state.review.packets;
+      const visibleStartUs=state.review.visibleStartUs;
+      const endUs=state.review.endUs;
+      const durationUs=Math.max(1,state.review.durationUs);
+      const decoderConfig=cloneDecoderConfig(state.decoderConfig||state.codec.decoder);
+      const exportCanvas=document.createElement("canvas");
+      exportCanvas.width=state.width;
+      exportCanvas.height=state.height;
+      const fps=Math.max(10,Math.min(30,Math.round(1e6/state.frameIntervalUs)));
+      let mediaStream=null,recorder=null,decoder=null,recorderStopped=null,format=null,decodeError=null;
+
+      try{
+        await drawExportStartFrame(exportCanvas,packets,decoderConfig,visibleStartUs);
+        mediaStream=exportCanvas.captureStream(fps);
+        const track=mediaStream.getVideoTracks()[0];
+        if(!track) throw new Error("Canvas capture track is unavailable");
+
+        for(const candidate of formats){
+          try{
+            recorder=new MediaRecorder(mediaStream,{mimeType:candidate.mimeType,videoBitsPerSecond:1800000});
+            format=candidate;
+            break;
+          }catch(_error){}
+        }
+        if(!recorder||!format) throw new Error("No usable MediaRecorder format");
+
+        const chunks=[];
+        recorderStopped=new Promise((resolve,reject)=>{
+          recorder.addEventListener("dataavailable",event=>{ if(event.data&&event.data.size>0) chunks.push(event.data); });
+          recorder.addEventListener("stop",resolve,{once:true});
+          recorder.addEventListener("error",event=>reject(event.error||new Error("MediaRecorder error")),{once:true});
+        });
+
+        const exportContext=exportCanvas.getContext("2d",{alpha:false});
+        decoder=new VideoDecoder({
+          output:frame=>{
+            try{
+              if(frame.timestamp>=visibleStartUs-state.frameIntervalUs&&frame.timestamp<=endUs+state.frameIntervalUs){
+                exportContext.drawImage(frame,0,0,exportCanvas.width,exportCanvas.height);
+              }
+            }finally{ frame.close(); }
+          },
+          error:error=>{ decodeError=error; }
+        });
+        decoder.configure(decoderConfig);
+
+        let packetIndex=0;
+        const primeUntil=visibleStartUs+state.frameIntervalUs;
+        while(packetIndex<packets.length&&packets[packetIndex].timestamp<=primeUntil){
+          decoder.decode(chunkFromPacket(packets[packetIndex]));
+          packetIndex+=1;
+        }
+
+        recorder.start(250);
+        const startPerformance=performance.now();
+
+        for(;packetIndex<packets.length;packetIndex+=1){
+          const packet=packets[packetIndex];
+          if(packet.timestamp>endUs) break;
+          const dueMs=Math.max(0,(packet.timestamp-visibleStartUs)/1000);
+          await waitUntilExport(startPerformance+dueMs,generation);
+          if(decodeError) throw decodeError;
+          decoder.decode(chunkFromPacket(packet));
+          const percent=Math.max(0,Math.min(100,Math.round((dueMs/(durationUs/1000))*100)));
+          els.exportProgressBar.value=percent;
+          els.exportProgressText.textContent=t("exportProgress").replace("{percent}",String(percent));
+        }
+
+        await decoder.flush();
+        if(decodeError) throw decodeError;
+        await waitUntilExport(startPerformance+durationUs/1000,generation);
+        els.exportProgressBar.value=100;
+        els.exportProgressText.textContent=t("exportProgress").replace("{percent}","100");
+
+        recorder.stop();
+        await recorderStopped;
+        const blob=new Blob(chunks,{type:recorder.mimeType||format.mimeType});
+        if(!blob.size) throw new Error("Export produced an empty file");
+
+        const url=URL.createObjectURL(blob);
+        blobUrls.add(url);
+        const anchor=document.createElement("a");
+        anchor.href=url;
+        anchor.download=normalizedOutputFilename(format.extension);
+        anchor.rel="noopener";
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(()=>{ URL.revokeObjectURL(url); blobUrls.delete(url); },1500);
+        AppToast.show({message:t("exportReady"),tone:"success"});
+      }catch(error){
+        console.error("Practice Mirror export error",error);
+        if(recorder&&recorder.state!=="inactive"){
+          try{ recorder.stop(); if(recorderStopped) await recorderStopped; }catch(_error){}
+        }
+        showNotice(els.runtimeNotice,"error",t("exportFailedTitle"),error&&error.message?t("exportFailedCopy")+" ("+error.message+")":t("exportFailedCopy"));
+      }finally{
+        try{if(decoder&&decoder.state!=="closed") decoder.close();}catch(_error){}
+        if(mediaStream) mediaStream.getTracks().forEach(track=>track.stop());
+        if(generation===state.exportGeneration){ state.exporting=false; updateReviewUI(); updateExportUI(); }
+      }
+    }
     function normalizedCameraError(error){
       const name=error?.name||"";
       if(name==="NotAllowedError"||name==="SecurityError") return {title:t("cameraDeniedTitle"),copy:t("cameraDeniedCopy")};
@@ -513,7 +705,7 @@
     function stopStream(){ if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
 
     async function stopPractice({message=true}={}){
-      state.stopping=true; state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; stopStream(); state.phase="idle"; state.stopping=false;
+      if(state.exporting) return; state.stopping=true; state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; stopStream(); state.phase="idle"; state.stopping=false;
       els.mirrorPanel.classList.remove("active"); els.startPanel.hidden=false; els.startButton.disabled=false; clearStageError(); hideNotice(els.runtimeNotice); resetCanvas(); updateReviewUI();
       if(message) showNotice(els.preflightNotice,"",t("stopped"),t("localOnly"));
     }
@@ -668,7 +860,7 @@
       const durationSeconds=Math.max(0,state.review.durationUs/1e6).toFixed(1); els.reviewDurationMeta.textContent=t("reviewDuration").replace("{seconds}",durationSeconds);
       els.playPauseLabel.textContent=state.review.playing?t("pauseButton"):t("playButton");
       els.playPauseIcon.innerHTML=state.review.playing?'<path d="M8 7h3v10H8zM13 7h3v10h-3z" fill="currentColor"/>':'<path d="m9 7 8 5-8 5Z" fill="currentColor"/>';
-      document.querySelectorAll(".rate-button").forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.rate)===state.review.rate))); const canStep=state.phase==="review"; els.frameBackButton.disabled=!canStep||state.review.positionUs<=0; els.frameForwardButton.disabled=!canStep||state.review.positionUs>=state.review.durationUs;
+      document.querySelectorAll(".rate-button").forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.rate)===state.review.rate))); const canStep=state.phase==="review"&&!state.exporting; els.frameBackButton.disabled=!canStep||state.review.positionUs<=0; els.frameForwardButton.disabled=!canStep||state.review.positionUs>=state.review.durationUs; els.playPauseButton.disabled=state.exporting; updateExportUI();
     }
 
     async function startReview(){
@@ -684,26 +876,26 @@
     }
 
     async function returnToPractice(){
-      if(state.phase!=="review") return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice);
+      if(state.phase!=="review"||state.exporting) return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice);
       const track=state.stream?.getVideoTracks?.()[0]; if(!track||track.readyState!=="live"){ await stopPractice({message:false}); showNotice(els.preflightNotice,"error",t("cameraDeniedTitle"),t("cameraBusyCopy")); return; }
       state.runtimeErrorShown=false; configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; updateReviewUI();
     }
 
     document.querySelectorAll(".delay-option").forEach(button=>button.addEventListener("click",()=>{ if(state.phase!=="idle") return; state.delaySeconds=Number(button.dataset.delay); writeStorage("practice-mirror-delay",String(state.delaySeconds)); updateDelayLabels(); }));
     document.querySelectorAll(".rate-button").forEach(button=>button.addEventListener("click",()=>{ const rate=Number(button.dataset.rate); if(state.phase!=="review"||!Number.isFinite(rate)) return; if(state.review.playing){ const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; state.review.positionUs=Math.min(state.review.durationUs,state.review.playbackBasePositionUs+elapsed); state.review.playbackBasePositionUs=state.review.positionUs; state.review.playbackBasePerfUs=performance.now()*1000; } state.review.rate=rate; updateReviewUI(); }));
-    els.startButton.addEventListener("click",startPractice); els.stopButton.addEventListener("click",()=>stopPractice()); els.reviewButton.addEventListener("click",startReview); els.returnButton.addEventListener("click",returnToPractice); els.frameBackButton.addEventListener("click",()=>stepReview(-1)); els.frameForwardButton.addEventListener("click",()=>stepReview(1)); els.addVerticalGuideButton.addEventListener("click",()=>addGuide("vertical")); els.addHorizontalGuideButton.addEventListener("click",()=>addGuide("horizontal")); els.clearGuidesButton.addEventListener("click",clearGuides); els.mirrorButton.addEventListener("click",toggleMirror);
+    els.startButton.addEventListener("click",startPractice); els.stopButton.addEventListener("click",()=>stopPractice()); els.reviewButton.addEventListener("click",startReview); els.returnButton.addEventListener("click",returnToPractice); els.saveClipButton.addEventListener("click",saveReviewClip); els.frameBackButton.addEventListener("click",()=>stepReview(-1)); els.frameForwardButton.addEventListener("click",()=>stepReview(1)); els.addVerticalGuideButton.addEventListener("click",()=>addGuide("vertical")); els.addHorizontalGuideButton.addEventListener("click",()=>addGuide("horizontal")); els.clearGuidesButton.addEventListener("click",clearGuides); els.mirrorButton.addEventListener("click",toggleMirror);
     els.playPauseButton.addEventListener("click",()=>{ if(state.review.playing) pauseReview(); else playReview(); });
     els.reviewSeek.addEventListener("input",()=>{ if(state.review.playing) pauseReview(); const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; state.review.positionUs=position; els.reviewCurrentTime.textContent=formatReviewTime(position); });
     els.reviewSeek.addEventListener("change",()=>{ const position=(Number(els.reviewSeek.value)/1000)*state.review.durationUs; seekReview(position); });
     els.languageButton.addEventListener("click",()=>applyLanguage(state.language==="ja"?"en":"ja"));
     els.helpButton.addEventListener("click",()=>els.helpDialog.showModal()); els.helpCloseButton.addEventListener("click",()=>els.helpDialog.close());
     els.helpDialog.addEventListener("click",event=>{ if(event.target===els.helpDialog){ const rect=els.helpDialog.getBoundingClientRect(); const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom; if(!inside) els.helpDialog.close(); }});
-    document.addEventListener("visibilitychange",()=>{ if(document.hidden&&state.phase!=="idle") stopPractice({message:false}); });
-    window.addEventListener("pagehide",()=>{ if(state.phase!=="idle") stopPractice({message:false}); });
+    document.addEventListener("visibilitychange",()=>{ if(document.hidden){ state.exportGeneration+=1; state.exporting=false; if(state.phase!=="idle") stopPractice({message:false}); } });
+    window.addEventListener("pagehide",()=>{ state.exportGeneration+=1; state.exporting=false; if(state.phase!=="idle") stopPractice({message:false}); });
 
     const savedDelay=Number(readStorage("practice-mirror-delay")); if(savedDelay===5||savedDelay===10) state.delaySeconds=savedDelay; state.mirror=readStorage("practice-mirror-mirror")==="1"; applyMirror(); renderGuides();
     els.startIcon.src=els.appBrandIcon.src; const versionBadge=document.querySelector(".version-badge"); if(versionBadge) versionBadge.textContent=`v${APP_CONFIG.version}`;
-    applyLanguage(detectLanguage()); updateDelayLabels(); updateReviewUI();
+    applyLanguage(detectLanguage()); updateDelayLabels(); updateReviewUI(); updateExportUI();
     const initialCaps=capabilityReport(); if(!initialCaps.ok){ const secureOnly=initialCaps.missing.includes("secure-context")||initialCaps.missing.includes("getUserMedia"); showNotice(els.preflightNotice,"warning",t("unsupportedTitle"),secureOnly?t("secureCopy"):`${t("unsupportedCopy")} (${initialCaps.missing.join(", ")})`); }
   })();
   </script>
