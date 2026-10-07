@@ -530,7 +530,7 @@
       els.cameraMeta.textContent=`${state.width} × ${state.height} · ${Math.round(cameraFps)} fps`;
       els.codecMeta.textContent=state.codec.label; els.engineMeta.textContent=`${state.codec.label} · ${t("localOnly")}`;
       resetPerformanceWindow(); updateCapabilityDiagnostics();
-      await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls();
+      await refreshCameraDeviceCount(); await requestWakeLock(); updatePracticeUxButtons(); showControls(); if(document.hidden) await suspendSessionForBackground();
     }
     async function switchCamera(){
       if(!["warming","practice"].includes(state.phase)||state.exporting) return;
@@ -1054,6 +1054,7 @@
       else if(state.phase==="practice"){ els.stageStatus.dataset.state="practice"; els.stageStatusText.textContent=t("practiceStatus"); }
       else if(state.phase==="reviewPreparing"){ els.stageStatus.dataset.state="warming"; els.stageStatusText.textContent=t("reviewPreparingStatus"); }
       else if(state.phase==="review"){ els.stageStatus.dataset.state="review"; els.stageStatusText.textContent=t("reviewStatus"); }
+      else if(state.phase==="suspended"){ els.stageStatus.dataset.state="warming"; els.stageStatusText.textContent=t("suspendedStatus"); }
       else if(state.phase==="error"){ els.stageStatus.dataset.state="error"; els.stageStatusText.textContent=t("errorStatus"); }
       els.reviewButton.disabled=state.phase!=="practice"||!state.reviewReady; els.reviewButton.title=state.reviewReady?"":t("reviewNotReadyCopy");
       els.reviewButton.hidden=state.phase==="review"||state.phase==="reviewPreparing";
@@ -1098,6 +1099,59 @@
     }
     function clearReviewState(){ disposeReviewDecoder(); state.review.packets=[]; state.review.visibleStartUs=0; state.review.endUs=0; state.review.durationUs=0; state.review.positionUs=0; state.review.packetIndex=0; state.review.outputMode="play"; state.review.seekGeneration+=1; }
     function stopStream(){ clearTrackLifecycle(); if(state.stream){ for(const track of state.stream.getTracks()) track.stop(); state.stream=null; } els.cameraVideo.srcObject=null; }
+
+    async function suspendSessionForBackground(){
+      if(state.reliability.suspended||!["warming","practice","reviewPreparing","review"].includes(state.phase)) return;
+      const rel=state.reliability;
+      rel.suspended=true;
+      rel.suspendedFrom=state.phase==="review"&&state.review.packets.length?"review":"practice";
+      state.exportGeneration+=1; state.exporting=false; stopReliabilityWatchdog(); clearControlsAutoHide(); setControlsHidden(false); await releaseWakeLock();
+
+      if(rel.suspendedFrom==="review"){
+        pauseReview({update:true}); disposeReviewDecoder();
+      }else{
+        state.generation+=1; cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false;
+      }
+
+      state.phase="suspended";
+      setOverlay(t("suspendedStatus"),t("backgroundPaused"),{progress:false});
+      updatePhaseUI(); updateReviewUI(); updateExportUI(); updateReliabilityDiagnostics();
+    }
+    async function resumeSessionFromBackground(){
+      const rel=state.reliability;
+      if(!rel.suspended||document.visibilityState!=="visible") return;
+      const resumeFrom=rel.suspendedFrom; rel.suspended=false; rel.suspendedFrom=null;
+
+      try{
+        if(resumeFrom==="review"&&state.review.packets.length){
+          state.phase="review"; els.stageOverlay.hidden=true; updatePhaseUI();
+          await seekReview(state.review.positionUs);
+          await requestWakeLock(); AppToast.show({message:t("reviewRecovered"),tone:"success"});
+          return;
+        }
+
+        const track=state.stream?.getVideoTracks?.()[0];
+        if(track&&track.readyState==="live"){
+          const settings=track.getSettings();
+          state.width=Number(settings.width)||els.cameraVideo.videoWidth||state.width||qualityProfile().width;
+          state.height=Number(settings.height)||els.cameraVideo.videoHeight||state.height||qualityProfile().height;
+          const cameraFps=Math.max(8,Number(settings.frameRate)||state.captureTargetFps||qualityProfile().fps);
+          state.captureTargetFps=Math.max(8,Math.min(qualityProfile().fps,cameraFps));
+          state.frameIntervalUs=Math.round(1e6/state.captureTargetFps);
+          state.codec=await chooseCodec(state.width,state.height,state.captureTargetFps);
+          if(!state.codec) throw Object.assign(new Error("No supported codec while resuming"),{practiceCode:"codec"});
+          els.delayCanvas.width=state.width; els.delayCanvas.height=state.height; resetCanvas(); configureLivePipeline();
+        }else{
+          stopStream();
+          const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
+          await activateCameraStream(stream);
+        }
+        await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"});
+      }catch(error){
+        rel.suspended=false; rel.suspendedFrom=null; updateReliabilityDiagnostics();
+        handleRuntimeFailure(error);
+      }
+    }
 
     async function stopPractice({message=true}={}){
       if(state.exporting) return; state.stopping=true; state.generation+=1; stopReliabilityWatchdog(); clearControlsAutoHide(); setControlsHidden(false); cancelLiveLoops(); disposeLiveCodecs(); clearReviewState(); state.historyPackets.length=0; state.encodedQueue.length=0; stopStream(); state.phase="idle"; state.reliability.suspended=false; state.reliability.suspendedFrom=null; state.reliability.recovering=false; state.stopping=false;
@@ -1284,9 +1338,17 @@
     }
 
     async function returnToPractice(){
-      if(state.phase!=="review"||state.exporting) return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice);
-      const track=state.stream?.getVideoTracks?.()[0]; if(!track||track.readyState!=="live"){ await stopPractice({message:false}); showNotice(els.preflightNotice,"error",t("cameraDeniedTitle"),t("cameraBusyCopy")); return; }
-      state.runtimeErrorShown=false; configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; requestWakeLock(); updateReviewUI(); showControls();
+      if(state.phase!=="review"||state.exporting) return; pauseReview(); clearReviewState(); hideNotice(els.runtimeNotice); state.runtimeErrorShown=false;
+      const track=state.stream?.getVideoTracks?.()[0];
+      try{
+        if(!track||track.readyState!=="live"){
+          stopStream();
+          const stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(state.facingMode));
+          await activateCameraStream(stream);
+        }else{
+          configureLivePipeline(); els.engineMeta.textContent=`${state.codec.label} · ${t("practiceRestarting")}`; requestWakeLock(); updateReviewUI(); showControls();
+        }
+      }catch(error){ handleRuntimeFailure(error); }
     }
 
     document.querySelectorAll(".delay-option[data-delay]").forEach(button=>button.addEventListener("click",()=>{ if(state.phase!=="idle") return; setDelaySeconds(button.dataset.delay); }));
@@ -1309,7 +1371,7 @@
     document.addEventListener("fullscreenchange",()=>{ updatePracticeUxButtons(); showControls(); });
     window.addEventListener("resize",()=>showControls());
     if(screen.orientation?.addEventListener) screen.orientation.addEventListener("change",()=>showControls());
-    document.addEventListener("visibilitychange",()=>{ if(document.hidden){ state.exportGeneration+=1; state.exporting=false; releaseWakeLock(); if(state.phase!=="idle") stopPractice({message:false}); } });
+    document.addEventListener("visibilitychange",()=>{ if(document.hidden) void suspendSessionForBackground(); else void resumeSessionFromBackground(); });
     window.addEventListener("pagehide",()=>{ state.exportGeneration+=1; state.exporting=false; releaseWakeLock(); if(state.phase!=="idle") stopPractice({message:false}); });
 
     const savedDelay=Number(readStorage("practice-mirror-delay")); if(Number.isInteger(savedDelay)&&savedDelay>=1&&savedDelay<=30) state.delaySeconds=savedDelay; const savedFacing=readStorage("practice-mirror-facing"); if(savedFacing==="user"||savedFacing==="environment") state.facingMode=savedFacing; const savedWake=readStorage("practice-mirror-wake"); if(savedWake==="0") state.wakeEnabled=false; state.mirror=readStorage("practice-mirror-mirror")==="1"; applyMirror(); renderGuides();
