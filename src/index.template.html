@@ -958,7 +958,7 @@
       els.reviewButton.disabled=state.phase!=="practice"||!state.reviewReady; els.reviewButton.title=state.reviewReady?"":t("reviewNotReadyCopy");
       els.reviewButton.hidden=state.phase==="review"||state.phase==="reviewPreparing";
       els.reviewControls.hidden=state.phase!=="review";
-      updateDelayLabels(); updatePracticeUxButtons();
+      updateDelayLabels(); updatePracticeUxButtons(); updateCapabilityDiagnostics();
       if(state.phase==="practice") scheduleControlsAutoHide(); else showControls({schedule:false});
     }
 
@@ -1009,14 +1009,14 @@
       try{
         if(metadata?.decoderConfig){ state.decoderConfig=cloneDecoderConfig(metadata.decoderConfig); if(state.decoder&&!state.decoderConfigured){ state.decoder.configure(state.decoderConfig); state.decoderConfigured=true; } }
         if(!state.decoderConfigured&&state.decoder&&state.codec){ state.decoder.configure(state.codec.decoder); state.decoderConfigured=true; }
-        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); }
+        state.encodedQueue.push(chunk); state.historyPackets.push(packetFromChunk(chunk)); state.latestEncodedTimestamp=chunk.timestamp; if(state.firstEncodedTimestamp===null) state.firstEncodedTimestamp=chunk.timestamp; state.performance.encoded+=1; noteEncoderQueue(); pruneHistory(); if(!state.reviewReady&&historyReady()){ state.reviewReady=true; updatePhaseUI(); }
       }catch(error){ handleRuntimeFailure(error); }
     }
 
     function decoderOutput(frame){
       try{
-        if(state.phase==="warming"){ state.phase="practice"; els.stageOverlay.hidden=true; updatePhaseUI(); }
-        drawFrame(frame); state.latestRenderedTimestamp=frame.timestamp;
+        if(state.phase==="warming"){ state.phase="practice"; els.stageOverlay.hidden=true; resetPerformanceWindow(); updatePhaseUI(); }
+        drawFrame(frame); state.latestRenderedTimestamp=frame.timestamp; if(state.phase==="practice") state.performance.rendered+=1;
         if(state.latestEncodedTimestamp!==null){ const currentDelay=Math.max(0,(state.latestEncodedTimestamp-frame.timestamp)/1e6); els.delayActualMeta.textContent=`${currentDelay.toFixed(1)} s`; }
       }catch(error){ handleRuntimeFailure(error); }
       finally{ try{ frame.close(); }catch(_error){} }
@@ -1025,9 +1025,9 @@
     function scheduleDecode(){
       if(state.phase!=="warming"&&state.phase!=="practice") return;
       const nowUs=Math.round(performance.now()*1000); const delayUs=state.delaySeconds*1e6; let decoded=0;
-      try{ while(state.encodedQueue.length&&nowUs-state.encodedQueue[0].timestamp>=delayUs&&decoded<12){ const chunk=state.encodedQueue.shift(); if(state.decoderConfigured&&state.decoder?.state==="configured") state.decoder.decode(chunk); decoded+=1; } }
+      try{ while(state.encodedQueue.length&&nowUs-state.encodedQueue[0].timestamp>=delayUs&&decoded<12){ const chunk=state.encodedQueue.shift(); if(state.decoderConfigured&&state.decoder?.state==="configured") state.decoder.decode(chunk); decoded+=1; } noteDecoderQueue(); }
       catch(error){ handleRuntimeFailure(error); return; }
-      updateWarmup(nowUs); state.schedulerId=requestAnimationFrame(scheduleDecode);
+      updateWarmup(nowUs); evaluatePerformanceWindow(performance.now()); state.schedulerId=requestAnimationFrame(scheduleDecode);
     }
     function updateWarmup(nowUs){ if(state.phase!=="warming") return; const elapsed=Math.max(0,(nowUs-state.startPerformanceUs)/1e6); const progress=Math.min(1,elapsed/state.delaySeconds); els.progressBar.style.width=`${(progress*100).toFixed(1)}%`; els.warmupCount.textContent=`${Math.min(elapsed,state.delaySeconds).toFixed(1)} / ${state.delaySeconds.toFixed(1)} s`; }
     function scheduleCapture(generation){
@@ -1035,8 +1035,14 @@
         if(generation!==state.generation||!["warming","practice"].includes(state.phase)) return;
         try{
           const timestampUs=Math.round(now*1000);
-          if(timestampUs-state.lastFrameUs>=state.frameIntervalUs*0.72&&state.encoder?.state==="configured"&&state.encoder.encodeQueueSize<4){
-            const frame=new VideoFrame(els.cameraVideo,{timestamp:timestampUs}); const keyFrame=state.lastKeyframeUs===0||timestampUs-state.lastKeyframeUs>=2_000_000; state.encoder.encode(frame,{keyFrame}); frame.close(); state.lastFrameUs=timestampUs; if(keyFrame) state.lastKeyframeUs=timestampUs;
+          const due=timestampUs-state.lastFrameUs>=state.frameIntervalUs*0.72;
+          if(due){
+            state.performance.captureDue+=1; noteEncoderQueue();
+            if(state.encoder?.state==="configured"&&state.encoder.encodeQueueSize<4){
+              const frame=new VideoFrame(els.cameraVideo,{timestamp:timestampUs}); const keyFrame=state.lastKeyframeUs===0||timestampUs-state.lastKeyframeUs>=2_000_000; state.encoder.encode(frame,{keyFrame}); frame.close(); state.lastFrameUs=timestampUs; if(keyFrame) state.lastKeyframeUs=timestampUs;
+            }else{
+              state.performance.backpressureSkips+=1;
+            }
           }
         }catch(error){ handleRuntimeFailure(error); return; }
         state.frameRequestId=els.cameraVideo.requestVideoFrameCallback(callback);
@@ -1050,7 +1056,7 @@
       state.encoder=new VideoEncoder({output:encoderOutput,error:handleRuntimeFailure}); state.encoder.configure(state.codec.encoder);
       state.encodedQueue.length=0; state.historyPackets.length=0; state.reviewReady=false; state.firstEncodedTimestamp=null; state.latestEncodedTimestamp=null; state.latestRenderedTimestamp=null; state.lastKeyframeUs=0; state.lastFrameUs=0;
       state.startPerformanceUs=Math.round(performance.now()*1000); state.phase="warming"; state.generation+=1; const generation=state.generation;
-      setWarmupOverlay(); updatePhaseUI(); els.delayActualMeta.textContent=t("actualPending"); scheduleCapture(generation); scheduleDecode();
+      resetPerformanceWindow(); setWarmupOverlay(); updatePhaseUI(); els.delayActualMeta.textContent=t("actualPending"); updateCapabilityDiagnostics(); scheduleCapture(generation); scheduleDecode();
     }
 
     async function startPractice(){
