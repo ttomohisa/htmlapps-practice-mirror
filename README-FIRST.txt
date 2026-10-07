@@ -14,6 +14,9 @@ Release screenshots:
 - assets/screenshot-mobile.png
 - assets/screenshot-mobile-en.png
 
+Review history defaults to 10 seconds and is configurable from 10 to 180 seconds.
+Review becomes available after about 10 seconds; longer settings extend the retained compressed history.
+
 Feature work is frozen for v0.9.0.
 Fix release-blocking bugs, packaging/documentation issues, and validation failures only.
 
