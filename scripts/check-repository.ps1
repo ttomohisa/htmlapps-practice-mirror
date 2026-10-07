@@ -155,7 +155,7 @@ if (-not $sourceText.Contains("audio:false")) {
   throw "Practice Mirror camera capture must keep microphone audio disabled."
 }
 
-# Practice Mirror v0.9.0 release-asset contract.
+# Practice Mirror v1.0.0 release-asset contract.
 $approvedIconSha256 = "1b1b88edb9dcb1da5e42b294577fb1a5cf8d3ce023ab19096180bb087004229e"
 $iconPath = Join-Path $Root "assets\favicon.svg"
 $iconStream = [System.IO.File]::OpenRead($iconPath)
@@ -219,7 +219,7 @@ foreach ($token in $practiceMirrorReviewKeyframeTokens) {
   }
 }
 
-# v0.9.0 Review ergonomics and seekable export regression contract.
+# v1.0.0 Review ergonomics and seekable export regression contract.
 $practiceMirrorReviewRcTokens = @(
   'data-rate="2"',
   'id="toolsToggleButton"',
@@ -234,11 +234,11 @@ $practiceMirrorReviewRcTokens = @(
 )
 foreach ($token in $practiceMirrorReviewRcTokens) {
   if (-not $sourceText.Contains([string]$token)) {
-    throw "src\index.template.html is missing v0.9.0 Review RC marker: $token"
+    throw "src\index.template.html is missing v1.0.0 Review release marker: $token"
   }
 }
 if ($sourceText.Contains('video/mp4;codecs=avc1.42E01E') -or $sourceText.Contains('{mimeType:"video/mp4"')) {
-  throw "Practice Mirror v0.9.0 Review export must not prefer raw MediaRecorder MP4; use seekable WebM."
+  throw "Practice Mirror v1.0.0 Review export must not prefer raw MediaRecorder MP4; use seekable WebM."
 }
 
 # Configurable Review history must remain 10 seconds by default and support up to 180 seconds.
@@ -260,6 +260,33 @@ foreach ($token in $practiceMirrorReviewDurationTokens) {
 if ($sourceText.Contains("REVIEW_DURATION_US") -or $sourceText.Contains("HISTORY_KEEP_US")) {
   throw "Practice Mirror must not return to fixed 10-second Review history constants."
 }
+
+# Stable release identity.
+if (-not $sourceText.Contains("v1.0.0")) {
+  throw "src\index.template.html must contain the v1.0.0 release identity."
+}
+if ($sourceText.Contains("v1.0.0 is the release candidate") -or $sourceText.Contains("v1.0.0はリリース候補")) {
+  throw "v1.0.0 source must not describe itself as a release candidate."
+}
+$readmeText = Get-Content -Raw -Encoding UTF8 (Join-Path $Root "README.md")
+$readmeJaText = Get-Content -Raw -Encoding UTF8 (Join-Path $Root "README.ja.md")
+foreach ($token in @(
+  "https://ttomohisa.github.io/htmlapps-practice-mirror/",
+  "practice-mirror.html",
+  "## Quick start",
+  "## Privacy and runtime network protection"
+)) {
+  if (-not $readmeText.Contains($token)) { throw "README.md is missing v1.0.0 public README marker: $token" }
+}
+foreach ($token in @(
+  "https://ttomohisa.github.io/htmlapps-practice-mirror/",
+  "practice-mirror.html",
+  "## すぐに使う",
+  "## プライバシーと通信防止"
+)) {
+  if (-not $readmeJaText.Contains($token)) { throw "README.ja.md is missing v1.0.0 public README marker: $token" }
+}
+
 if ($sourceText.Contains("data:packet.data.slice()")) {
   throw "Practice Mirror must not duplicate every encoded Review packet when freezing long history."
 }
