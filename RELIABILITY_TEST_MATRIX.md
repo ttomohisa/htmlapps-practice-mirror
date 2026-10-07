@@ -40,6 +40,19 @@ Pass when:
 - Review remains available,
 - no progressive UI slowdown appears.
 
+### A3 — 180-second Review history
+
+Configure Review maximum to 180 seconds and run Practice for at least 10 minutes.
+
+Pass when:
+
+- Review becomes available after about 10 seconds,
+- history continues growing until roughly 180 seconds,
+- entering Review does not cause an abrupt near-2x packet-memory spike,
+- live/history arrays remain bounded after the 180-second window is full,
+- UI remains responsive,
+- returning to Practice releases the frozen Review packet set before building a new history.
+
 ## B. Repeated transitions
 
 ### B1 — Practice ↔ Review
@@ -62,7 +75,7 @@ Create 20 Review files across one session.
 Pass when:
 
 - each completed download is non-empty,
-- exported files remain playable,
+- exported WebM files remain playable and seekable in a normal player,
 - Blob/export memory is released between saves,
 - Review remains usable after each export.
 

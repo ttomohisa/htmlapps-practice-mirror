@@ -10,12 +10,13 @@ Test around 320px, 360px, 390px, and 430px CSS width.
 
 Verify:
 
+- Practice tools panel starts collapsed and opens from Controls,
 - no horizontal page scroll,
 - delay buttons fit,
 - Practice tool buttons fit in two columns,
 - Review / Stop remain visible,
-- Review transport does not overlap,
-- speed controls fit,
+- Review transport does not overlap and the whole video + seek bar fit in the viewport,
+- 0.25x / 0.5x / 1x / 2x speed controls fit,
 - long filename stays inside its control,
 - dialogs stay inside viewport,
 - toast stays inside safe area.
@@ -128,6 +129,21 @@ Verify:
 - filename is associated with export explanation.
 
 ## H. Form validation
+
+### Review maximum setting
+
+Test 10, 180, blank, 9, 181, and decimal input.
+
+Verify:
+
+- default is 10 seconds,
+- 10 and 180 are valid,
+- out-of-range / decimal input exposes invalid state,
+- invalid input does not replace the last valid persisted setting,
+- the collapsed Review settings summary reflects the saved value,
+- Start with invalid Review input opens the setting and focuses the field.
+
+
 
 For custom delay test:
 

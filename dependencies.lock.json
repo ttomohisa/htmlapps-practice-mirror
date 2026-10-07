@@ -1,5 +1,13 @@
 {
   "$schema": "./schemas/dependencies-lock.schema.json",
   "schemaVersion": 1,
-  "dependencies": []
+  "dependencies": [
+    {
+      "id": "fix-webm-duration",
+      "package": "fix-webm-duration",
+      "version": "1.0.6",
+      "tarballSha256": "1b35a8f848cc0cc50aeb86e8e739197b026ac9b410c51eb3568db8ba937cc5b5",
+      "integrity": "sha512-zVAqi4gE+8ywxJuAyV/rlJVX6CMtvyapEbQx6jyoeX9TMjdqAlt/FdG5d7rXSSkDVzTvS0H7CtwzHcH/vh4FPA=="
+    }
+  ]
 }

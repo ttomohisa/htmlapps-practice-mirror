@@ -1,0 +1,86 @@
+name: Capture release screenshots
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "app.config.json"
+      - "assets/favicon.svg"
+      - "scripts/capture-screenshots.mjs"
+      - "scripts/verify-review-export.mjs"
+      - "scripts/verify-review-layout.mjs"
+      - ".github/workflows/capture-release-screenshots.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  capture:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Build standalone HTML for capture
+        shell: pwsh
+        run: ./build-standalone.ps1
+
+      - name: Install pinned Playwright for capture
+        shell: pwsh
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install chromium
+
+      - name: Verify seekable Review export
+        shell: pwsh
+        run: node .\scripts\verify-review-export.mjs
+
+      - name: Verify Review and fullscreen layout
+        shell: pwsh
+        run: node .\scripts\verify-review-layout.mjs
+
+      - name: Capture Japanese and English screenshots
+        shell: pwsh
+        run: node .\scripts\capture-screenshots.mjs
+
+      - name: Commit refreshed screenshots
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/screenshot.png assets/screenshot-en.png assets/screenshot-mobile.png assets/screenshot-mobile-en.png
+
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release screenshots are already current."
+            exit 0
+          }
+
+          git commit -m "docs: refresh Practice Mirror release screenshots"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
+      - name: Upload screenshot artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: practice-mirror-screenshots-${{ github.event.pull_request.head.sha }}
+          path: |
+            assets/screenshot.png
+            assets/screenshot-en.png
+            assets/screenshot-mobile.png
+            assets/screenshot-mobile-en.png
+            tmp-review-ui/*.png
+          if-no-files-found: error
+          retention-days: 14

@@ -42,6 +42,13 @@ $required = @(
   "README.ja.md",
   "LICENSE",
   "THIRD_PARTY_NOTICES.md",
+  "RELEASE_CHECKLIST.md",
+  "MOBILE_ACCESSIBILITY_TEST_MATRIX.md",
+  "RELIABILITY_TEST_MATRIX.md",
+  "assets\screenshot.png",
+  "assets\screenshot-en.png",
+  "assets\screenshot-mobile.png",
+  "assets\screenshot-mobile-en.png",
   "schemas\app-config.schema.json",
   "schemas\dependencies.schema.json",
   "schemas\dependencies-lock.schema.json"
@@ -148,6 +155,41 @@ if (-not $sourceText.Contains("audio:false")) {
   throw "Practice Mirror camera capture must keep microphone audio disabled."
 }
 
+# Practice Mirror v0.9.0 release-asset contract.
+$approvedIconSha256 = "1b1b88edb9dcb1da5e42b294577fb1a5cf8d3ce023ab19096180bb087004229e"
+$iconPath = Join-Path $Root "assets\favicon.svg"
+$iconStream = [System.IO.File]::OpenRead($iconPath)
+$iconHashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+try {
+  $iconSha256 = (($iconHashAlgorithm.ComputeHash($iconStream) | ForEach-Object { $_.ToString("x2") }) -join "")
+} finally {
+  $iconHashAlgorithm.Dispose()
+  $iconStream.Dispose()
+}
+if ($iconSha256 -ne $approvedIconSha256) {
+  throw "assets\favicon.svg does not match the approved Practice Mirror artwork."
+}
+
+$releaseScreenshots = @(
+  "assets\screenshot.png",
+  "assets\screenshot-en.png",
+  "assets\screenshot-mobile.png",
+  "assets\screenshot-mobile-en.png"
+)
+$pngSignature = @(0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a)
+foreach ($relative in $releaseScreenshots) {
+  $screenshotPath = Join-Path $Root $relative
+  $bytes = [System.IO.File]::ReadAllBytes($screenshotPath)
+  if ($bytes.Length -lt 10000) {
+    throw "$relative is too small to be a release screenshot."
+  }
+  for ($index = 0; $index -lt $pngSignature.Count; $index += 1) {
+    if ($bytes[$index] -ne $pngSignature[$index]) {
+      throw "$relative is not a valid PNG release screenshot."
+    }
+  }
+}
+
 # Practice Mirror mobile/accessibility regression contract.
 $practiceMirrorAccessibilityTokens = @(
   'id="appLiveRegion"',
@@ -162,6 +204,71 @@ $practiceMirrorAccessibilityTokens = @(
   ".guide-line.horizontal{left:0;right:0;height:44px",
   ".secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px"
 )
+
+# Review playback must restart a freshly configured decoder from an actual key frame.
+$practiceMirrorReviewKeyframeTokens = @(
+  "prepareReviewPlaybackDecoder",
+  "playbackFloorUs",
+  'let index=-1;',
+  'if(keyIndex<0)',
+  'if(startIndex<0)'
+)
+foreach ($token in $practiceMirrorReviewKeyframeTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing Review key-frame restart marker: $token"
+  }
+}
+
+# v0.9.0 Review ergonomics and seekable export regression contract.
+$practiceMirrorReviewRcTokens = @(
+  'data-rate="2"',
+  'id="toolsToggleButton"',
+  'id="reviewStopButton"',
+  'id="reviewExportDetails"',
+  "body.review-active .stage-shell",
+  ".mirror-panel:fullscreen .stage-shell{width:min(100%,calc((100dvh - 180px) * 16 / 9));margin-inline:auto",
+  "getWebmDurationFixer",
+  "makeSeekableWebm",
+  'StandaloneAssets.blobUrlAsync("fix-webm-duration","main")',
+  "recorder.start();"
+)
+foreach ($token in $practiceMirrorReviewRcTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing v0.9.0 Review RC marker: $token"
+  }
+}
+if ($sourceText.Contains('video/mp4;codecs=avc1.42E01E') -or $sourceText.Contains('{mimeType:"video/mp4"')) {
+  throw "Practice Mirror v0.9.0 Review export must not prefer raw MediaRecorder MP4; use seekable WebM."
+}
+
+# Configurable Review history must remain 10 seconds by default and support up to 180 seconds.
+$practiceMirrorReviewDurationTokens = @(
+  'reviewSeconds:10',
+  'id="reviewSecondsInput"',
+  'min="10" max="180"',
+  "MIN_REVIEW_READY_US = 10_000_000",
+  "REVIEW_HISTORY_MARGIN_US = 4_000_000",
+  "reviewTargetDurationUs",
+  "reviewHistoryKeepUs",
+  'practice-mirror-review-seconds'
+)
+foreach ($token in $practiceMirrorReviewDurationTokens) {
+  if (-not $sourceText.Contains([string]$token)) {
+    throw "src\index.template.html is missing configurable Review history marker: $token"
+  }
+}
+if ($sourceText.Contains("REVIEW_DURATION_US") -or $sourceText.Contains("HISTORY_KEEP_US")) {
+  throw "Practice Mirror must not return to fixed 10-second Review history constants."
+}
+if ($sourceText.Contains("data:packet.data.slice()")) {
+  throw "Practice Mirror must not duplicate every encoded Review packet when freezing long history."
+}
+
+$dependencyConfig = Get-Content -Raw -LiteralPath (Join-Path $Root "dependencies.json") | ConvertFrom-Json
+$webmFixDependency = @($dependencyConfig.dependencies | Where-Object { $_.id -eq "fix-webm-duration" })
+if ($webmFixDependency.Count -ne 1 -or [string]$webmFixDependency[0].version -ne "1.0.6") {
+  throw "Practice Mirror must pin fix-webm-duration exactly at 1.0.6."
+}
 foreach ($token in $practiceMirrorAccessibilityTokens) {
   if (-not $sourceText.Contains([string]$token)) {
     throw "src\index.template.html is missing Practice Mirror accessibility marker: $token"

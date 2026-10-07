@@ -1,133 +1,81 @@
 # Changelog
 
+## [0.9.0] - 2026-10-07
+
+### Fixed
+
+- Review playback recreates the decoder from the nearest actual key frame after seek/flush, preventing `VideoDecoder` delta-frame restart failures.
+- Review export now prioritizes seekability: MediaRecorder creates one WebM Blob, then embedded `fix-webm-duration` 1.0.6 repairs duration metadata before download.
+- Fullscreen centers the video horizontally and aligns the control rows with the video width.
+- Review mode constrains video height so the complete video and seek bar fit in the normal desktop/mobile viewport.
+
+### Added
+
+- Configurable Review history from 10 to 180 seconds, defaulting to 10 seconds and persisted locally.
+- Review remains available after about 10 seconds even when a longer maximum is selected.
+- 2x Review playback.
+- Smartphone Practice tools toggle with the panel closed by default.
+- Collapsed Review Save section.
+- Pinned `fix-webm-duration` dependency and lock entry.
+
+### Changed
+
+- Long Review history reuses encoded packet payloads when freezing Review and batches history pruning to avoid unnecessary long-buffer overhead.
+- Review controls are grouped into a compact Review dock with Back to practice and Stop together.
+- Review saving is WebM-only in v0.9.0 so the file can be post-processed locally for seekability.
+- Release documentation and checklist updated for the revised Review/save behavior.
+- User-approved Practice Mirror SVG remains the canonical favicon/header icon.
+
 ## [0.8.0] - 2026-10-07
 
 ### Added
 
-- Dedicated polite screen-reader status region for important state changes.
-- Keyboard-modality detection that prevents Practice auto-hide.
-- Explicit tabindex fallback for hidden controls when `inert` is unavailable.
-- Accessible current/total value text for Review seek.
-- Guide keyboard shortcut metadata and movement-axis slider orientation.
-- Custom-delay `aria-describedby` / `aria-invalid` behavior.
-- `MOBILE_ACCESSIBILITY_TEST_MATRIX.md`.
+- Dedicated polite screen-reader status region.
+- Keyboard-aware Practice auto-hide.
+- 44px-class touch targets and mobile accessibility test matrix.
 
 ### Changed
 
-- Primary touch targets and guide drag hit areas increased to approximately 44px.
-- Smartphone Practice toolbar uses a two-column grid.
-- Review transport and speed controls are more stable at narrow widths.
-- Short-landscape control rail is narrower and hardened against horizontal overflow.
-- Mobile/fullscreen/dialog/toast spacing respects safe-area insets.
-- Start / Review / Back to Practice / Stop / Help transitions restore focus to visible controls.
-- Whole-workspace `aria-live` usage was removed in favor of targeted status announcements.
-- Long output filenames remain contained within the export control.
-
+- Smartphone/landscape layout, focus transitions, guide ARIA semantics, safe-area handling, and Review accessibility were polished.
 
 ## [0.7.0] - 2026-10-07
 
 ### Added
 
-- Generation-safe live encoder/decoder callbacks.
-- Two-second live reliability watchdog with encoded/rendered progress checks.
-- Hard packet bounds for compressed Review history.
-- Live delay queue time/packet growth guard.
-- Limited automatic live recovery, capped at two attempts per minute.
-- Camera-track `ended` handling.
-- Background/foreground suspension and resume behavior.
-- BFCache-aware page lifecycle handling.
-- Review-only decoder recovery with degraded-safe fallback.
-- Session reliability diagnostics.
-- Dedicated real-device `RELIABILITY_TEST_MATRIX.md`.
-
-### Changed
-
-- Practice resume discards stale delayed media and restarts Warm-up.
-- Frozen Review can survive background suspension where possible.
-- Review decoder failure no longer automatically destroys the live camera session.
-- Camera switch, adaptive quality, recovery, and camera activation use stale-result guards.
-- Repeated Review failure disables broken Review controls while preserving Back to Practice.
-- Stop invalidates pending camera-switch/adaptive/recovery work.
-
+- Generation-safe media callbacks, bounded queues, live watchdog, limited recovery, background/resume lifecycle, Review decoder isolation, and reliability test matrix.
 
 ## [0.6.0] - 2026-10-07
 
 ### Added
 
-- Full / Core / Unsupported runtime capability tier.
-- Four-second Practice performance monitoring using rendered FPS, encoder/decode queue pressure, and backpressure skips.
-- Local initial-quality selection using broad device hints and requested delay.
-- Automatic sustained-load downgrade profiles: 720p/30 → 720p/20 → 540p/15 → 360p/12 targets.
-- Processing-quality and performance diagnostics.
-
-### Changed
-
-- A single overloaded window no longer triggers a quality change; two consecutive overload windows are required.
-- Quality changes observe a cooldown to avoid rapid repeated adaptation.
-- 30 → 20fps adaptation keeps the existing delayed buffer.
-- Resolution reductions restart Warm-up and fall back to software FPS reduction when camera constraints cannot be changed.
-- Automatic quality changes are downward-only within one Practice session.
-
+- Capability tiers, four-second performance monitoring, and adaptive processing profiles down to lower FPS/resolution targets.
 
 ## [0.5.0] - 2026-10-07
 
 ### Added
 
-- 3 / 5 / 10 / 15 second delay presets and 1–30 second custom delay.
-- Front/rear camera switching when multiple video inputs are available.
-- Fullscreen workspace mode.
-- Optional Screen Wake Lock.
-- Practice control auto-hide on appropriate mobile/fullscreen layouts.
-- Two-column short-landscape mobile layout.
-
-### Changed
-
-- Delay selection now follows preset + custom numeric-field behavior.
-- Camera switching rebuilds the delay buffer and attempts to recover the previous camera if switching fails.
-- Generic camera-facing and Wake Lock preferences can be stored locally without storing device IDs.
+- 1–30 second delay controls, camera switching, Fullscreen, Screen Wake Lock, Practice auto-hide, and landscape layout.
 
 ## [0.4.0] - 2026-10-07
 
 ### Added
 
-- Explicit local saving of the frozen Review clip.
-- Editable output filename with a separate predictable extension.
-- Runtime MP4-preferred / WebM-fallback MediaRecorder format detection.
-- Local export progress while the clip is reconstructed.
-- Clear unsupported-save state without disabling Review.
-
-### Changed
-
-- Review save uses a separate temporary Canvas so guides and CSS Mirror are not baked into the exported file.
-- Conflicting Review / Stop actions are disabled during export.
+- Explicit local Review clip saving and editable output filename.
 
 ## [0.3.0] - 2026-10-07
 
 ### Added
 
-- 0.25x Review playback.
-- Previous-frame and next-frame Review controls.
-- Multiple draggable vertical and horizontal guide lines.
-- Keyboard guide movement, edge jumps, and deletion.
-- Clear-all guide action with Undo.
-- Mirror display toggle that flips the Canvas without changing encoded video.
+- 0.25x playback, frame stepping, guides, and Mirror.
 
 ## [0.2.0] - 2026-10-07
 
 ### Added
 
-- Fixed Review snapshot of up to the previous 10 seconds.
-- Review play / pause / seek.
-- 0.5x and 1x Review playback.
-- Return-to-practice flow that reuses the live camera and rebuilds the delay buffer.
-- Bounded compressed Review history and keyframe-based seeking.
+- Fixed previous-10-second Review with playback, seek, and return-to-practice.
 
 ## [0.1.0] - 2026-10-07
 
 ### Added
 
-- Initial delayed-camera implementation.
-- User-initiated camera access.
-- WebCodecs delayed playback.
-- Japanese and English UI.
-- Local-only CSP with `connect-src 'none'`.
+- Initial delayed-camera implementation, local-only CSP, Japanese/English UI, and standalone build.
