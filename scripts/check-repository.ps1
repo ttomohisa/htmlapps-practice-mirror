@@ -226,7 +226,7 @@ $practiceMirrorReviewRcTokens = @(
   'id="reviewStopButton"',
   'id="reviewExportDetails"',
   "body.review-active .stage-shell",
-  ".mirror-panel:fullscreen .stage-shell{width:min(100%,155dvh);margin-inline:auto",
+  ".mirror-panel:fullscreen .stage-shell{width:min(100%,calc((100dvh - 180px) * 16 / 9));margin-inline:auto",
   "getWebmDurationFixer",
   "makeSeekableWebm",
   'StandaloneAssets.blobUrlAsync("fix-webm-duration","main")',
