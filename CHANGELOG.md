@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.1] - 2026-10-08
+
+### Added
+
+- Quick 10 / 30 / 60 / 180 second Review-history presets, with the existing custom field retained.
+- Camera-free source-level regression tests for timing drafts, preset selection, persistence, and bilingual header labels.
+
+### Fixed
+
+- Language changes no longer replace invalid or empty timing drafts with the last saved value or hide custom delay entry.
+- A custom delay equal to a preset remains editable instead of unexpectedly collapsing.
+- The header keeps its version badge visible at 320px instead of clipping it alongside the app name.
+- The language button identifies its destination in localized accessible labels/tooltips, Help exposes a matching tooltip, and its hit target stays at least 44 pixels.
+
 ## [1.0.0] - 2026-10-07
 
 ### Stable release

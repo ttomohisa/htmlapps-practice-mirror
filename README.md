@@ -21,7 +21,7 @@ Mobile screenshot: [assets/screenshot-mobile-en.png](assets/screenshot-mobile-en
 ## Features
 
 - **Delayed practice mirror** — Choose 3 / 5 / 10 / 15 seconds, or enter a custom delay from 1–30 seconds.
-- **Configurable Review history** — Defaults to 10 seconds and can be set from 10–180 seconds. Review becomes available after about 10 seconds and keeps growing up to the configured maximum.
+- **Configurable Review history** — Defaults to 10 seconds, with 10 / 30 / 60 / 180 second presets and custom 10–180 second values. Review becomes available after about 10 seconds and keeps growing up to the configured maximum.
 - **Detailed frame review** — Play at 0.25x / 0.5x / 1x / 2x, seek through the clip, or step one frame backward/forward.
 - **Guides for alignment** — Add vertical/horizontal guides, drag them on the video, or adjust them with the keyboard.
 - **Mirror and camera controls** — Flip the displayed image, switch front/rear cameras when multiple inputs are available, enter fullscreen, and optionally keep the screen awake.
@@ -69,7 +69,7 @@ Python, Node.js, and a local web server are not required for the normal PowerShe
 
 ### Review settings
 
-Review history defaults to 10 seconds. You can configure any whole-number maximum from 10 through 180 seconds before starting the camera.
+Review history defaults to 10 seconds. Before starting the camera, choose a 10 / 30 / 60 / 180 second preset or enter any whole-number maximum from 10 through 180 seconds. Presets also clear an invalid draft. Language changes keep your current input and validation message; reloading restores only the last valid setting.
 
 Review does not make you wait for the full maximum: it becomes available after about 10 seconds, then the retained compressed history keeps growing until it reaches the configured limit. Longer history uses more device memory. At the 180-second maximum, compressed video can reach tens of megabytes depending on the active encoder settings.
 

@@ -262,8 +262,10 @@ if ($sourceText.Contains("REVIEW_DURATION_US") -or $sourceText.Contains("HISTORY
 }
 
 # Stable release identity.
-if (-not $sourceText.Contains("v1.0.0")) {
-  throw "src\index.template.html must contain the v1.0.0 release identity."
+$releaseConfig = Get-Content -Raw -Encoding UTF8 (Join-Path $Root "app.config.json") | ConvertFrom-Json
+$releaseVersion = "v" + [string]$releaseConfig.version
+if (-not $sourceText.Contains($releaseVersion)) {
+  throw "src\index.template.html must contain the configured release identity: $releaseVersion"
 }
 if ($sourceText.Contains("v1.0.0 is the release candidate")) {
   throw "v1.0.0 source must not describe itself as a release candidate."
