@@ -14,7 +14,7 @@ Move → delayed view → Review if needed → adjust → move again.
 
 - Review settings offers 10 / 30 / 60 / 180 second presets alongside the existing 10–180 second integer field.
 - Presets commit immediately to local storage and clear any invalid Review draft. Only the last valid setting is restored after reload.
-- Language changes preserve unfinished/invalid delay and Review drafts, custom delay mode, and localized validation messages. A custom delay that matches a preset remains editable until a preset is chosen.
+- Language changes preserve unfinished/invalid delay and Review drafts, custom delay mode, and localized validation messages. A custom delay that matches a preset remains editable during the current editing session, including language changes. Reload restores the saved value using the matching preset when available.
 - The Review summary shows the last valid maximum; no preset is highlighted for a different or invalid draft.
 - Language control displays the destination EN / JA with localized destination `aria-label` / `title`; Help has a matching localized title.
 - No camera capture, microphone, codec, export, persistence-key, or network boundary changes.
