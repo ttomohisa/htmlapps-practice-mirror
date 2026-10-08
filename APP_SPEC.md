@@ -1,7 +1,7 @@
 # Practice Mirror — Application Specification
 
 Status: Stable release
-Current version: v1.0.0
+Current version: v1.0.1
 Target: Browser Kitty
 
 ## Product definition
@@ -9,6 +9,16 @@ Target: Browser Kitty
 Practice Mirror is a local-first delayed camera mirror for self-practice.
 
 Move → delayed view → Review if needed → adjust → move again.
+
+## v1.0.1 settings polish
+
+- Review settings offers 10 / 30 / 60 / 180 second presets alongside the existing 10–180 second integer field.
+- Presets commit immediately to local storage and clear any invalid Review draft. Only the last valid setting is restored after reload.
+- Language changes preserve unfinished/invalid delay and Review drafts, custom delay mode, and localized validation messages. A custom delay that matches a preset remains editable until a preset is chosen.
+- The Review summary shows the last valid maximum; no preset is highlighted for a different or invalid draft.
+- Language control displays the destination EN / JA with localized destination `aria-label` / `title`; Help has a matching localized title.
+- No camera capture, microphone, codec, export, persistence-key, or network boundary changes.
+- Camera-free settings behavior is covered by source-level unit tests; physical-camera capture, timing/latency, and device-specific checks remain separate manual gates.
 
 ## v1.0.0 release scope
 
