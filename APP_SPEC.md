@@ -12,7 +12,7 @@ Move → delayed view → Review if needed → adjust → move again.
 
 ## v1.0.2 responsive polish
 
-- Help uses one scrollable body and a fixed dialog header; the final item remains reachable on short screens.
+- Help uses one scrollable body and a fixed dialog header; background page scrolling is locked only while the dialog is open; the final item remains reachable on short screens.
 - The Japanese tagline is “動いた直後にさっきの自分を確認する”; the subtitle is “1〜30秒の遅延表示と振り返り”.
 - The concise English introduction fits one line at desktop width and wraps normally on phones.
 - Smartphone portrait and landscape hide the footer and retain the same brand title size when switching languages. Browser text inflation is normalized without disabling user zoom.

@@ -42,9 +42,10 @@ try {
       const help = await page.evaluate(() => {
         const dialog=document.querySelector('#helpDialog'), body=dialog.querySelector('.dialog-body'), head=dialog.querySelector('.dialog-head');
         return { outerOverflow:dialog.scrollHeight-dialog.clientHeight, bodyScroll:body.scrollHeight>body.clientHeight,
-          outerStyle:getComputedStyle(dialog).overflowY, bottom:dialog.getBoundingClientRect().bottom,
+          outerStyle:getComputedStyle(dialog).overflowY, backgroundOverflow:getComputedStyle(document.documentElement).overflowY, bottom:dialog.getBoundingClientRect().bottom,
           headTop:head.getBoundingClientRect().top, bodyTop:body.getBoundingClientRect().top };
       });
+      check(help.backgroundOverflow === 'hidden', `${name}/${lang}: background page scrollbar is hidden while help is open`);
       check(help.outerOverflow <= 1 && help.outerStyle === 'hidden', `${name}/${lang}: only inner help scrolls ${JSON.stringify(help)}`);
       check(help.bottom <= height + 1, `${name}/${lang}: dialog stays in viewport`);
       await page.locator('.dialog-body').evaluate(el => { el.scrollTop=el.scrollHeight; });
@@ -54,6 +55,7 @@ try {
       check(lastVisible, `${name}/${lang}: final help item reachable`);
       await page.keyboard.press('Escape');
       check(await page.locator('#helpDialog').isVisible() === false, `${name}/${lang}: Escape closes`);
+      check(await page.locator('html').evaluate(el=>getComputedStyle(el).overflowY) !== 'hidden', `${name}/${lang}: background scrolling restored`);
       check(await page.locator('#helpButton').evaluate(el => el===document.activeElement), `${name}/${lang}: focus restored`);
       await page.locator('#helpButton').click(); await page.locator('#helpCloseButton').click();
       await page.locator('#helpButton').click(); await page.mouse.click(2,2);

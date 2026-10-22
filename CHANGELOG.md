@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Removed the redundant outer help scrollbar while retaining a fixed header and fully scrollable help content.
+- Removed the redundant outer help scrollbar and locked background page scrolling while help is open, retaining a fixed header and fully scrollable help content.
 - Refined Japanese introductory text and shortened the English introduction without clipping or forcing a single line on phones.
 - Hid the footer on smartphones and stabilized title sizing across Japanese/English switches.
 - Kept landscape Practice/Review controls below the video instead of a right-hand panel.
