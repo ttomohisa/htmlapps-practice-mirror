@@ -12,6 +12,7 @@ on:
       - "scripts/verify-review-export.mjs"
       - "scripts/verify-review-layout.mjs"
       - "scripts/verify-settings-ui.mjs"
+      - "scripts/verify-responsive-ui.mjs"
       - ".github/workflows/capture-release-screenshots.yml"
 
 permissions:
@@ -52,6 +53,10 @@ jobs:
       - name: Verify camera-free settings and narrow layout
         shell: pwsh
         run: node .\scripts\verify-settings-ui.mjs
+
+      - name: Verify bilingual responsive layout and help scrolling
+        shell: pwsh
+        run: node .\scripts\verify-responsive-ui.mjs
 
       - name: Verify Review and fullscreen layout
         shell: pwsh
