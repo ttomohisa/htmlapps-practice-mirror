@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.2] - 2026-10-22
+
+### Fixed
+
+- Removed the redundant outer help scrollbar while retaining a fixed header and fully scrollable help content.
+- Refined Japanese introductory text and shortened the English introduction without clipping or forcing a single line on phones.
+- Hid the footer on smartphones and stabilized title sizing across Japanese/English switches.
+- Kept landscape Practice/Review controls below the video instead of a right-hand panel.
+- Added camera-free bilingual responsive regression checks, including short-view help reachability and repeated dismissal.
+
 ## [1.0.1] - 2026-10-08
 
 ### Added

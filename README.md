@@ -26,7 +26,7 @@ Mobile screenshot: [assets/screenshot-mobile-en.png](assets/screenshot-mobile-en
 - **Guides for alignment** — Add vertical/horizontal guides, drag them on the video, or adjust them with the keyboard.
 - **Mirror and camera controls** — Flip the displayed image, switch front/rear cameras when multiple inputs are available, enter fullscreen, and optionally keep the screen awake.
 - **Save only the clip you need** — Export the frozen Review as a seekable WebM. Duration metadata is repaired locally before download so normal players can seek.
-- **Mobile-first Practice UI** — Touch targets, safe areas, short-landscape layout, auto-hiding Practice controls, and a collapsed tools panel on smartphones.
+- **Mobile-first Practice UI** — Touch targets, safe areas, portrait/landscape video-then-controls layout, hidden smartphone footer, stable bilingual title sizing, auto-hiding Practice controls, and a collapsed tools panel on smartphones.
 - **Adaptive and bounded processing** — Sustained load can reduce processing FPS/resolution; compressed queues are bounded and recoverable live failures use limited automatic recovery.
 - **Japanese / English UI** — Both languages are included in the same standalone HTML.
 - **Local processing** — Camera frames, Review media, guides, performance counters, and reliability state stay in the browser.

@@ -1,10 +1,22 @@
-# Practice Mirror v1.0.0 — Release Checklist
+# Practice Mirror v1.0.2 — Release Checklist
 
 Do not mark manual/device checks complete unless they were actually tested.
 
+## v1.0.2 targeted verification
+
+- [ ] Single help scrollbar; final item reachable in JA/EN, including short viewports.
+- [ ] Exact Japanese tagline and natural delay subtitle.
+- [ ] English introduction fits one line at 1360px and wraps normally on phones.
+- [ ] Smartphone footer hidden in portrait and landscape.
+- [ ] JA/EN brand title retains its size, including repeated language switches.
+- [ ] Practice/Review controls stay below the video at 844x390 and 932x430.
+- [ ] `scripts/verify-responsive-ui.mjs` passes.
+
+The unchecked device/camera gates below are not implied by emulated Chromium layout checks.
+
 ## Repository / packaging
 
-- [ ] app.config/UI/help/footer are v1.0.0.
+- [ ] app.config/UI/help/footer are v1.0.2.
 - [ ] User-approved `assets/favicon.svg` is canonical.
 - [ ] Favicon and upper-left app icon use the same SVG.
 - [ ] `fix-webm-duration` is pinned at 1.0.6 and lock hash verifies.
@@ -79,6 +91,6 @@ Do not mark manual/device checks complete unless they were actually tested.
 - [ ] current `assets/screenshot-mobile-en.png`.
 - [ ] README screenshot references resolve.
 
-## v1.0.0 release decision
+## v1.0.2 release decision
 
 Release only when static checks pass, the required device gates are completed or explicitly excepted, and no Critical/High issue remains.
