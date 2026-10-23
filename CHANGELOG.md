@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Move the existing footer version to the end of Help, retaining its phone/short-landscape/Review hiding, the header version, and localized privacy note.
+
 ## [1.0.2] - 2026-10-22
 
 ### Fixed

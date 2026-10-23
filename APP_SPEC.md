@@ -10,6 +10,12 @@ Practice Mirror is a local-first delayed camera mirror for self-practice.
 
 Move → delayed view → Review if needed → adjust → move again.
 
+## Shared build-information placement
+
+- The existing informational footer version, “Practice Mirror v1.0.2”, is the final item in the Help scroll body. The footer retains its localized processing note and the header version is unchanged.
+- The moved version retains the original footer visibility: hidden at widths up to 760px, on coarse-pointer landscape screens up to 620px high, and while Review is active. Other Help content remains available.
+- No camera, codec, export, permission, or version changes.
+
 ## v1.0.2 responsive polish
 
 - Help uses one scrollable body and a fixed dialog header; background page scrolling is locked only while the dialog is open; the final item remains reachable on short screens.
