@@ -1,0 +1,52 @@
+'use strict';
+// CI-only native layout checks; synthetic inputs never request camera/microphone access.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {pathToFileURL}=require('node:url'),{chromium}=require('playwright');
+const cfg={"slug": "practice-mirror", "bp": 760, "short": 620, "landscape": true, "lang": "#languageButton", "version": ".version-badge", "value": "v1.0.2", "badge": "[data-i18n=\"localBadge\"]", "meta": true, "head": "#helpDialog > .dialog-head", "close": "#helpCloseButton"};
+const results=path.resolve(__dirname,'../test-results/mobile-layout');
+async function bounds(locator,width,height,label){const r=await locator.boundingBox();assert.ok(r&&r.x>=0&&r.x+r.width<=width+1&&r.y>=0&&r.y+r.height<=height+1,label+': '+JSON.stringify(r));}
+async function smoke(page,file){
+ await page.locator('#reviewSettings > summary').click();await page.locator('[data-review-seconds="60"]').click();assert.equal(await page.locator('#reviewSecondsInput').inputValue(),'60');
+ await page.locator('#customDelayTrigger').click();await page.locator('#customDelayInput').fill('7');await page.locator('#customDelayInput').press('Tab');
+ await page.reload();await page.locator('#helpButton').waitFor();await page.locator('#reviewSettings > summary').click();assert.equal(await page.locator('#reviewSecondsInput').inputValue(),'60');assert.equal(await page.locator('#customDelayInput').inputValue(),'7');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('practice-mirror-delay')),'7');assert.equal(await page.locator('#startButton').isVisible(),true);
+ console.log('PASS actual camera-free settings persistence '+file);
+}
+async function main(){
+ fs.mkdirSync(results,{recursive:true});const browser=await chromium.launch();
+ try{for(const file of ['dist/index.html','dist/index.self-extract.html',cfg.slug+'.html'])for(const language of ['ja','en'])for(const [width,height,coarse] of [[1360,900,false],[cfg.bp+1,568,false],[cfg.bp,568,false],[360,640,false],[320,568,false],[393,252,false],[900,430,true]]){
+  const compact=width<=cfg.bp||(coarse&&height<=cfg.short&&(!cfg.landscape||width>height));
+  const context=await browser.newContext({viewport:{width,height},locale:language,hasTouch:coarse,reducedMotion:'reduce'}),page=await context.newPage(),errors=[],requests=[];
+  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
+  const label=`${file} ${language} ${width}x${height} coarse=${coarse}`;
+  try{
+   await page.goto(pathToFileURL(path.resolve(__dirname,'..',file)).href);await page.locator('#helpButton').waitFor();
+   if(await page.locator('html').getAttribute('lang')!==language)await page.locator(cfg.lang).click();await page.locator(cfg.lang).click();await page.locator(cfg.lang).click();assert.equal(await page.locator('html').getAttribute('lang'),language,label+': repeated localization');
+   assert.equal((await page.locator(cfg.version).textContent()).trim(),cfg.value,label+': existing header version');
+   assert.equal((await page.locator(cfg.badge).textContent()).trim(),language==='ja'?'完全ローカル処理':'Fully local processing');
+   if(await page.locator('.local-badge').isVisible())assert.ok(await page.locator('.local-badge').evaluate(el=>{const b=el.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(el.querySelector('span'));return b.left>=0&&b.right<=innerWidth&&el.scrollWidth<=el.clientWidth+1&&[...range.getClientRects()].every(r=>r.left>=b.left-1&&r.right<=b.right+1&&r.top>=b.top-1&&r.bottom<=b.bottom+1);}),label+': rendered badge fits');
+   assert.equal(await page.locator('body > footer').isVisible(),!compact,label+': existing footer visibility');
+   if(cfg.meta){assert.equal(await page.locator('#helpVersion').count(),1);assert.equal(await page.locator('#helpVersion').textContent(),'Practice Mirror v1.0.2');assert.equal(await page.locator('main #helpVersion').count(),0);assert.doesNotMatch(await page.locator('footer').textContent(),/v1\.0\.2/);}
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+': page width');
+   await page.locator('#helpButton').focus();await page.keyboard.press('Enter');const body=page.locator('#helpDialog > .dialog-body');
+   if(cfg.meta){assert.ok(await body.evaluate(el=>el.lastElementChild.id==='helpVersion'),label+': metadata final in actual scroll body');assert.equal(await page.locator('#helpVersion').isVisible(),!compact,label+': original metadata hiding');}
+   // Pause's existing license disclosure uses the pointer route; no dismissal behavior is changed by this wording-only fix.
+   if(!cfg.meta){await page.locator('.pt-license > summary').click();assert.equal(await page.locator('.pt-license').getAttribute('open'),'');assert.equal(await page.locator('#helpDialog').isVisible(),true);}
+   await body.evaluate(el=>{el.scrollTop=el.scrollHeight;});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   const finalSelector=cfg.meta?(compact?'#helpDialog [data-lang-block="'+language+'"] > p:last-child':'#helpVersion'):'.pt-license pre';
+   const tail=await page.locator(finalSelector).evaluate(el=>{const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let last;while(w.nextNode())if(w.currentNode.textContent.trim())last=w.currentNode;const range=document.createRange(),end=last.textContent.trimEnd().length;range.setStart(last,end-1);range.setEnd(last,end);return range.getBoundingClientRect().toJSON();});
+   const bb=await body.boundingBox(),db=await page.locator('#helpDialog').boundingBox();console.log('GEOMETRY '+label+' '+JSON.stringify({tail,body:bb,dialog:db}));
+   assert.ok(tail.x>=0&&tail.right<=width&&tail.y>=Math.max(0,bb.y,db.y)-1&&tail.bottom<=Math.min(height,bb.y+bb.height,db.y+db.height)+1,label+': final Help character reachable');
+   assert.ok(await body.evaluate(el=>el.scrollWidth<=el.clientWidth+1),label+': Help width');await bounds(page.locator(cfg.head),width,height,label+': header');await bounds(page.locator(cfg.head+' h2'),width,height,label+': title');await bounds(page.locator(cfg.close),width,height,label+': Close');
+   const header=await page.locator(cfg.head).boundingBox();for(const selector of [cfg.head+' h2',cfg.close]){const r=await page.locator(selector).boundingBox();assert.ok(r.x>=header.x-1&&r.x+r.width<=header.x+header.width+1&&r.y>=header.y-1&&r.y+r.height<=header.y+header.height+1,label+': title/Close contained in fixed Help header');}
+   if(file==='dist/index.html'&&[1360,320].includes(width))await page.screenshot({path:path.join(results,`help-${language}-${width}.png`)});
+   assert.ok(db.y>1,label+': genuine backdrop');const before=await page.evaluate(()=>scrollY);await page.mouse.move(2,1);await page.mouse.wheel(0,400);await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>scrollY),before,label+': background lock retained');
+   await page.keyboard.press('Escape');assert.equal(await page.locator('#helpDialog').isVisible(),false);await page.locator('#helpButton').click();await page.locator(cfg.close).click();assert.equal(await page.locator('#helpDialog').isVisible(),false);await page.locator('#helpButton').click();await page.mouse.click(2,1);assert.equal(await page.locator('#helpDialog').isVisible(),false,label+': existing backdrop dismissal');
+   // CSS-only Review state: this does not simulate camera capture or media Review.
+   await page.evaluate(()=>document.body.classList.add('review-active'));await page.locator('#helpButton').click();assert.equal(await page.locator('#helpVersion').isVisible(),false,label+': original Review metadata hiding');await page.locator(cfg.close).click();await page.evaluate(()=>document.body.classList.remove('review-active'));
+   if(file!==cfg.slug+'.html'&&language==='ja'&&width===360)await smoke(page,file);
+   assert.deepEqual(errors,[],label+': runtime errors');assert.deepEqual(requests,[],label+': external runtime requests');console.log('PASS '+label);
+  }catch(e){await page.screenshot({path:path.join(results,`failure-${file.replace(/[^a-z0-9]/gi,'-')}-${language}-${width}x${height}.png`)}).catch(()=>{});console.error('CONTEXT '+label+' '+JSON.stringify({errors,requests}));throw e;}finally{await context.close();}
+ }}finally{await browser.close();}
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});
