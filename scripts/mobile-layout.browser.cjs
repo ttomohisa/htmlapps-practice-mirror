@@ -2,7 +2,7 @@
 // CI-only native layout checks; synthetic inputs never request camera/microphone access.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {pathToFileURL}=require('node:url'),{chromium}=require('playwright');
-const cfg={"slug": "practice-mirror", "bp": 760, "short": 620, "landscape": true, "lang": "#languageButton", "version": ".version-badge", "value": "v1.0.2", "badge": "[data-i18n=\"localBadge\"]", "meta": true, "head": "#helpDialog > .dialog-head", "close": "#helpCloseButton"};
+const cfg={"slug": "practice-mirror", "bp": 760, "short": 620, "landscape": true, "lang": "#languageButton", "version": ".version-badge", "value": "v"+JSON.parse(fs.readFileSync(path.resolve(__dirname,"../app.config.json"),"utf8")).version, "badge": "[data-i18n=\"localBadge\"]", "meta": true, "head": "#helpDialog > .dialog-head", "close": "#helpCloseButton"};
 const results=path.resolve(__dirname,'../test-results/mobile-layout');
 async function bounds(locator,width,height,label){const r=await locator.boundingBox();assert.ok(r&&r.x>=0&&r.x+r.width<=width+1&&r.y>=0&&r.y+r.height<=height+1,label+': '+JSON.stringify(r));}
 async function smoke(page,file){
@@ -13,7 +13,7 @@ async function smoke(page,file){
  console.log('PASS actual camera-free settings persistence '+file);
 }
 async function main(){
- fs.mkdirSync(results,{recursive:true});const browser=await chromium.launch();
+ fs.mkdirSync(results,{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined});
  try{for(const file of ['dist/index.html','dist/index.self-extract.html',cfg.slug+'.html'])for(const language of ['ja','en'])for(const [width,height,coarse] of [[1360,900,false],[cfg.bp+1,568,false],[cfg.bp,568,false],[360,640,false],[320,568,false],[393,252,false],[900,430,true]]){
   const compact=width<=cfg.bp||(coarse&&height<=cfg.short&&(!cfg.landscape||width>height));
   const context=await browser.newContext({viewport:{width,height},locale:language,hasTouch:coarse,reducedMotion:'reduce'}),page=await context.newPage(),errors=[],requests=[];
@@ -26,7 +26,7 @@ async function main(){
    assert.equal((await page.locator(cfg.badge).textContent()).trim(),language==='ja'?'完全ローカル処理':'Fully local processing');
    if(await page.locator('.local-badge').isVisible())assert.ok(await page.locator('.local-badge').evaluate(el=>{const b=el.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(el.querySelector('span'));return b.left>=0&&b.right<=innerWidth&&el.scrollWidth<=el.clientWidth+1&&[...range.getClientRects()].every(r=>r.left>=b.left-1&&r.right<=b.right+1&&r.top>=b.top-1&&r.bottom<=b.bottom+1);}),label+': rendered badge fits');
    assert.equal(await page.locator('body > footer').isVisible(),!compact,label+': existing footer visibility');
-   if(cfg.meta){assert.equal(await page.locator('#helpVersion').count(),1);assert.equal(await page.locator('#helpVersion').textContent(),'Practice Mirror v1.0.2');assert.equal(await page.locator('main #helpVersion').count(),0);assert.doesNotMatch(await page.locator('footer').textContent(),/v1\.0\.2/);}
+   if(cfg.meta){assert.equal(await page.locator('#helpVersion').count(),1);assert.equal(await page.locator('#helpVersion').textContent(),'Practice Mirror '+cfg.value);assert.equal(await page.locator('main #helpVersion').count(),0);assert.doesNotMatch(await page.locator('footer').textContent(),/v\d+\.\d+\.\d+/);}
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+': page width');
    await page.locator('#helpButton').focus();await page.keyboard.press('Enter');const body=page.locator('#helpDialog > .dialog-body');
    if(cfg.meta){assert.ok(await body.evaluate(el=>el.lastElementChild.id==='helpVersion'),label+': metadata final in actual scroll body');assert.equal(await page.locator('#helpVersion').isVisible(),!compact,label+': original metadata hiding');}

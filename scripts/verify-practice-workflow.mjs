@@ -51,7 +51,15 @@ try{
   assert.ok(Math.abs(media.duration-2)<0.2,JSON.stringify(media));assert.ok(Math.abs(media.time-1)<0.2);
   await page.locator('#reviewExportDetails summary').click();
   for(const [width,height] of [[320,568],[375,667],[390,844],[430,932],[667,375],[844,390],[1360,900]]){
-    await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
+    await page.setViewportSize({width,height});
+    // setViewportSize may resolve before the browser dispatches resize and fitStage runs.
+    await page.waitForFunction(()=>{
+      const stage=document.querySelector('#stageShell').getBoundingClientRect();
+      const landscape=innerWidth>innerHeight&&innerHeight<=620;
+      const limit=Math.max(120,innerHeight-66-(landscape?24:300));
+      return stage.height<=limit+1&&stage.width<=innerWidth;
+    });
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>{scrollTo(0,0);resolve();}))));
     for(const lang of ['ja','en']){
       if(await page.locator('html').getAttribute('lang')!==lang)await page.locator('#languageButton').click();
       const g=await page.evaluate(()=>{const a=document.querySelector('#stageShell').getBoundingClientRect(),b=document.querySelector('#reviewSeek').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,aspect:a.width/a.height,seekBottom:b.bottom};});
