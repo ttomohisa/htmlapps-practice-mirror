@@ -38,6 +38,15 @@ try{
   const snapshot=await page.evaluate(()=>{const r=window.testMirror.state.review;return {end:r.endUs,pos:r.positionUs,duration:r.durationUs,playing:r.playing};});
   assert.equal(snapshot.end,anchor);assert.equal(snapshot.pos,snapshot.duration);assert.equal(snapshot.playing,false);
   assert.equal(await page.evaluate(()=>window.testMirror.setReviewRange(1e6,3e6)),true);
+  await page.locator('#loopButton').click();
+  assert.equal(await page.locator('#loopButton').getAttribute('aria-pressed'),'true');
+  assert.match(await page.locator('#loopButton').innerText(),/ON/);
+  await page.locator('#languageButton').click();
+  assert.match(await page.locator('#loopButton').innerText(),/Loop.*ON/s);
+  await page.locator('#loopButton').click();
+  assert.equal(await page.locator('#loopButton').getAttribute('aria-pressed'),'false');
+  assert.match(await page.locator('#loopButton').innerText(),/OFF/);
+  await page.locator('#languageButton').click();
   await page.locator('#loopButton').click();await page.locator('#playPauseButton').click();
   await page.waitForTimeout(4500);
   const loop=await page.evaluate(()=>{const r=window.testMirror.state.review;return {pos:r.positionUs,playing:r.playing};});
@@ -64,7 +73,12 @@ try{
       if(await page.locator('html').getAttribute('lang')!==lang)await page.locator('#languageButton').click();
       const g=await page.evaluate(()=>{const a=document.querySelector('#stageShell').getBoundingClientRect(),b=document.querySelector('#reviewSeek').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,aspect:a.width/a.height,seekBottom:b.bottom};});
       assert.equal(g.overflow,false,`${width}/${lang}`);assert.ok(Math.abs(g.aspect-360/640)<0.02,JSON.stringify(g));assert.ok(g.seekBottom<=height+1,`${width}/${lang}: seek must remain on screen ${JSON.stringify(g)}`);
-      await page.screenshot({path:`tmp-review-ui/review-${width}-${lang}.png`});
+      await page.locator('#rangeDetails').evaluate(node=>node.open=true);
+      const range=await page.locator('.range-fields').evaluate(node=>({width:node.clientWidth,scroll:node.scrollWidth}));
+      assert.ok(range.scroll<=range.width,`${width}/${lang}: range controls overflow`);
+      await page.screenshot({path:`tmp-review-ui/review-${width}-${lang}.png`,fullPage:true});
+      await page.locator("#rangeDetails").screenshot({path:`tmp-review-ui/range-${width}-${lang}.png`});
+      await page.locator('#rangeDetails').evaluate(node=>node.open=false);
     }
   }
   await page.locator('#returnButton').click();await page.waitForFunction(()=>window.testMirror.state.phase==='warming');

@@ -78,3 +78,7 @@ The v1.0.0 release branch includes the generated `practice-mirror.html`. The scr
 `RELEASE_CHECKLIST.md`, `MOBILE_ACCESSIBILITY_TEST_MATRIX.md`, and `RELIABILITY_TEST_MATRIX.md` remain the release validation references. Static CI verifies packaging, runtime-network boundaries, key-frame restart safety, seekable WebM output, Review layout, configurable Review history, icon consistency, and accessibility/reliability regression markers.
 
 Manual device checks must not be represented as completed unless they were actually run.
+
+## Review control clarity
+
+Start and end each group their numeric time (seconds) with a current-position action. Narrow screens use separate rows; full-range reset is secondary. Loop shows ON/OFF text and a switch position alongside its localized label, synchronized with aria-pressed through language changes.
