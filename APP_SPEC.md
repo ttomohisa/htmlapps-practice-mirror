@@ -82,3 +82,7 @@ Manual device checks must not be represented as completed unless they were actua
 ## Review control clarity
 
 Start and end each group their numeric time (seconds) with a current-position action. Narrow screens use separate rows; full-range reset is secondary. Loop shows ON/OFF text and a switch position alongside its localized label, synchronized with aria-pressed through language changes.
+
+## Phone visual hierarchy
+
+At widths up to 760px, preparation is left aligned with underlined delay presets and one full-width start action. Sessions use a flat media workspace without nested cards. Review puts seek/time before centered play and frame controls; playback speed uses a quiet segmented row. Return, range, export and settings retain text labels, keyboard access and 44px targets. The loop ON/OFF state remains explicit. Camera geometry and media behavior are unchanged.

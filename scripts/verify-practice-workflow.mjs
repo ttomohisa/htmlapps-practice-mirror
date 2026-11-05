@@ -68,14 +68,29 @@ try{
       const limit=Math.max(120,innerHeight-66-(landscape?24:300));
       return stage.height<=limit+1&&stage.width<=innerWidth;
     });
-    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>{scrollTo(0,0);resolve();}))));
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>{scrollTo(0,0);document.querySelector(".session-side").scrollTop=0;resolve();}))));
     for(const lang of ['ja','en']){
       if(await page.locator('html').getAttribute('lang')!==lang)await page.locator('#languageButton').click();
       const g=await page.evaluate(()=>{const a=document.querySelector('#stageShell').getBoundingClientRect(),b=document.querySelector('#reviewSeek').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,aspect:a.width/a.height,seekBottom:b.bottom};});
       assert.equal(g.overflow,false,`${width}/${lang}`);assert.ok(Math.abs(g.aspect-360/640)<0.02,JSON.stringify(g));assert.ok(g.seekBottom<=height+1,`${width}/${lang}: seek must remain on screen ${JSON.stringify(g)}`);
+      if(width<=760 || (width>height && height<=620)){
+        const controls=await page.evaluate(()=>{
+          const box=id=>document.getElementById(id).getBoundingClientRect().toJSON();
+          return {back:box('frameBackButton'),play:box('playPauseButton'),forward:box('frameForwardButton'),seek:box('reviewSeek')};
+        });
+        assert.ok(controls.back.x<controls.play.x&&controls.play.x<controls.forward.x,'frame controls flank play');
+        assert.ok(Math.abs(controls.back.y+controls.back.height/2-controls.play.y-controls.play.height/2)<2,'transport aligns vertically');
+        assert.ok(controls.seek.bottom<=controls.play.y,'seek stays immediately before playback controls');
+        await page.locator('#frameBackButton').focus();
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#playPauseButton').evaluate(node=>node===document.activeElement),true,'keyboard reaches play after back');
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#frameForwardButton').evaluate(node=>node===document.activeElement),true,'keyboard reaches forward after play');
+      }
       await page.locator('#rangeDetails').evaluate(node=>node.open=true);
       const range=await page.locator('.range-fields').evaluate(node=>({width:node.clientWidth,scroll:node.scrollWidth}));
       assert.ok(range.scroll<=range.width,`${width}/${lang}: range controls overflow`);
+      await page.locator('.session-side').evaluate(node=>node.scrollTop=0);
       await page.screenshot({path:`tmp-review-ui/review-${width}-${lang}.png`,fullPage:true});
       await page.locator("#rangeDetails").screenshot({path:`tmp-review-ui/range-${width}-${lang}.png`});
       await page.locator('#rangeDetails').evaluate(node=>node.open=false);

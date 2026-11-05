@@ -5,6 +5,7 @@
 - Added range selection, looping and selected-range WebM export.
 - Paired range times with their actions and made loop ON/OFF visible in text and a switch.
 - Simplified mobile layout, landscape side controls and explicit guide editing.
+- Reworked phone preparation and session screens into a flat media workspace with a centered play control, adjacent seek bar, quiet speed selector and consistent disclosures.
 
 # Changelog
 
