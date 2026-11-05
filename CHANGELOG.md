@@ -1,3 +1,10 @@
+# v1.1.0 — 2026-11-05
+
+- Added camera positioning preview before practice.
+- Anchored review to the displayed frame with bounded history.
+- Added range selection, looping and selected-range WebM export.
+- Simplified mobile layout, landscape side controls and explicit guide editing.
+
 # Changelog
 
 ## Unreleased

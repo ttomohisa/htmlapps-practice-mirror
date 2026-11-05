@@ -62,6 +62,10 @@ jobs:
         shell: pwsh
         run: node .\scripts\verify-review-layout.mjs
 
+      - name: Verify positioning and review workflow
+        shell: pwsh
+        run: node ./scripts/verify-practice-workflow.mjs
+
       - name: Capture Japanese and English screenshots
         shell: pwsh
         run: node .\scripts\capture-screenshots.mjs

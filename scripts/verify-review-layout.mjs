@@ -3,19 +3,19 @@ import { readFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const html=await readFile(path.resolve("dist/index.html"));
+const html=await readFile(path.resolve("dist/index.html"),"utf8");
 const out=path.resolve("tmp-review-ui");
 await mkdir(out,{recursive:true});
-const server=http.createServer((req,res)=>{res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store"});res.end(html);});
+const server=http.createServer((req,res)=>{res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store"});res.end(html.replace("    const savedDelay=","    window.layoutTest={state,fitStage,updatePhaseUI}; const savedDelay="));});
 await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
 const port=server.address().port;
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined});
 
 async function forceReview(page){
   await page.evaluate(()=>{
     document.querySelector("#startPanel").hidden=true;
     const mirror=document.querySelector("#mirrorPanel"); mirror.classList.add("active","review-mode");
-    document.body.classList.add("review-active");
+    document.body.classList.add("review-active","session-active"); window.layoutTest.state.phase="review"; window.layoutTest.fitStage();
     document.querySelector("#stageOverlay").hidden=true;
     document.querySelector("#reviewControls").hidden=false;
     document.querySelector("#reviewExportDetails").open=false;
@@ -80,9 +80,9 @@ async function validateFullscreen(){
   const page=await context.newPage(); await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:"networkidle"});
   await page.evaluate(()=>{
     document.querySelector("#startPanel").hidden=true;
-    document.querySelector("#mirrorPanel").classList.add("active");
+    document.querySelector("#mirrorPanel").classList.add("active"); window.layoutTest.state.phase="practice"; document.body.classList.add("session-active"); window.layoutTest.fitStage();
     document.querySelector("#stageOverlay").hidden=true;
-    document.querySelector("#fullscreenButton").disabled=false;
+    document.querySelector("#fullscreenButton").disabled=false; document.querySelector("#practiceTools").classList.add("tools-open");
     const canvas=document.querySelector("#delayCanvas"); canvas.width=1280; canvas.height=720;
     const ctx=canvas.getContext("2d"); ctx.fillStyle="#d8dedb"; ctx.fillRect(0,0,1280,720);
   });

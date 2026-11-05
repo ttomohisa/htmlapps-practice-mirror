@@ -1,7 +1,12 @@
+
+## v1.1.0
+
+Camera start opens a live positioning preview; Start practice begins delayed processing. Review freezes the displayed frame, retaining preceding history plus the delay (bounded by 64 MiB, time and packet count). Short retained history is reported. Review opens paused at its end; start/end selection controls loop playback and original-speed WebM export. Export excludes audio, guides and mirroring. Landscape sessions place controls beside the camera view, preserving its aspect ratio. Guide dragging requires edit mode. These rules supersede older layout and Review timing descriptions below.
+
 # Practice Mirror — Application Specification
 
 Status: Stable release
-Current version: v1.0.2
+Current version: v1.1.0
 Target: Browser Kitty
 
 ## Product definition
@@ -12,17 +17,17 @@ Move → delayed view → Review if needed → adjust → move again.
 
 ## Shared build-information placement
 
-- The existing informational footer version, “Practice Mirror v1.0.2”, is the final item in the Help scroll body. The footer retains its localized processing note and the header version is unchanged.
+- The existing informational footer version, “Practice Mirror v1.1.0”, is the final item in the Help scroll body. The footer retains its localized processing note and the header version is unchanged.
 - The moved version retains the original footer visibility: hidden at widths up to 760px, on coarse-pointer landscape screens up to 620px high, and while Review is active. Other Help content remains available.
 - No camera, codec, export, permission, or version changes.
 
-## v1.0.2 responsive polish
+## v1.1.0 responsive polish
 
 - Help uses one scrollable body and a fixed dialog header; background page scrolling is locked only while the dialog is open; the final item remains reachable on short screens.
 - The Japanese tagline is “動いた直後にさっきの自分を確認する”; the subtitle is “1〜30秒の遅延表示と振り返り”.
 - The concise English introduction fits one line at desktop width and wraps normally on phones.
 - Smartphone portrait and landscape hide the footer and retain the same brand title size when switching languages. Browser text inflation is normalized without disabling user zoom.
-- Practice and Review always place controls below the video in landscape; short screens may scroll vertically rather than moving controls beside the video.
+- Practice and Review place controls beside the video in short landscape viewports.
 - Automated Chromium coverage includes 320/390px portrait, 844/932px landscape, desktop, and short desktop in Japanese and English. These are emulated viewports, not physical-device certification.
 
 ## v1.0.1 settings polish
