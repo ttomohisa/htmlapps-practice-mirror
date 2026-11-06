@@ -1,6 +1,7 @@
 # v1.1.0 — 2026-11-05
 
 - Added camera positioning preview before practice.
+- Kept Review visible and tappable throughout Practice; only auxiliary tools auto-hide.
 - Anchored review to the displayed frame with bounded history.
 - Disabled low-latency front-buffer canvas presentation, which can introduce line-like tearing during delayed playback.
 - Added range selection, looping and selected-range WebM export.

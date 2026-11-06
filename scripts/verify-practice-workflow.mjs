@@ -34,7 +34,24 @@ try{
   await page.waitForFunction(()=>window.testMirror.state.phase==='practice');
   await page.waitForFunction(()=>!document.querySelector('#reviewButton').disabled,null,{timeout:20000});
   await page.waitForFunction(()=>window.testMirror.state.latestRenderedTimestamp>=5e6);
-  const anchor=await page.evaluate(()=>{const a=window.testMirror.state.latestRenderedTimestamp;void window.testMirror.startReview();return a;});
+  // Idle touch users must be able to enter Review without first revealing settings.
+  await page.evaluate(()=>document.activeElement?.blur());
+  await page.waitForFunction(()=>document.querySelector('#mirrorPanel').classList.contains('controls-hidden'),null,{timeout:7000});
+  const persistent=await page.locator('#reviewButton').evaluate(button=>{
+    const panel=button.closest('#stageControls'),style=getComputedStyle(panel);
+    return {opacity:Number(style.opacity),pointerEvents:style.pointerEvents,inert:Boolean(button.closest('[inert]')),hidden:Boolean(button.closest('[aria-hidden="true"]')),tabIndex:button.tabIndex};
+  });
+  assert.equal(persistent.opacity,1,'Review stays visible after the auxiliary auto-hide timeout');
+  assert.notEqual(persistent.pointerEvents,'none','Review remains tappable');
+  assert.equal(persistent.inert,false);assert.equal(persistent.hidden,false);assert.ok(persistent.tabIndex>=0);
+  assert.equal(await page.locator('#practiceTools').evaluate(node=>node.inert),true,'hidden auxiliary controls leave the focus order');
+  await page.locator('#stageShell').tap();
+  await page.waitForFunction(()=>!document.querySelector('#mirrorPanel').classList.contains('controls-hidden'));
+  assert.equal(await page.locator('#practiceTools').evaluate(node=>node.inert),false,'video tap reveals auxiliary controls');
+  await page.waitForFunction(()=>document.querySelector('#mirrorPanel').classList.contains('controls-hidden'),null,{timeout:7000});
+  await page.evaluate(()=>document.addEventListener('click',event=>{if(event.target.closest('#reviewButton'))window.reviewClickAnchor=window.testMirror.state.latestRenderedTimestamp;},{capture:true,once:true}));
+  await page.locator('#reviewButton').tap();
+  const anchor=await page.evaluate(()=>window.reviewClickAnchor);
   await page.waitForFunction(()=>window.testMirror.state.phase==='review');
   const snapshot=await page.evaluate(()=>{const r=window.testMirror.state.review;return {end:r.endUs,pos:r.positionUs,duration:r.durationUs,playing:r.playing};});
   assert.equal(snapshot.end,anchor);assert.equal(snapshot.pos,snapshot.duration);assert.equal(snapshot.playing,false);

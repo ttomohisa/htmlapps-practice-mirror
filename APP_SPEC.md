@@ -90,3 +90,7 @@ At widths up to 760px, preparation is left aligned with underlined delay presets
 ## Video presentation
 
 The shared Practice/Review video canvas requests synchronized compositing (`desynchronized:false`). Front-buffer rendering must not be requested: it can expose partial frame updates as tearing. Camera acquisition, codec selection, delay timestamps, guides and exported video are unchanged. A Chromium regression checks the effective canvas context attributes before the camera workflow. Physical Android display scanout still requires device verification.
+
+## Persistent Review action
+
+During Practice, auto-hide affects only auxiliary tools. The Review action and delay summary stay visible, pointer-accessible and in the accessibility tree, including after idle time and in fullscreen. Hidden auxiliary tools remain inert and leave the tab order; tapping the video restores them. Preview, warm-up, Review and keyboard interaction retain their existing auto-hide guards.
