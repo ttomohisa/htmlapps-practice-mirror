@@ -581,7 +581,9 @@
       reviewControls:$("reviewControls"), reviewDurationMeta:$("reviewDurationMeta"), returnButton:$("returnButton"), reviewExportDetails:$("reviewExportDetails"), playPauseButton:$("playPauseButton"), playPauseIcon:$("playPauseIcon"), playPauseLabel:$("playPauseLabel"), frameBackButton:$("frameBackButton"), frameForwardButton:$("frameForwardButton"),
       reviewSeek:$("reviewSeek"), reviewCurrentTime:$("reviewCurrentTime"), reviewTotalTime:$("reviewTotalTime"), outputFilename:$("outputFilename"), outputExtension:$("outputExtension"), saveClipButton:$("saveClipButton"), saveClipLabel:$("saveClipLabel"), exportMeta:$("exportMeta"), exportProgress:$("exportProgress"), exportProgressBar:$("exportProgressBar"), exportProgressText:$("exportProgressText")
     };
-    const context = els.delayCanvas.getContext("2d", {alpha:false, desynchronized:true});
+    // Present complete video frames through the compositor. Low-latency/front-buffer
+    // rendering (desynchronized:true) can tear during scanout on Android displays.
+    const context = els.delayCanvas.getContext("2d", {alpha:false, desynchronized:false});
 
     function readStorage(key){ try{return localStorage.getItem(key);}catch{return null;} }
     function writeStorage(key,value){ try{localStorage.setItem(key,value);}catch{/* Storage may be unavailable. */} }

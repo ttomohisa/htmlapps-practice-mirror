@@ -25,6 +25,7 @@ try{
   const page=await context.newPage();const errors=[];const external=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith(`http://127.0.0.1:${server.address().port}`))external.push(r.url());});
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  assert.equal(await page.locator('#delayCanvas').evaluate(canvas=>canvas.getContext('2d').getContextAttributes().desynchronized),false,'video presentation must use synchronized compositing to avoid scanout tearing');
   await page.locator('[data-delay="3"]').click();await page.locator('#startButton').click();
   await page.waitForFunction(()=>window.testMirror.state.phase==='preview',null,{timeout:5000});
   assert.equal(await page.evaluate(()=>window.testMirror.state.encoder),null,'positioning must not start delayed encoding');

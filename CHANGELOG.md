@@ -2,6 +2,7 @@
 
 - Added camera positioning preview before practice.
 - Anchored review to the displayed frame with bounded history.
+- Disabled low-latency front-buffer canvas presentation, which can introduce line-like tearing during delayed playback.
 - Added range selection, looping and selected-range WebM export.
 - Paired range times with their actions and made loop ON/OFF visible in text and a switch.
 - Simplified mobile layout, landscape side controls and explicit guide editing.

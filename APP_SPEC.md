@@ -86,3 +86,7 @@ Start and end each group their numeric time (seconds) with a current-position ac
 ## Phone visual hierarchy
 
 At widths up to 760px, preparation is left aligned with underlined delay presets and one full-width start action. Sessions use a flat media workspace without nested cards. Review puts seek/time before centered play and frame controls; playback speed uses a quiet segmented row. Return, range, export and settings retain text labels, keyboard access and 44px targets. The loop ON/OFF state remains explicit. Camera geometry and media behavior are unchanged.
+
+## Video presentation
+
+The shared Practice/Review video canvas requests synchronized compositing (`desynchronized:false`). Front-buffer rendering must not be requested: it can expose partial frame updates as tearing. Camera acquisition, codec selection, delay timestamps, guides and exported video are unchanged. A Chromium regression checks the effective canvas context attributes before the camera workflow. Physical Android display scanout still requires device verification.
