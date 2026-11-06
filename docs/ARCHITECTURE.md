@@ -1,8 +1,3 @@
-
-## v1.1.0
-
-Camera start opens a live positioning preview; Start practice begins delayed processing. Review freezes the displayed frame, retaining preceding history plus the delay (bounded by 64 MiB, time and packet count). Short retained history is reported. Review opens paused at its end; start/end selection controls loop playback and original-speed WebM export. Export excludes audio, guides and mirroring. Landscape sessions place controls beside the camera view, preserving its aspect ratio. Guide dragging requires edit mode. These rules supersede older layout and Review timing descriptions below.
-
 # Architecture
 
 ## Overview

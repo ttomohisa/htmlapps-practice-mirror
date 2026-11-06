@@ -254,7 +254,7 @@
               <label class="review-length-label" for="reviewSecondsInput" data-i18n="reviewLengthLabel">Review上限</label>
               <input id="reviewSecondsInput" class="review-length-input" type="number" min="10" max="180" step="1" value="10" inputmode="numeric" data-i18n-aria="reviewLengthAria" aria-label="Review上限秒数" aria-describedby="reviewLengthHelp reviewSecondsError" aria-invalid="false">
               <span class="review-length-unit" data-i18n="secondsUnit">秒</span>
-              <p id="reviewLengthHelp" class="review-length-help" data-i18n="reviewLengthHelp">10〜180秒。Reviewは約10秒たまれば使え、最大でこの時間まで保持します。長くすると端末メモリと保存時間を多く使います。</p>
+              <p id="reviewLengthHelp" class="review-length-help" data-i18n="reviewLengthHelp">10〜180秒。表示済みの履歴があれば見返せます。最大でこの時間まで保持します。長くすると端末メモリと保存時間を多く使います。</p>
               <span id="reviewSecondsError" class="review-length-error" role="status"></span>
             </div>
           </details>
@@ -390,12 +390,12 @@
             <div class="range-fields">
               <div class="range-boundary">
                 <label for="rangeStartInput" data-i18n="rangeStart">開始</label>
-                <div class="range-time-field"><input id="rangeStartInput" type="number" min="0" step="0.1" inputmode="decimal" aria-describedby="rangeError"><span data-i18n="secondsUnit">秒</span></div>
+                <div class="range-time-field"><input id="rangeStartInput" type="number" min="0" step="0.001" inputmode="decimal" aria-describedby="rangeError"><span data-i18n="secondsUnit">秒</span></div>
                 <button id="setRangeStartButton" data-i18n-aria="setRangeStartAria" aria-label="現在位置を使う：開始" class="secondary-button" type="button" data-i18n="setRangeStart">現在位置を使う</button>
               </div>
               <div class="range-boundary">
                 <label for="rangeEndInput" data-i18n="rangeEnd">終了</label>
-                <div class="range-time-field"><input id="rangeEndInput" type="number" min="0" step="0.1" inputmode="decimal" aria-describedby="rangeError"><span data-i18n="secondsUnit">秒</span></div>
+                <div class="range-time-field"><input id="rangeEndInput" type="number" min="0" step="0.001" inputmode="decimal" aria-describedby="rangeError"><span data-i18n="secondsUnit">秒</span></div>
                 <button id="setRangeEndButton" data-i18n-aria="setRangeEndAria" aria-label="現在位置を使う：終了" class="secondary-button" type="button" data-i18n="setRangeEnd">現在位置を使う</button>
               </div>
               <button id="resetRangeButton" class="secondary-button" type="button" data-i18n="resetRange">全範囲に戻す</button>
@@ -540,7 +540,7 @@
         unsupportedTitle:"このブラウザでは開始できません", unsupportedCopy:"遅延表示に必要なブラウザ機能が不足しています。最新版のChrome、Edge、Safariなどでお試しください。", secureCopy:"カメラを使うには、安全なページ（HTTPSまたは対応するローカル環境）で開く必要があります。",
         cameraDeniedTitle:"カメラを利用できません", cameraDeniedCopy:"ブラウザの設定から、このページのカメラ利用を許可してください。", cameraMissingCopy:"使用できるカメラが見つかりませんでした。", cameraBusyCopy:"カメラを開始できませんでした。他のアプリがカメラを使用していないか確認してください。",
         codecTitle:"映像処理を開始できません", codecCopy:"この端末で利用できる映像コーデックを確認できませんでした。ブラウザを更新するか、別のブラウザをお試しください。", runtimeTitle:"遅延映像を処理できませんでした", runtimeCopy:"カメラを終了しました。もう一度開始しても改善しない場合は、別のブラウザまたは端末をお試しください。",
-        reviewNotReadyTitle:"見返しの準備中です", reviewNotReadyCopy:"約10秒分の映像がたまると見返しを使えます。設定した上限まで履歴を保持します。", reviewFailedTitle:"見返しを開始できませんでした", reviewFailedCopy:"直前の映像を固定できませんでした。練習に戻ってもう一度お試しください。",
+        reviewNotReadyTitle:"見返しの準備中です", reviewNotReadyCopy:"表示済みの履歴がたまると見返しを使えます。設定した上限まで履歴を保持します。", reviewFailedTitle:"見返しを開始できませんでした", reviewFailedCopy:"直前の映像を固定できませんでした。練習に戻ってもう一度お試しください。",
         cameraStarting:"カメラを準備しています…", stopped:"カメラを終了しました。", cameraReady:"カメラを開始しました。遅延映像を準備しています。", reviewAvailable:"見返しを使えるようになりました。", reviewOpened:"見返しを開始しました。", practiceReturned:"練習表示へ戻りました。遅延映像を準備しています。", guideAdded:"ガイドを追加しました。", guideRemoved:"ガイドを削除しました。", localOnly:"外部通信なし", seconds:"秒遅延", actualPending:"準備中", reviewChip:"見返し", reviewDuration:"見ていた時点までの {seconds} 秒", practiceRestarting:"遅延表示を準備しています"
       },
       en: {
@@ -552,7 +552,7 @@
         unsupportedTitle:"This browser cannot start Practice Mirror", unsupportedCopy:"A browser feature required for delayed video is missing. Try the latest Chrome, Edge, Safari, or another supported browser.", secureCopy:"Camera access requires a secure page (HTTPS or a supported local environment).",
         cameraDeniedTitle:"Camera access is unavailable", cameraDeniedCopy:"Allow camera access for this page in your browser settings and try again.", cameraMissingCopy:"No usable camera was found.", cameraBusyCopy:"The camera could not start. Check whether another app is using it.",
         codecTitle:"Video processing could not start", codecCopy:"No supported video codec could be selected on this device. Update the browser or try another browser.", runtimeTitle:"Delayed video stopped", runtimeCopy:"The camera has been stopped. If restarting does not help, try another browser or device.",
-        reviewNotReadyTitle:"Review is still preparing", reviewNotReadyCopy:"Review becomes available after about 10 seconds. History continues building up to your configured maximum.", reviewFailedTitle:"Review could not start", reviewFailedCopy:"The previous video could not be frozen. Return to practice and try again.",
+        reviewNotReadyTitle:"Review is still preparing", reviewNotReadyCopy:"Review becomes available when displayed history is available. History continues building up to your configured maximum.", reviewFailedTitle:"Review could not start", reviewFailedCopy:"The previous video could not be frozen. Return to practice and try again.",
         cameraStarting:"Starting camera…", stopped:"Camera stopped.", cameraReady:"Camera started. Preparing delayed video.", reviewAvailable:"Review is now available.", reviewOpened:"Review started.", practiceReturned:"Back to Practice. Rebuilding the delay buffer.", guideAdded:"Guide added.", guideRemoved:"Guide removed.", localOnly:"No network access", seconds:"sec delay", actualPending:"Preparing", reviewChip:"Review", reviewDuration:"{seconds} sec ending at the frame you saw", practiceRestarting:"Rebuilding the delay buffer"
       }
     };
@@ -1777,7 +1777,7 @@
       if(els.rangeSummary){
         els.rangeSummary.textContent=t("selectedRange").replace("{seconds}",((state.review.rangeEndUs-state.review.rangeStartUs)/1e6).toFixed(1));
         for(const [input,value] of [[els.rangeStartInput,state.review.rangeStartUs],[els.rangeEndInput,state.review.rangeEndUs]]){
-          input.max=String(state.review.durationUs/1e6);
+          input.max=String(Math.round(state.review.durationUs/1000)/1000);
           if(document.activeElement!==input&&input.getAttribute("aria-invalid")!=="true") input.value=String(Math.round(value/1000)/1000);
         }
         els.loopButton.setAttribute("aria-pressed",String(state.review.loop));
@@ -1830,13 +1830,23 @@
     els.reviewSecondsInput.addEventListener("change",normalizeReviewSeconds);
     els.reviewSecondsInput.addEventListener("blur",normalizeReviewSeconds);
     document.querySelectorAll(".rate-button").forEach(button=>button.addEventListener("click",()=>{ const rate=Number(button.dataset.rate); if(state.phase!=="review"||!Number.isFinite(rate)) return; if(state.review.playing){ const elapsed=(performance.now()*1000-state.review.playbackBasePerfUs)*state.review.rate; state.review.positionUs=Math.min(state.review.rangeEndUs,state.review.playbackBasePositionUs+elapsed); state.review.playbackBasePositionUs=state.review.positionUs; state.review.playbackBasePerfUs=performance.now()*1000; } state.review.rate=rate; updateReviewUI(); }));
+    function rangeInputUs(value,previousUs){
+      if(value.trim()==="") return NaN;
+      const seconds=Number(value);
+      // The fields display milliseconds; retain the exact microsecond timestamp
+      // when an untouched value (or the full-clip endpoint) round-trips through UI.
+      for(const exactUs of [previousUs,state.review.durationUs]){
+        if(seconds===Math.round(exactUs/1000)/1000) return exactUs;
+      }
+      return seconds*1e6;
+    }
     function commitRange(startUs,endUs){
       const valid=setReviewRange(startUs,endUs);
       els.rangeError.textContent=valid?"":t("rangeInvalid");
       for(const input of [els.rangeStartInput,els.rangeEndInput]) input.setAttribute("aria-invalid",String(!valid));
       if(valid){ els.rangeStartInput.value=String(Math.round(startUs/1000)/1000); els.rangeEndInput.value=String(Math.round(endUs/1000)/1000); }
     }
-    for(const input of [els.rangeStartInput,els.rangeEndInput]) input.addEventListener("change",()=>commitRange(els.rangeStartInput.value===""?NaN:Number(els.rangeStartInput.value)*1e6,els.rangeEndInput.value===""?NaN:Number(els.rangeEndInput.value)*1e6));
+    for(const input of [els.rangeStartInput,els.rangeEndInput]) input.addEventListener("change",()=>commitRange(rangeInputUs(els.rangeStartInput.value,state.review.rangeStartUs),rangeInputUs(els.rangeEndInput.value,state.review.rangeEndUs)));
     els.setRangeStartButton.addEventListener("click",()=>commitRange(state.review.positionUs,state.review.rangeEndUs));
     els.setRangeEndButton.addEventListener("click",()=>commitRange(state.review.rangeStartUs,state.review.positionUs));
     els.resetRangeButton.addEventListener("click",()=>commitRange(0,state.review.durationUs));

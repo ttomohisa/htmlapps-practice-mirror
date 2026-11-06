@@ -46,7 +46,7 @@ Configure Review maximum to 180 seconds and run Practice for at least 10 minutes
 
 Pass when:
 
-- Review becomes available after about 10 seconds,
+- Review becomes available once displayed history is available,
 - history continues growing until roughly 180 seconds,
 - entering Review does not cause an abrupt near-2x packet-memory spike,
 - live/history arrays remain bounded after the 180-second window is full,

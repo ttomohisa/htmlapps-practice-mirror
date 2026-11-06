@@ -1,8 +1,3 @@
-
-## v1.1.0
-
-Camera start opens a live positioning preview; Start practice begins delayed processing. Review freezes the displayed frame, retaining preceding history plus the delay (bounded by 64 MiB, time and packet count). Short retained history is reported. Review opens paused at its end; start/end selection controls loop playback and original-speed WebM export. Export excludes audio, guides and mirroring. Landscape sessions place controls beside the camera view, preserving its aspect ratio. Guide dragging requires edit mode. These rules supersede older layout and Review timing descriptions below.
-
 # Practice Mirror
 
 [![GitHub Pages](https://github.com/ttomohisa/htmlapps-practice-mirror/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/ttomohisa/htmlapps-practice-mirror/actions/workflows/deploy-pages.yml)
@@ -27,6 +22,8 @@ Mobile screenshot: [assets/screenshot-mobile-en.png](assets/screenshot-mobile-en
 
 - **Delayed practice mirror** — Choose 3 / 5 / 10 / 15 seconds, or enter a custom delay from 1–30 seconds.
 - **Configurable Review history** — Defaults to 10 seconds, with 10 / 30 / 60 / 180 second presets and custom 10–180 second values. Review becomes available when displayed history is available and keeps growing up to the configured maximum.
+- **Position before practicing** — Check a live camera preview before starting the delayed view.
+- **Select a range** — Set the start/end, loop the selection or save only that range at original speed.
 - **Detailed frame review** — Play at 0.25x / 0.5x / 1x / 2x, seek through the clip, or step one frame backward/forward.
 - **Guides for alignment** — Add vertical/horizontal guides, drag them on the video, or adjust them with the keyboard.
 - **Mirror and camera controls** — Flip the displayed image, switch front/rear cameras when multiple inputs are available, enter fullscreen, and optionally keep the screen awake.
@@ -65,11 +62,11 @@ Python, Node.js, and a local web server are not required for the normal PowerShe
 1. Choose the delayed-view time: 3 / 5 / 10 / 15 seconds, or a custom 1–30 second value.
 2. Open **Review settings** if you want more than the default 10-second Review history. The maximum can be set from 10–180 seconds.
 3. Select **Start camera** and allow camera access.
-4. Wait for Warm-up. Practice Mirror then shows the camera with the selected delay.
+4. Check your position, camera and mirroring in the live preview, then select **Start practice**. Warm-up shows the live view until delayed playback is ready.
 5. On smartphones, open **Controls** only when you need guides, Mirror, camera switching, fullscreen, or screen wake lock.
 6. Once displayed history is available, select **Review**. History continues accumulating up to your configured maximum.
-7. Use playback speed, seek, or frame stepping to inspect the movement.
-8. Open **Save clip** only if you want to keep the frozen Review.
+7. Review opens paused on the displayed frame. Use playback speed, seek or frame stepping; set a start/end to loop a selected range.
+8. Open **Save clip** to name and save the selected range as WebM at original speed.
 9. Select **Back to practice** to discard the frozen Review and rebuild the delayed buffer, or **Stop** to release the camera.
 
 ### Review settings
@@ -94,6 +91,10 @@ Guides and the Mirror display transform are not burned into the saved clip, and 
 | Shift + Arrow | Move by 5% |
 | Home / End | Move to an edge |
 | Delete / Backspace | Remove the focused guide |
+
+## Tags and GitHub Releases
+
+After the owner merges the release PR, a main-only workflow verifies the build and creates the version tag and GitHub Release with both HTML variants and checksums. PRs validate without publishing. See [Releasing](docs/RELEASING.md) for retries and pending device checks.
 
 ## Publish with GitHub Pages
 

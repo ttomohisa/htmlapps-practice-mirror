@@ -1,96 +1,37 @@
-# Practice Mirror v1.0.2 — Release Checklist
+# Practice Mirror v1.1.0 — Release Checklist
 
-Do not mark manual/device checks complete unless they were actually tested.
+The checkboxes are owner review gates; current automated results are shown on the PR. Automated Chromium/emulated viewports are distinct from physical-device checks. Do not mark a device item complete without testing it. The owner decides when to merge; merging activates the main-only tag/Release workflow.
 
-## v1.0.2 targeted verification
+## Automated release checks
 
-- [ ] Single help scrollbar; final item reachable in JA/EN, including short viewports.
-- [ ] Exact Japanese tagline and natural delay subtitle.
-- [ ] English introduction fits one line at 1360px and wraps normally on phones.
-- [ ] Smartphone footer hidden in portrait and landscape.
-- [ ] JA/EN brand title retains its size, including repeated language switches.
-- [ ] Practice/Review controls stay below the video at 844x390 and 932x430.
-- [ ] `scripts/verify-responsive-ui.mjs` passes.
+- [ ] PowerShell syntax/encoding and repository/standalone verification.
+- [ ] Readable HTML, root copy and self-extracting HTML match the build contract.
+- [ ] Canonical embedded favicon, pinned dependency hash, CSP and no runtime external requests.
+- [ ] All settings, history/range, mobile layout and release-safety unit tests.
+- [ ] File-open readable/root/self-extract settings and help behavior.
+- [ ] Japanese/English at 320/375/390/430px portrait, phone landscape and desktop.
+- [ ] Preview → warm-up → delayed practice → displayed-frame Review → return.
+- [ ] Review stays visible/tappable after auxiliary auto-hide; video tap restores tools.
+- [ ] Millisecond-rounded range fields preserve exact unchanged endpoints and native input validity.
+- [ ] Slow playback, frame steps, range loop and seekable 2-second WebM with an edited filename.
+- [ ] Fullscreen alignment, help scrolling, visible keyboard focus and logical transport focus order.
+- [ ] Both HTML release assets and SHA256SUMS prepared for the tested commit.
+- [ ] PR release-validation job succeeds; publish job is skipped on PRs.
 
-The unchecked device/camera gates below are not implied by emulated Chromium layout checks.
+## Manual / physical-device checks — pending
 
-## Repository / packaging
+- [ ] Android Chrome: physical camera, front/back switching and sustained delayed practice.
+- [ ] Android reporting device: line-like noise is absent with synchronized drawing.
+- [ ] iPhone/iPad Safari: camera permission, positioning, delayed playback, Review and WebM export where supported.
+- [ ] Device-specific background/resume, screen lock, orientation and safe-area behavior.
+- [ ] Sustained long-history/resource tests in RELIABILITY_TEST_MATRIX.md.
 
-- [ ] app.config/UI/help/footer are v1.0.2.
-- [ ] User-approved `assets/favicon.svg` is canonical.
-- [ ] Favicon and upper-left app icon use the same SVG.
-- [ ] `fix-webm-duration` is pinned at 1.0.6 and lock hash verifies.
-- [ ] `dist/index.html` builds.
-- [ ] `practice-mirror.html` matches `dist/index.html` byte-for-byte.
-- [ ] self-extract build verifies.
-- [ ] no unresolved build placeholder remains.
+## Release preparation
 
-## Runtime privacy / security
+- [ ] README/help/spec/CHANGELOG match v1.1.0 and the final behavior.
+- [ ] Four committed Japanese/English desktop/mobile screenshots are current.
+- [ ] Release notes include the physical-device and Android-noise verification limits.
+- [ ] Main-only publisher validates artifact commit and hashes before creating a tag.
+- [ ] Failed uploads leave a draft; retries never overwrite a published release or move a conflicting tag.
 
-- [ ] `connect-src 'none'` is present.
-- [ ] camera capture uses `audio:false`.
-- [ ] no external runtime script/style/font exists.
-- [ ] embedded WebM helper is loaded only from the standalone asset bundle.
-- [ ] no application fetch/XHR/WebSocket/EventSource endpoint exists.
-- [ ] media is not persisted without explicit save.
-- [ ] export Blob URLs are revoked.
-
-## Desktop / mobile / language
-
-- [ ] desktop start screen checked.
-- [ ] smartphone portrait checked.
-- [ ] short landscape checked.
-- [ ] no horizontal page scroll.
-- [ ] smartphone Practice tools panel starts closed.
-- [ ] fullscreen video is horizontally centered.
-- [ ] fullscreen controls align with the video instead of floating at the far edge.
-- [ ] Japanese main flow checked.
-- [ ] English main flow checked.
-
-## Review
-
-- [ ] Review maximum defaults to 10 seconds.
-- [ ] Review maximum accepts integer values from 10 through 180.
-- [ ] invalid Review maximum does not overwrite the last valid setting.
-- [ ] Review maximum persists across reload.
-- [ ] with 180 seconds configured, Review becomes available after about 10 seconds rather than waiting 180 seconds.
-- [ ] after sufficient Practice time, Review can freeze close to the configured maximum.
-- [ ] whole Review video and seek bar fit in one viewport on desktop.
-- [ ] whole Review video and seek bar fit in one viewport on smartphone.
-- [ ] 0.25x / 0.5x / 1x / 2x.
-- [ ] frame stepping and seeking.
-- [ ] Play after Review entry.
-- [ ] Play after seek.
-- [ ] Play after frame stepping.
-- [ ] no `VideoDecoder` key-frame error.
-- [ ] Review Save section is collapsed initially.
-- [ ] Review clip save produces WebM.
-- [ ] saved WebM has finite duration and can be seeked in a normal player.
-- [ ] saved clip has no audio.
-- [ ] saved clip does not burn in guides/Mirror.
-
-## Camera / Practice
-
-- [ ] camera allow flow.
-- [ ] camera deny flow.
-- [ ] 3 / 5 / 10 / 15 presets.
-- [ ] custom 1 / 30 seconds and invalid values.
-- [ ] guides / Mirror.
-- [ ] multi-camera switching where available.
-
-## Accessibility / reliability
-
-- [ ] Complete `MOBILE_ACCESSIBILITY_TEST_MATRIX.md`.
-- [ ] Complete `RELIABILITY_TEST_MATRIX.md`.
-
-## Release assets
-
-- [ ] current `assets/screenshot.png`.
-- [ ] current `assets/screenshot-en.png`.
-- [ ] current `assets/screenshot-mobile.png`.
-- [ ] current `assets/screenshot-mobile-en.png`.
-- [ ] README screenshot references resolve.
-
-## v1.0.2 release decision
-
-Release only when static checks pass, the required device gates are completed or explicitly excepted, and no Critical/High issue remains.
+After merge, confirm the release workflow publishes `v1.1.0` at its tested main commit with both HTML files and SHA256SUMS. Actual tag creation and GitHub upload/publication are intentionally not exercised from the unmerged PR.

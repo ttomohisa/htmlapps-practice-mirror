@@ -1,4 +1,6 @@
-# v1.1.0 — 2026-11-05
+# Changelog
+
+## [1.1.0] - 2026-11-06
 
 - Added camera positioning preview before practice.
 - Kept Review visible and tappable throughout Practice; only auxiliary tools auto-hide.
@@ -9,11 +11,9 @@
 - Simplified mobile layout, landscape side controls and explicit guide editing.
 - Reworked phone preparation and session screens into a flat media workspace with a centered play control, adjacent seek bar, quiet speed selector and consistent disclosures.
 
-# Changelog
-
-## Unreleased
-
-- Move the existing footer version to the end of Help, retaining its phone/short-landscape/Review hiding, the header version, and localized privacy note.
+- Moved the existing footer version into Help while retaining its visibility rules.
+- Fixed range input rounding rejecting an unchanged full-clip endpoint.
+- Added main-only version tagging and GitHub Release publication after full validation, with both standalone HTML variants and SHA-256 checksums.
 
 ## [1.0.2] - 2026-10-22
 

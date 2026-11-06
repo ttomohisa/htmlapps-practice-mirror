@@ -1,13 +1,17 @@
-
-## v1.1.0
-
-Camera start opens a live positioning preview; Start practice begins delayed processing. Review freezes the displayed frame, retaining preceding history plus the delay (bounded by 64 MiB, time and packet count). Short retained history is reported. Review opens paused at its end; start/end selection controls loop playback and original-speed WebM export. Export excludes audio, guides and mirroring. Landscape sessions place controls beside the camera view, preserving its aspect ratio. Guide dragging requires edit mode. These rules supersede older layout and Review timing descriptions below.
-
 # Practice Mirror — Application Specification
 
-Status: Stable release
+Status: v1.1.0 release candidate (pending owner merge)
 Current version: v1.1.0
 Target: Browser Kitty
+
+## Current v1.1.0 behavior
+
+- Start camera opens a live positioning preview; Start practice begins delayed processing.
+- Review freezes the displayed frame and includes preceding history up to the configured maximum. Delay and Review history are independent; retained compressed history includes the delay and is bounded by time, packet count and 64 MiB.
+- Review opens paused at the displayed endpoint. Select a range for looping or original-speed, seekable WebM export. Export excludes audio, guides and display mirroring.
+- Phone controls use a flat media workspace; short landscape puts controls beside the aspect-preserving video. Review stays visible when auxiliary tools auto-hide.
+- Guide movement requires explicit editing. Returning to practice rebuilds the delay while showing the live view.
+- Earlier version sections below describe historical behavior; release verification uses the current behavior above and RELEASE_CHECKLIST.md.
 
 ## Product definition
 
@@ -94,3 +98,7 @@ The shared Practice/Review video canvas requests synchronized compositing (`desy
 ## Persistent Review action
 
 During Practice, auto-hide affects only auxiliary tools. The Review action and delay summary stay visible, pointer-accessible and in the accessibility tree, including after idle time and in fullscreen. Hidden auxiliary tools remain inert and leave the tab order; tapping the video restores them. Preview, warm-up, Review and keyboard interaction retain their existing auto-hide guards.
+
+## Range input precision and release pipeline
+
+Range fields show milliseconds and preserve exact microsecond timestamps when an unchanged endpoint is reparsed. Their native step and maximum match the displayed precision. Out-of-range/reversed/empty ranges remain invalid. The main-only release workflow tests the revision before tagging and publishes both standalone variants with SHA-256 checksums. PR runs validate/package only; release mutation is restricted to main. See docs/RELEASING.md.

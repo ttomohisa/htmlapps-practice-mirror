@@ -48,3 +48,15 @@ test('range rejects empty, reversed, non-finite and out-of-bounds input without 
   const w=a.run('reviewExportWindow()');assert.equal(w.visibleStartUs,17e6);assert.equal(w.endUs,21e6);assert.equal(w.durationUs,4e6);
   a.state.exporting=true;assert.equal(a.run('setReviewRange(0,10e6)'),false);
 });
+
+test('range input round-trips a fractional-millisecond endpoint without widening the range',()=>{
+  const a=app();a.state.review.durationUs=5_066_667;a.state.review.rangeEndUs=5_066_667;
+  a.add('rangeInputUs');a.add('setReviewRange');
+  assert.equal(a.run('rangeInputUs("5.067",state.review.rangeEndUs)'),5_066_667);
+  assert.equal(a.run('setReviewRange(rangeInputUs("1",0),rangeInputUs("5.067",state.review.rangeEndUs))'),true);
+  assert.equal(a.state.review.rangeStartUs,1e6);assert.equal(a.state.review.rangeEndUs,5_066_667);
+  a.state.review.rangeStartUs=1_066_667;
+  assert.equal(a.run('rangeInputUs("1.067",state.review.rangeStartUs)'),1_066_667);
+  assert.equal(a.run('setReviewRange(0,rangeInputUs("5.068",state.review.rangeEndUs))'),false);
+  assert.ok(Number.isNaN(a.run('rangeInputUs("",0)')));
+});

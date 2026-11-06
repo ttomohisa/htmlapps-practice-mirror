@@ -55,6 +55,12 @@ try{
   await page.waitForFunction(()=>window.testMirror.state.phase==='review');
   const snapshot=await page.evaluate(()=>{const r=window.testMirror.state.review;return {end:r.endUs,pos:r.positionUs,duration:r.durationUs,playing:r.playing};});
   assert.equal(snapshot.end,anchor);assert.equal(snapshot.pos,snapshot.duration);assert.equal(snapshot.playing,false);
+  await page.locator('#rangeDetails').evaluate(node=>node.open=true);
+  await page.locator('#rangeStartInput').fill('1');await page.locator('#rangeStartInput').dispatchEvent('change');
+  assert.equal(await page.locator('#rangeError').innerText(),'','editing start must preserve the exact full-clip end');
+  assert.equal(await page.evaluate(()=>window.testMirror.state.review.rangeEndUs),snapshot.duration);
+  assert.equal(await page.locator('#rangeEndInput').evaluate(input=>input.validity.valid),true,'rounded endpoint must satisfy native input constraints');
+  await page.locator('#rangeDetails').evaluate(node=>node.open=false);
   assert.equal(await page.evaluate(()=>window.testMirror.setReviewRange(1e6,3e6)),true);
   await page.locator('#loopButton').click();
   assert.equal(await page.locator('#loopButton').getAttribute('aria-pressed'),'true');
