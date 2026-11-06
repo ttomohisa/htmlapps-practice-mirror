@@ -38,7 +38,7 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const address = server.address();
 const url = "http://127.0.0.1:" + address.port + "/";
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, executablePath:process.env.CHROMIUM_PATH||undefined });
 
 async function capture({ locale, viewport, mobile, output }) {
   const context = await browser.newContext({
@@ -53,7 +53,7 @@ async function capture({ locale, viewport, mobile, output }) {
   const page = await context.newPage();
   await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForFunction(() => {
-    const icon = document.querySelector("#startIcon");
+    const icon = document.querySelector("#appBrandIcon");
     return icon && String(icon.getAttribute("src") || "").startsWith("data:image/svg+xml");
   });
   await page.screenshot({

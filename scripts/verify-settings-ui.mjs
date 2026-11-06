@@ -12,7 +12,7 @@ const server = http.createServer((request, response) => {
   response.end(html);
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, executablePath:process.env.CHROMIUM_PATH||undefined });
 try {
   for (const viewport of [{ width: 1280, height: 900 }, { width: 320, height: 640 }]) {
     const context = await browser.newContext({ viewport, locale: "en-US" });

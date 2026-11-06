@@ -1,0 +1,96 @@
+name: Validate and release Practice Mirror
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - app.config.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: practice-mirror-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+      - name: PowerShell syntax and standalone build
+        shell: pwsh
+        run: |
+          ./scripts/check-powershell-syntax.ps1
+          ./scripts/check-repository.ps1
+      - name: Unit and release safety tests
+        shell: pwsh
+        run: |
+          node --test scripts/verify-settings.test.mjs scripts/verify-review-range.test.mjs tests/mobile-layout.test.cjs tests/release.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Unit tests failed.' }
+      - name: Install pinned browser test tooling
+        shell: pwsh
+        run: |
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          if ($LASTEXITCODE -ne 0) { throw 'Browser test tooling installation failed.' }
+          npx playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Chromium installation failed.' }
+      - name: Browser regression suite
+        shell: pwsh
+        run: |
+          $checks = @('mobile-layout.browser.cjs', 'verify-settings-ui.mjs', 'verify-responsive-ui.mjs', 'verify-review-layout.mjs', 'verify-review-export.mjs', 'verify-practice-workflow.mjs')
+          foreach ($check in $checks) {
+            node "scripts/$check"
+            if ($LASTEXITCODE -ne 0) { throw "Browser regression failed: $check" }
+          }
+      - name: Prepare versioned release assets and checksums
+        shell: pwsh
+        run: |
+          node scripts/package-release.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Release packaging failed.' }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: practice-mirror-release-${{ github.sha }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: practice-mirror-release-browser-${{ github.run_id }}
+          path: |
+            test-results/
+            tmp-review-ui/
+          if-no-files-found: ignore
+          retention-days: 7
+  publish:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: practice-mirror-release-${{ github.sha }}
+          path: release/
+      - name: Tag tested commit and publish complete release
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: await require('./scripts/publish-release.cjs')({ github, context, core });

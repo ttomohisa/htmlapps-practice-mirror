@@ -5,7 +5,7 @@ import { mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { chromium } from 'playwright';
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, executablePath:process.env.CHROMIUM_PATH||undefined });
 const failures = [];
 const check = (ok, message) => { if (!ok) failures.push(message); };
 await mkdir('tmp-review-ui', { recursive: true });
@@ -77,7 +77,7 @@ try {
         return {stage:stage.toJSON(),controls:[...document.querySelectorAll(review ? '#practiceTools,#reviewControls' : '#practiceTools,#stageControls')].map(el=>el.getBoundingClientRect().toJSON()),overflow:document.documentElement.scrollWidth>innerWidth};
       },review);
       check(!geometry.overflow, `${name}/${review}: no active-state overflow`);
-      if(mobile) check(geometry.controls.every(box=>box.y >= geometry.stage.bottom - 1), `${name}/${review}: all controls below video ${JSON.stringify(geometry)}`);
+      if(mobile && width<=height) check(geometry.controls.every(box=>box.y >= geometry.stage.bottom - 1), `${name}/${review}: all controls below video ${JSON.stringify(geometry)}`);
       // Expanded panels must stay in normal flow, including at very narrow widths.
       await page.locator('#practiceTools').evaluate(el=>el.classList.add('tools-open'));
       if (review) await page.locator('#reviewExportDetails').evaluate(el=>el.open=true);
@@ -90,7 +90,7 @@ try {
           const p=document.querySelector('#mirrorPanel'), s=document.querySelector('#stageShell').getBoundingClientRect();
           return {overflow:p.scrollWidth>p.clientWidth, bottom:s.bottom, controls:document.querySelector('#stageControls').getBoundingClientRect().top};
         });
-        check(!fs.overflow && fs.controls>=fs.bottom-1, `${name}/${lang}: fullscreen controls below video without horizontal overflow`);
+        check(!fs.overflow && (width>height || fs.controls>=fs.bottom-1), `${name}/${lang}: fullscreen controls below video without horizontal overflow`);
         await page.evaluate(()=>document.exitFullscreen());
         await page.waitForFunction(()=>!document.fullscreenElement);
       }

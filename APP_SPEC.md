@@ -1,8 +1,17 @@
 # Practice Mirror — Application Specification
 
-Status: Stable release
-Current version: v1.0.2
+Status: v1.1.0 release candidate (pending owner merge)
+Current version: v1.1.0
 Target: Browser Kitty
+
+## Current v1.1.0 behavior
+
+- Start camera opens a live positioning preview; Start practice begins delayed processing.
+- Review freezes the displayed frame and includes preceding history up to the configured maximum. Delay and Review history are independent; retained compressed history includes the delay and is bounded by time, packet count and 64 MiB.
+- Review opens paused at the displayed endpoint. Select a range for looping or original-speed, seekable WebM export. Export excludes audio, guides and display mirroring.
+- Phone controls use a flat media workspace; short landscape puts controls beside the aspect-preserving video. Review stays visible when auxiliary tools auto-hide.
+- Guide movement requires explicit editing. Returning to practice rebuilds the delay while showing the live view.
+- Earlier version sections below describe historical behavior; release verification uses the current behavior above and RELEASE_CHECKLIST.md.
 
 ## Product definition
 
@@ -12,17 +21,17 @@ Move → delayed view → Review if needed → adjust → move again.
 
 ## Shared build-information placement
 
-- The existing informational footer version, “Practice Mirror v1.0.2”, is the final item in the Help scroll body. The footer retains its localized processing note and the header version is unchanged.
+- The existing informational footer version, “Practice Mirror v1.1.0”, is the final item in the Help scroll body. The footer retains its localized processing note and the header version is unchanged.
 - The moved version retains the original footer visibility: hidden at widths up to 760px, on coarse-pointer landscape screens up to 620px high, and while Review is active. Other Help content remains available.
 - No camera, codec, export, permission, or version changes.
 
-## v1.0.2 responsive polish
+## v1.1.0 responsive polish
 
 - Help uses one scrollable body and a fixed dialog header; background page scrolling is locked only while the dialog is open; the final item remains reachable on short screens.
 - The Japanese tagline is “動いた直後にさっきの自分を確認する”; the subtitle is “1〜30秒の遅延表示と振り返り”.
 - The concise English introduction fits one line at desktop width and wraps normally on phones.
 - Smartphone portrait and landscape hide the footer and retain the same brand title size when switching languages. Browser text inflation is normalized without disabling user zoom.
-- Practice and Review always place controls below the video in landscape; short screens may scroll vertically rather than moving controls beside the video.
+- Practice and Review place controls beside the video in short landscape viewports.
 - Automated Chromium coverage includes 320/390px portrait, 844/932px landscape, desktop, and short desktop in Japanese and English. These are emulated viewports, not physical-device certification.
 
 ## v1.0.1 settings polish
@@ -73,3 +82,23 @@ The v1.0.0 release branch includes the generated `practice-mirror.html`. The scr
 `RELEASE_CHECKLIST.md`, `MOBILE_ACCESSIBILITY_TEST_MATRIX.md`, and `RELIABILITY_TEST_MATRIX.md` remain the release validation references. Static CI verifies packaging, runtime-network boundaries, key-frame restart safety, seekable WebM output, Review layout, configurable Review history, icon consistency, and accessibility/reliability regression markers.
 
 Manual device checks must not be represented as completed unless they were actually run.
+
+## Review control clarity
+
+Start and end each group their numeric time (seconds) with a current-position action. Narrow screens use separate rows; full-range reset is secondary. Loop shows ON/OFF text and a switch position alongside its localized label, synchronized with aria-pressed through language changes.
+
+## Phone visual hierarchy
+
+At widths up to 760px, preparation is left aligned with underlined delay presets and one full-width start action. Sessions use a flat media workspace without nested cards. Review puts seek/time before centered play and frame controls; playback speed uses a quiet segmented row. Return, range, export and settings retain text labels, keyboard access and 44px targets. The loop ON/OFF state remains explicit. Camera geometry and media behavior are unchanged.
+
+## Video presentation
+
+The shared Practice/Review video canvas requests synchronized compositing (`desynchronized:false`). Front-buffer rendering must not be requested: it can expose partial frame updates as tearing. Camera acquisition, codec selection, delay timestamps, guides and exported video are unchanged. A Chromium regression checks the effective canvas context attributes before the camera workflow. Physical Android display scanout still requires device verification.
+
+## Persistent Review action
+
+During Practice, auto-hide affects only auxiliary tools. The Review action and delay summary stay visible, pointer-accessible and in the accessibility tree, including after idle time and in fullscreen. Hidden auxiliary tools remain inert and leave the tab order; tapping the video restores them. Preview, warm-up, Review and keyboard interaction retain their existing auto-hide guards.
+
+## Range input precision and release pipeline
+
+Range fields show milliseconds and preserve exact microsecond timestamps when an unchanged endpoint is reparsed. Their native step and maximum match the displayed precision. Out-of-range/reversed/empty ranges remain invalid. The main-only release workflow tests the revision before tagging and publishes both standalone variants with SHA-256 checksums. PR runs validate/package only; release mutation is restricted to main. See docs/RELEASING.md.

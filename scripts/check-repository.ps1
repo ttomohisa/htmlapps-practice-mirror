@@ -1,4 +1,4 @@
-param(
+﻿param(
   [switch]$ForceDownload
 )
 
@@ -223,7 +223,7 @@ foreach ($token in $practiceMirrorReviewKeyframeTokens) {
 $practiceMirrorReviewRcTokens = @(
   'data-rate="2"',
   'id="toolsToggleButton"',
-  'id="reviewStopButton"',
+  'id="beginPracticeButton"',
   'id="reviewExportDetails"',
   "body.review-active .stage-shell",
   ".mirror-panel:fullscreen .stage-shell{width:min(100%,calc((100dvh - 180px) * 16 / 9));margin-inline:auto",
