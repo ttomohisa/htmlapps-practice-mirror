@@ -127,3 +127,41 @@ test("desktop camera selection uses a specific device ID",()=>{
   assert.equal(value.video.deviceId.exact,"external-usb-camera");
   assert.equal(Object.hasOwn(value.video,"facingMode"),false);
 });
+
+test("desktop camera switching uses deviceId after facingMode exact selection fails",async()=>{
+  const fakeStream=id=>({
+    getVideoTracks:()=>[{getSettings:()=>({deviceId:id})}],
+    getTracks:()=>[{stop(){}}]
+  });
+  const state={
+    phase:"preview",stream:fakeStream("cam-a"),facingMode:"user",generation:1,
+    cameraSwitching:false,cameraSwitchToken:0,reliability:{suspended:false},
+    exporting:false,historyPackets:[1],reviewReady:true
+  };
+  const requests=[],saved=[];
+  let stops=0;
+  const ctx=execute(extract("    function cameraConstraintsForDevice(","    function capabilityReport(){"),{
+    state,qualityProfile:()=>({width:1280,height:720,fps:30}),
+    cameraConstraints:(mode,{exact}={})=>({audio:false,video:{facingMode:exact?{exact:mode}:{ideal:mode}}}),
+    navigator:{mediaDevices:{
+      enumerateDevices:async()=>[{kind:"videoinput",deviceId:"cam-a"},{kind:"videoinput",deviceId:"cam-b"}],
+      getUserMedia:async options=>{
+        requests.push(options);
+        if(options.video.facingMode?.exact) throw Error("facing mode unsupported");
+        return fakeStream(options.video.deviceId.exact);
+      }
+    }},
+    updatePracticeUxButtons(){},cancelLiveLoops(){},disposeLiveCodecs(){},
+    setOverlay(){},showControls(){},stopStream(){stops+=1;state.stream=null;},
+    activateCameraStream:async stream=>{state.stream=stream;return true;},
+    writeStorage:(key,value)=>saved.push([key,value])
+  });
+  await ctx.switchCamera();
+  assert.equal(requests.length,2);
+  assert.equal(requests[0].video.facingMode.exact,"environment");
+  assert.equal(requests[1].video.deviceId.exact,"cam-b");
+  assert.equal(state.stream.getVideoTracks()[0].getSettings().deviceId,"cam-b");
+  assert.equal(state.cameraSwitching,false);
+  assert.equal(stops,1);
+  assert.equal(saved[0][1],"environment");
+});
