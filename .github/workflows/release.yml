@@ -36,7 +36,7 @@ jobs:
       - name: Unit and release safety tests
         shell: pwsh
         run: |
-          node --test scripts/verify-settings.test.mjs scripts/verify-review-range.test.mjs tests/mobile-layout.test.cjs tests/release.test.cjs
+          node --test scripts/verify-settings.test.mjs scripts/verify-review-range.test.mjs scripts/verify-reliability.test.mjs tests/mobile-layout.test.cjs tests/release.test.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Unit tests failed.' }
       - name: Install pinned browser test tooling
         shell: pwsh
