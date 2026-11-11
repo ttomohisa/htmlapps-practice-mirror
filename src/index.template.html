@@ -854,13 +854,13 @@
         stopStream();
         try{
           let stream=null;
-          // Desktop USB cameras often do not expose facingMode; use their deviceId.
-          if(alternateId&&!["user","environment"].includes(oldSettings.facingMode)){
-            try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraintsForDevice(alternateId)); }catch(_error){}
-          }
-          if(!stream){
-            try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next,{exact:true})); }
-            catch(_exactError){ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next)); }
+          // Prefer front/back switching on phones; desktop USB cameras may need deviceId.
+          try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next,{exact:true})); }
+          catch(_exactError){
+            if(alternateId){
+              try{ stream=await navigator.mediaDevices.getUserMedia(cameraConstraintsForDevice(alternateId)); }catch(_deviceError){}
+            }
+            if(!stream) stream=await navigator.mediaDevices.getUserMedia(cameraConstraints(next));
           }
           if(alternateId&&oldSettings.deviceId&&stream.getVideoTracks()[0]?.getSettings?.().deviceId===oldSettings.deviceId){
             stream.getTracks().forEach(track=>track.stop());
