@@ -871,6 +871,7 @@
           const activated=await activateCameraStream(stream,{preview}); if(!activated) return;
           writeStorage("practice-mirror-facing",next);
         }catch(error){
+          if(switchToken!==state.cameraSwitchToken||state.reliability.suspended||state.phase==="idle") return;
           stopStream(); disposeLiveCodecs();
           try{
             const recovery=await navigator.mediaDevices.getUserMedia(cameraConstraints(previous));
@@ -1548,6 +1549,7 @@
             if(state.review.lastDecoderError) throw state.review.lastDecoderError;
             await requestWakeLock(); AppToast.show({message:t("reviewRecovered"),tone:"success"});
           }catch(error){
+            if(rel.suspended||state.phase!=="review") return;
             degradeReview(error);
           }
           return;
@@ -1574,6 +1576,7 @@
         }
         await requestWakeLock(); AppToast.show({message:t("backgroundResumed"),tone:"success"}); announce(t("backgroundResumed"));
       }catch(error){
+        if(rel.suspended||state.phase==="suspended"||state.phase==="idle") return;
         rel.suspended=false; rel.suspendedFrom=null; updateReliabilityDiagnostics();
         handleRuntimeFailure(error);
       }
