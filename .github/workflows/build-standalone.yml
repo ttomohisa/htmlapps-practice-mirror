@@ -48,7 +48,7 @@ jobs:
 
       - name: Verify camera-free settings behavior
         shell: pwsh
-        run: node --test scripts/verify-settings.test.mjs
+        run: node --test scripts/verify-settings.test.mjs scripts/verify-review-range.test.mjs scripts/verify-reliability.test.mjs
 
       - name: Upload standalone artifact
         uses: actions/upload-artifact@v7

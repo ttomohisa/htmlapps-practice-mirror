@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.1] - 2026-11-11
+
+### Fixed
+
+- Prevented background/resume and screen Wake Lock races when a session is stopped or the tab is switched.
+- Decoded Review exports from the nearest preceding key frame instead of the beginning of long retained history.
+- Made frame stepping follow actual encoded-frame timestamps when frames are dropped.
+- Switched multiple desktop cameras using real device IDs when facing-mode switching is unavailable or selects the same camera.
+- Fixed the Japanese camera-interruption notice while reviewing.
+- Preserved guides added after Clear when Undo restores the previously cleared guides.
+
+### Validation
+
+- Source and distributed single-HTML files updated together, keeping the synchronized Canvas rendering change from v1.1.0.
+- Browser CI and physical-device checks must be reviewed before merge; Android tearing was confirmed resolved by the app owner.
+
+
 ## [1.1.0] - 2026-11-06
 
 - Added camera positioning preview before practice.
