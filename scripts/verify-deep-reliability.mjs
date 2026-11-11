@@ -240,9 +240,13 @@ try {
       return {count:r.packets.length,duration:r.durationUs/1e6,tailStart:first+shift,tailEnd:end+shift};
     });
     assert.ok(details.count>5400&&details.duration>178&&details.duration<185,JSON.stringify(details));
-    const downloaded=f.page.waitForEvent('download',{timeout:30000});
-    await f.page.locator('#saveClipButton').click();
-    const file=await downloaded;
+    // The Save section is collapsed on entry; open it just as a user would.
+    await f.page.locator('#reviewExportDetails').evaluate(node=>{node.open=true;});
+    await f.page.waitForFunction(()=>!document.querySelector('#saveClipButton').disabled);
+    const [file]=await Promise.all([
+      f.page.waitForEvent('download',{timeout:25000}),
+      f.page.locator('#saveClipButton').click()
+    ]);
     const bytes=await readFile(await file.path());
     assert.ok(bytes.byteLength>1000,'empty WebM export');
     const media=await f.page.evaluate(async base64=>{
@@ -267,7 +271,7 @@ try {
     assert.ok(media.duration>0.65&&media.duration<1.4,JSON.stringify(media));
     assert.ok(Math.abs(media.seeked-0.5)<0.2,JSON.stringify(media));
     const decoded=await f.page.evaluate(()=>window.__decodeCalls);
-    assert.ok(decoded<450,'export decoded too many frames from prefix: '+decoded);
+    assert.ok(decoded>0&&decoded<450,'export decoded an unexpected frame count: '+decoded);
     await f.page.waitForFunction(()=>deepTest.state.exporting===false);
     await f.page.evaluate(()=>deepTest.stopPractice());
     await expectIdle(f);
