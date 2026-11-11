@@ -151,7 +151,7 @@ test("desktop camera switching uses deviceId after facingMode exact selection fa
         return fakeStream(options.video.deviceId.exact);
       }
     }},
-    updatePracticeUxButtons(){},cancelLiveLoops(){},disposeLiveCodecs(){},
+    updatePracticeUxButtons(){},cancelLiveLoops(){},disposeLiveCodecs(){},t:key=>key,
     setOverlay(){},showControls(){},stopStream(){stops+=1;state.stream=null;},
     activateCameraStream:async stream=>{state.stream=stream;return true;},
     writeStorage:(key,value)=>saved.push([key,value])
