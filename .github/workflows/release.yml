@@ -48,7 +48,7 @@ jobs:
       - name: Browser regression suite
         shell: pwsh
         run: |
-          $checks = @('mobile-layout.browser.cjs', 'verify-settings-ui.mjs', 'verify-responsive-ui.mjs', 'verify-review-layout.mjs', 'verify-review-export.mjs', 'verify-practice-workflow.mjs')
+          $checks = @('mobile-layout.browser.cjs', 'verify-settings-ui.mjs', 'verify-responsive-ui.mjs', 'verify-review-layout.mjs', 'verify-review-export.mjs', 'verify-practice-workflow.mjs', 'verify-deep-reliability.mjs')
           foreach ($check in $checks) {
             node "scripts/$check"
             if ($LASTEXITCODE -ne 0) { throw "Browser regression failed: $check" }
