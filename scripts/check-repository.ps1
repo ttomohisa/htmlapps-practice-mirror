@@ -156,7 +156,7 @@ if (-not $sourceText.Contains("audio:false")) {
 }
 
 # Practice Mirror v1.0.0 release-asset contract.
-$approvedIconSha256 = "1b1b88edb9dcb1da5e42b294577fb1a5cf8d3ce023ab19096180bb087004229e"
+$approvedIconSha256 = "e591b2e249c6c3f4642caac8dfa6a430ef3e080d3e4f71aac22e6bb4966c0455"
 $iconPath = Join-Path $Root "assets\favicon.svg"
 $iconStream = [System.IO.File]::OpenRead($iconPath)
 $iconHashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
